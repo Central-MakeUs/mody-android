@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "com.makeus.mody.core.data"
-    compileSdk = 35
-    defaultConfig { minSdk = 35 }
+    compileSdk = 36
+    defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.makeus.mody"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.makeus.mody"
-        minSdk = 35
-        targetSdk = 35
+        minSdk = 26
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 

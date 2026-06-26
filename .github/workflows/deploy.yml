@@ -1,0 +1,65 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > keystore.jks
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
+          SIGNING_STORE_FILE: ${{ github.workspace }}/keystore.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: testers
+          file: app/build/outputs/apk/release/app-release.apk
+          releaseNotes: "빌드: ${{ github.sha }}\n작성자: ${{ github.actor }}"
+
+      - name: Notify Slack (성공)
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "✅ *배포 완료*\n커밋: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n배포자: ${{ github.actor }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify Slack (실패)
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "❌ *배포 실패*\n커밋: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n작성자: ${{ github.actor }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

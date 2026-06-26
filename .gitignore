@@ -1,15 +1,22 @@
 *.iml
 .gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+.idea/
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin
+.kotlin/
+
+# Build outputs
+release/
+*.apk
+*.aab
+
+# Signing (절대 커밋 금지)
+*.jks
+*.keystore
+keystore.properties

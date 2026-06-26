@@ -20,16 +20,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Decode Keystore
-        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > keystore.jks
-
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
-        env:
-          SIGNING_STORE_FILE: ${{ github.workspace }}/keystore.jks
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -37,7 +29,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           token: ${{ secrets.FIREBASE_TOKEN }}
           groups: testers
-          file: app/build/outputs/apk/release/app-release.apk
+          file: app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: "빌드: ${{ github.sha }}\n작성자: ${{ github.actor }}"
 
       - name: Notify Slack (성공)

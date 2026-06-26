@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "803448604367",
+    "project_id": "mody-c3bd9",
+    "storage_bucket": "mody-c3bd9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803448604367:android:ce007c6731b0e832f959ba",
+        "android_client_info": {
+          "package_name": "com.makeus.mody"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwiR3a_f-f7ZzX5Mu9Nx_ej55DsbkP6_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803448604367:android:182a034e5a5f19adf959ba",
+        "android_client_info": {
+          "package_name": "com.makeus.mody.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwiR3a_f-f7ZzX5Mu9Nx_ej55DsbkP6_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

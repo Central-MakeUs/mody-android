@@ -33,7 +33,7 @@ jobs:
           releaseNotes: "빌드: ${{ github.sha }}\n작성자: ${{ github.actor }}"
 
       - name: Notify Slack (성공)
-        if: success()
+        if: false  # 임시 비활성화 (알림 끔)
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
@@ -45,7 +45,7 @@ jobs:
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Notify Slack (실패)
-        if: failure()
+        if: false  # 임시 비활성화 (알림 끔)
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |

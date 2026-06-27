@@ -11,3 +11,12 @@ sealed interface AuthGraph : Route {
     @Serializable data object BasicInfoRoute : AuthGraph
     @Serializable data object GroupRoute : AuthGraph
 }
+
+@Serializable data object OnboardingGraphRoute : Route
+
+sealed interface OnboardingGraph : Route {
+    @Serializable data object NicknameRoute : OnboardingGraph
+    @Serializable data object BirthRoute : OnboardingGraph
+    @Serializable data object WeightRoute : OnboardingGraph
+    @Serializable data object AlarmRoute : OnboardingGraph
+}

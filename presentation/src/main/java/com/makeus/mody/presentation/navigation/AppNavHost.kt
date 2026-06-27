@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import com.makeus.mody.core.navigation.AuthGraphRoute
 import com.makeus.mody.feature.auth.navigation.authNavGraph
+import com.makeus.mody.feature.onboarding.navigation.onboardingNavGraph
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -13,5 +14,6 @@ fun AppNavHost(navController: NavHostController) {
         startDestination = AuthGraphRoute,
     ) {
         authNavGraph()
+        onboardingNavGraph(navController)
     }
 }

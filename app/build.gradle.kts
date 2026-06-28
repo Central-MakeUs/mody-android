@@ -14,8 +14,9 @@ android {
         applicationId = "com.makeus.mody"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // CI(태그 push)에서 VERSION_CODE/VERSION_NAME 주입, 로컬은 fallback
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionName = System.getenv("VERSION_NAME") ?: "1.0.0-local"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

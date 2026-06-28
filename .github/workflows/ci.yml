@@ -24,15 +24,3 @@ jobs:
 
       - name: Lint
         run: ./gradlew lint
-
-      - name: Notify Slack (실패 시)
-        if: false  # 임시 비활성화 (알림 끔)
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "❌ *PR 빌드 실패*\nPR: <${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>\n작성자: ${{ github.actor }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

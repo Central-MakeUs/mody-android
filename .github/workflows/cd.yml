@@ -1,5 +1,8 @@
 name: CD
 
+# 태그로 배포 트랙 분기
+#   vX.Y.Z-dev  -> Firebase App Distribution (debug APK, 내부 테스트)
+#   vX.Y.Z      -> Google Play Store (release AAB, 출시)  [미구성: Play 등록 후 활성화]
 on:
   push:
     tags:
@@ -14,19 +17,22 @@ jobs:
       - name: Validate tag format
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::잘못된 태그 형식: $GITHUB_REF_NAME (올바른 예: v1.2.3)"
+          # 허용: v1.2.3 (release) | v1.2.3-dev (Firebase)
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-dev)?$ ]]; then
+            echo "::error::잘못된 태그: $GITHUB_REF_NAME (예: v1.2.3 또는 v1.2.3-dev)"
             exit 1
           fi
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${GITHUB_REF_NAME#v}"
+          CORE="${GITHUB_REF_NAME#v}"; CORE="${CORE%-dev}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CORE"
           if (( 10#$MAJOR > 99 || 10#$MINOR > 99 || 10#$PATCH > 99 )); then
             echo "::error::각 자리는 0~99만 허용: $GITHUB_REF_NAME (오타 의심)"
             exit 1
           fi
 
-  deploy:
-    name: Build & Deploy
+  firebase:
+    name: Firebase (dev)
     needs: validate
+    if: endsWith(github.ref_name, '-dev')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,12 +44,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Resolve version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Resolve version
         run: |
-          TAG="${GITHUB_REF_NAME#v}"          # v1.2.3 -> 1.2.3
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG"
-          echo "VERSION_NAME=$TAG" >> "$GITHUB_ENV"
+          CORE="${GITHUB_REF_NAME#v}"; CORE="${CORE%-dev}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CORE"
+          echo "VERSION_NAME=$CORE" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$((10#$MAJOR*10000 + 10#$MINOR*100 + 10#$PATCH))" >> "$GITHUB_ENV"
 
       - name: Build Debug APK
@@ -58,26 +63,19 @@ jobs:
           file: app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: "버전: ${{ github.ref_name }}\n커밋: ${{ github.sha }}\n작성자: ${{ github.actor }}"
 
-      - name: Notify Slack (성공)
-        if: false  # 임시 비활성화 (알림 끔)
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "✅ *배포 완료*\n버전: ${{ github.ref_name }}\n커밋: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n배포자: ${{ github.actor }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - name: Notify Slack (실패)
-        if: false  # 임시 비활성화 (알림 끔)
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "❌ *배포 실패*\n버전: ${{ github.ref_name }}\n커밋: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n작성자: ${{ github.actor }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+  playstore:
+    name: Play Store (release)
+    needs: validate
+    if: ${{ !endsWith(github.ref_name, '-dev') }}
+    runs-on: ubuntu-latest
+    steps:
+      # TODO(Play 출시 준비되면 활성화):
+      #   1) Play Console 앱 등록 + 최초 1회 수동 업로드
+      #   2) Service Account JSON -> secrets.PLAY_SERVICE_ACCOUNT_JSON
+      #   3) 서명 keystore base64 -> secret, 디코드 스텝 추가
+      #   4) ./gradlew bundleRelease 후 Gradle Play Publisher 로 업로드
+      - name: Not configured
+        run: |
+          echo "::error::Play Store 배포 미구성. release 태그($GITHUB_REF_NAME) 배포하려면 Service Account/Play Console 설정 필요."
+          echo "내부 테스트는 -dev 태그(예: ${GITHUB_REF_NAME}-dev) 사용."
+          exit 1

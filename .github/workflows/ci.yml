@@ -1,4 +1,4 @@
-name: PR Check
+name: CI
 
 on:
   pull_request:
@@ -26,7 +26,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Notify Slack (실패 시)
-        if: failure()
+        if: false  # 임시 비활성화 (알림 끔)
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |

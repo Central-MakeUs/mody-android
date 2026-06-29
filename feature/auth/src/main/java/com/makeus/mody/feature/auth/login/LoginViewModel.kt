@@ -1,9 +1,9 @@
 package com.makeus.mody.feature.auth.login
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.navigation.AuthGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.core.navigation.OnboardingGraph
 import com.makeus.mody.feature.auth.login.contract.LoginIntent
 import com.makeus.mody.feature.auth.login.contract.LoginState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +24,7 @@ class LoginViewModel @Inject constructor(
     private fun navigateToBasicInfo() {
         navigationHelper.navigate(
             NavigationEvent.To(
-                route = AuthGraph.BasicInfoRoute,
+                route = OnboardingGraph.HeightWeightInputRoute,
                 popUpTo = true,
             )
         )

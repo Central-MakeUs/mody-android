@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.onboarding.navigation
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -9,26 +10,24 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.makeus.mody.core.navigation.OnboardingGraph
-import com.makeus.mody.core.navigation.OnboardingGraphRoute
+import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.alarm.AlarmScreen
-import com.makeus.mody.feature.onboarding.birth.BirthScreen
-import com.makeus.mody.feature.onboarding.nickname.NicknameScreen
 import com.makeus.mody.feature.onboarding.weight.WeightScreen
 
 fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
-    navigation<OnboardingGraphRoute>(startDestination = OnboardingGraph.NicknameRoute) {
-        composable<OnboardingGraph.NicknameRoute> { entry ->
-            NicknameScreen(entry.sharedViewModel(navController))
+    navigation<OnboardingGraphBaseRoute>(startDestination = OnboardingGraph.HeightWeightInputRoute) {
+        composable<OnboardingGraph.HeightWeightInputRoute> { entry ->
+            HeightWeightInputScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.BirthRoute> { entry ->
-            BirthScreen(entry.sharedViewModel(navController))
+        composable<OnboardingGraph.MealAlarmTimeRoute> { entry ->
+            MealAlarmTimeScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.WeightRoute> { entry ->
-            WeightScreen(entry.sharedViewModel(navController))
+        composable<OnboardingGraph.ExerciseAlarmTimeRoute> { entry ->
+            ExerciseAlarmTimeScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.AlarmRoute> { entry ->
-            AlarmScreen(entry.sharedViewModel(navController))
+        composable<OnboardingGraph.OnboardingCompleteRoute> {
+            OnboardingCompleteScreen()
         }
     }
 }
@@ -42,7 +41,27 @@ private fun NavBackStackEntry.sharedViewModel(
     navController: NavHostController,
 ): OnboardingViewModel {
     val parentEntry = remember(this) {
-        navController.getBackStackEntry(OnboardingGraphRoute)
+        navController.getBackStackEntry(OnboardingGraphBaseRoute)
     }
     return hiltViewModel(parentEntry)
+}
+
+@Composable
+private fun HeightWeightInputScreen(viewModel: OnboardingViewModel) {
+    WeightScreen(viewModel)
+}
+
+@Composable
+private fun MealAlarmTimeScreen(viewModel: OnboardingViewModel) {
+    AlarmScreen(viewModel)
+}
+
+@Composable
+private fun ExerciseAlarmTimeScreen(viewModel: OnboardingViewModel) {
+    AlarmScreen(viewModel)
+}
+
+@Composable
+private fun OnboardingCompleteScreen() {
+    Text(text = "OnboardingCompleteScreen")
 }

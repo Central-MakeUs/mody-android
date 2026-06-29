@@ -4,19 +4,50 @@ import kotlinx.serialization.Serializable
 
 sealed interface Route
 
-@Serializable data object AuthGraphRoute : Route
+@Serializable
+data object AuthGraphBaseRoute : Route
 
 sealed interface AuthGraph : Route {
-    @Serializable data object LoginRoute : AuthGraph
-    @Serializable data object BasicInfoRoute : AuthGraph
-    @Serializable data object GroupRoute : AuthGraph
+    @Serializable
+    data object LoginRoute : AuthGraph
+
+    @Serializable
+    data object SignUpRoute : AuthGraph
 }
 
-@Serializable data object OnboardingGraphRoute : Route
+@Serializable
+data object OnboardingGraphBaseRoute : Route
 
 sealed interface OnboardingGraph : Route {
-    @Serializable data object NicknameRoute : OnboardingGraph
-    @Serializable data object BirthRoute : OnboardingGraph
-    @Serializable data object WeightRoute : OnboardingGraph
-    @Serializable data object AlarmRoute : OnboardingGraph
+    @Serializable
+    data object HeightWeightInputRoute : OnboardingGraph
+
+    @Serializable
+    data object MealAlarmTimeRoute : OnboardingGraph
+
+    @Serializable
+    data object ExerciseAlarmTimeRoute : OnboardingGraph
+
+    @Serializable
+    data object OnboardingCompleteRoute : OnboardingGraph
 }
+
+@Serializable
+data object GroupGraphBaseRoute : Route
+
+sealed interface GroupGraph : Route {
+    @Serializable
+    data object GroupEntryRoute : GroupGraph
+
+    @Serializable
+    data object JoinGroupRoute : GroupGraph
+
+    @Serializable
+    data object CreateGroupRoute : GroupGraph
+
+    @Serializable
+    data object GroupShareRoute : GroupGraph
+}
+
+@Serializable
+data object MainRoute : Route

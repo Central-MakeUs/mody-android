@@ -42,9 +42,9 @@ class OnboardingViewModel @Inject constructor(
                     copy(exerciseDays = next)
                 }
 
-            is OnboardingIntent.NicknameNext -> navigate(OnboardingGraph.BirthRoute)
-            is OnboardingIntent.BirthNext -> navigate(OnboardingGraph.WeightRoute)
-            is OnboardingIntent.WeightNext -> navigate(OnboardingGraph.AlarmRoute)
+            is OnboardingIntent.NicknameNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
+            is OnboardingIntent.BirthNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
+            is OnboardingIntent.WeightNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
             is OnboardingIntent.AlarmNext -> complete()
         }
     }
@@ -54,6 +54,6 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun complete() {
-        // TODO: currentState 프로필을 repository 로 저장 후 메인 그래프로 이동
+        navigationHelper.navigate(NavigationEvent.To(OnboardingGraph.OnboardingCompleteRoute))
     }
 }

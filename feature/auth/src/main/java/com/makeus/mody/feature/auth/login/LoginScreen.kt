@@ -68,7 +68,7 @@ private fun LoginContent(
             ModyButton(
                 text = "Google로 시작하기",
                 onClick = onGoogleLoginClick,
-                variant = ModyButtonVariant.Gray,
+                variant = ModyButtonVariant.Google,
                 leadingIcon = R.drawable.ic_google,
             )
         }

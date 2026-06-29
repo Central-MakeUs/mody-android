@@ -1,6 +1,7 @@
 package com.makeus.mody.core.designsystem.component
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,9 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
-private val KakaoYellow = Color(0xFFFEE500)
-
-enum class ModyButtonVariant { Gray, Primary, Dark, Kakao }
+enum class ModyButtonVariant { Gray, Primary, Dark, Kakao, Google }
 
 @Composable
 fun ModyButton(
@@ -42,13 +41,19 @@ fun ModyButton(
         ModyButtonVariant.Gray -> ModyTheme.colors.gray02
         ModyButtonVariant.Primary -> ModyTheme.colors.primary100
         ModyButtonVariant.Dark -> ModyTheme.colors.gray10
-        ModyButtonVariant.Kakao -> KakaoYellow
+        ModyButtonVariant.Kakao -> ModyTheme.colors.kakaoYellow
+        ModyButtonVariant.Google -> ModyTheme.colors.white
     }
     val contentColor = when (variant) {
         ModyButtonVariant.Gray -> ModyTheme.colors.gray10
         ModyButtonVariant.Primary -> ModyTheme.colors.gray10
         ModyButtonVariant.Dark -> ModyTheme.colors.white
         ModyButtonVariant.Kakao -> ModyTheme.colors.gray10
+        ModyButtonVariant.Google -> ModyTheme.colors.gray10
+    }
+    val border = when (variant) {
+        ModyButtonVariant.Google -> BorderStroke(1.dp, ModyTheme.colors.gray03)
+        else -> null
     }
 
     Button(
@@ -58,6 +63,7 @@ fun ModyButton(
             .height(48.dp),
         enabled = enabled,
         shape = RoundedCornerShape(12.dp),
+        border = border,
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor,

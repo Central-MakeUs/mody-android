@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.makeus.mody.core.designsystem.component.ModyButton
@@ -45,7 +46,7 @@ private fun LoginContent(
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            text = "친구와 함께하는\n다이어트 습관",
+            text = stringResource(R.string.login_title),
             style = ModyTheme.typography.h1,
             color = ModyTheme.colors.gray10,
         )
@@ -60,13 +61,13 @@ private fun LoginContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ModyButton(
-                text = "카카오로 시작하기",
+                text = stringResource(R.string.login_kakao),
                 onClick = onKakaoLoginClick,
                 variant = ModyButtonVariant.Kakao,
                 leadingIcon = R.drawable.ic_kakao,
             )
             ModyButton(
-                text = "Google로 시작하기",
+                text = stringResource(R.string.login_google),
                 onClick = onGoogleLoginClick,
                 variant = ModyButtonVariant.Google,
                 leadingIcon = R.drawable.ic_google,

@@ -52,7 +52,11 @@ fun ModyButton(
         ModyButtonVariant.Google -> ModyTheme.colors.gray10
     }
     val border = when (variant) {
-        ModyButtonVariant.Google -> BorderStroke(1.dp, ModyTheme.colors.gray03)
+        // disabled 시 외곽선도 비활성 색으로 (fill/text 처리와 일관)
+        ModyButtonVariant.Google -> BorderStroke(
+            1.dp,
+            if (enabled) ModyTheme.colors.gray03 else ModyTheme.colors.gray02,
+        )
         else -> null
     }
 

@@ -46,20 +46,22 @@ private fun ColumnScope.NicknameField(
     onValueChange: (String) -> Unit,
 ) {
     val overLimit = value.length > OnboardingState.NICKNAME_MAX
-    val lineColor = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray03
+    val lineColor = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray02
 
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
         singleLine = true,
-        textStyle = ModyTheme.typography.b2.copy(color = ModyTheme.colors.gray10),
+        textStyle = ModyTheme.typography.b3.copy(color = ModyTheme.colors.gray10),
         cursorBrush = SolidColor(ModyTheme.colors.primary100),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
         decorationBox = { inner ->
             if (value.isEmpty()) {
                 Text(
                     text = "이름 또는 별명을 입력해주세요",
-                    style = ModyTheme.typography.b2,
+                    style = ModyTheme.typography.b3,
                     color = ModyTheme.colors.gray04,
                 )
             }
@@ -78,7 +80,7 @@ private fun ColumnScope.NicknameField(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 6.dp),
+            .padding(top = 6.dp, start = 8.dp, end = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -89,7 +91,7 @@ private fun ColumnScope.NicknameField(
         Text(
             text = "${value.length}/${OnboardingState.NICKNAME_MAX}",
             style = ModyTheme.typography.c1,
-            color = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray05,
+            color = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray07,
         )
     }
 }

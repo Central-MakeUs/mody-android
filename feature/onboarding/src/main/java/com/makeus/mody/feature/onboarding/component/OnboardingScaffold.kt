@@ -55,7 +55,7 @@ fun OnboardingScaffold(
 
         Text(
             text = title,
-            style = ModyTheme.typography.h1,
+            style = ModyTheme.typography.h2,
             color = ModyTheme.colors.gray10,
         )
 
@@ -63,7 +63,7 @@ fun OnboardingScaffold(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = subtitle,
-                style = ModyTheme.typography.b4,
+                style = ModyTheme.typography.c1,
                 color = ModyTheme.colors.gray06,
             )
         }

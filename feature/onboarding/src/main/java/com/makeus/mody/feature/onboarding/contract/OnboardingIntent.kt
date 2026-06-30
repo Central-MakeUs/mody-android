@@ -7,10 +7,11 @@ sealed class OnboardingIntent : UiIntent {
     data class NicknameChanged(val value: String) : OnboardingIntent()
     data class BirthChanged(val year: Int, val month: Int, val day: Int) : OnboardingIntent()
     data class WeightChanged(val current: Int, val target: Int) : OnboardingIntent()
+    // null = 해당 끼니 "식사 안 함"
     data class MealHourChanged(
-        val breakfast: Int,
-        val lunch: Int,
-        val dinner: Int,
+        val breakfast: Int?,
+        val lunch: Int?,
+        val dinner: Int?,
     ) : OnboardingIntent()
     data class ExerciseDayToggled(val day: Int) : OnboardingIntent()
 

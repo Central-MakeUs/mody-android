@@ -18,12 +18,12 @@ class LoginViewModel @Inject constructor(
         when (intent) {
             // TODO(auth): 실제 Kakao/Google 인증 미구현. 현재는 화면 전환 테스트용으로
             //  클릭 즉시 온보딩으로 이동. 인증 도입 시 로그인 성공 콜백에서만 navigate 하도록 변경할 것.
-            is LoginIntent.KakaoLoginClicked -> navigateToBasicInfo()
-            is LoginIntent.GoogleLoginClicked -> navigateToBasicInfo()
+            is LoginIntent.KakaoLoginClicked -> navigateToOnboarding()
+            is LoginIntent.GoogleLoginClicked -> navigateToOnboarding()
         }
     }
 
-    private fun navigateToBasicInfo() {
+    private fun navigateToOnboarding() {
         navigationHelper.navigate(
             NavigationEvent.To(
                 route = OnboardingGraph.NicknameRoute,

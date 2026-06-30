@@ -51,6 +51,8 @@ private fun NavBackStackEntry.sharedViewModel(
     return hiltViewModel(parentEntry)
 }
 
+// TODO(onboarding): 완료 화면은 임시 placeholder. 메인/그룹 그래프 구현 후
+//  complete() 흐름을 실제 post-onboarding 그래프로 핸드오프하도록 연결할 것.
 @Composable
 private fun OnboardingCompleteScreen() {
     Text(text = "OnboardingCompleteScreen")

@@ -26,7 +26,7 @@ class LoginViewModel @Inject constructor(
     private fun navigateToBasicInfo() {
         navigationHelper.navigate(
             NavigationEvent.To(
-                route = OnboardingGraph.HeightWeightInputRoute,
+                route = OnboardingGraph.NicknameRoute,
                 popUpTo = true,
             )
         )

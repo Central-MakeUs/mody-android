@@ -44,11 +44,12 @@ class OnboardingViewModel @Inject constructor(
                     }
                 }
 
+            // 스텝 순서: 닉네임 → 생년월일 → 체중 → 알림 → 완료
             // 진행 불변조건을 reducer 에서 강제 (UI 게이팅 우회 방지)
             is OnboardingIntent.NicknameNext ->
-                if (currentState.isNicknameValid) navigate(OnboardingGraph.MealAlarmTimeRoute)
-            is OnboardingIntent.BirthNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
-            is OnboardingIntent.WeightNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
+                if (currentState.isNicknameValid) navigate(OnboardingGraph.BirthRoute)
+            is OnboardingIntent.BirthNext -> navigate(OnboardingGraph.WeightRoute)
+            is OnboardingIntent.WeightNext -> navigate(OnboardingGraph.AlarmRoute)
             is OnboardingIntent.AlarmNext ->
                 if (currentState.isExerciseValid) complete()
         }

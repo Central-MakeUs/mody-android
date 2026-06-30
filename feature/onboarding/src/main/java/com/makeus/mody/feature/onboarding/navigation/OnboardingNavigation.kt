@@ -13,18 +13,23 @@ import com.makeus.mody.core.navigation.OnboardingGraph
 import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.alarm.AlarmScreen
+import com.makeus.mody.feature.onboarding.birth.BirthScreen
+import com.makeus.mody.feature.onboarding.nickname.NicknameScreen
 import com.makeus.mody.feature.onboarding.weight.WeightScreen
 
 fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
-    navigation<OnboardingGraphBaseRoute>(startDestination = OnboardingGraph.HeightWeightInputRoute) {
-        composable<OnboardingGraph.HeightWeightInputRoute> { entry ->
-            HeightWeightInputScreen(entry.sharedViewModel(navController))
+    navigation<OnboardingGraphBaseRoute>(startDestination = OnboardingGraph.NicknameRoute) {
+        composable<OnboardingGraph.NicknameRoute> { entry ->
+            NicknameScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.MealAlarmTimeRoute> { entry ->
-            MealAlarmTimeScreen(entry.sharedViewModel(navController))
+        composable<OnboardingGraph.BirthRoute> { entry ->
+            BirthScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.ExerciseAlarmTimeRoute> { entry ->
-            ExerciseAlarmTimeScreen(entry.sharedViewModel(navController))
+        composable<OnboardingGraph.WeightRoute> { entry ->
+            WeightScreen(entry.sharedViewModel(navController))
+        }
+        composable<OnboardingGraph.AlarmRoute> { entry ->
+            AlarmScreen(entry.sharedViewModel(navController))
         }
         composable<OnboardingGraph.OnboardingCompleteRoute> {
             OnboardingCompleteScreen()
@@ -44,21 +49,6 @@ private fun NavBackStackEntry.sharedViewModel(
         navController.getBackStackEntry(OnboardingGraphBaseRoute)
     }
     return hiltViewModel(parentEntry)
-}
-
-@Composable
-private fun HeightWeightInputScreen(viewModel: OnboardingViewModel) {
-    WeightScreen(viewModel)
-}
-
-@Composable
-private fun MealAlarmTimeScreen(viewModel: OnboardingViewModel) {
-    AlarmScreen(viewModel)
-}
-
-@Composable
-private fun ExerciseAlarmTimeScreen(viewModel: OnboardingViewModel) {
-    AlarmScreen(viewModel)
 }
 
 @Composable

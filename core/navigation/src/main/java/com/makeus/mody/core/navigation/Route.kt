@@ -19,14 +19,18 @@ sealed interface AuthGraph : Route {
 data object OnboardingGraphBaseRoute : Route
 
 sealed interface OnboardingGraph : Route {
+    // 입력 스텝 순서: 닉네임 → 생년월일 → 체중 → 알림 → 완료
     @Serializable
-    data object HeightWeightInputRoute : OnboardingGraph
+    data object NicknameRoute : OnboardingGraph
 
     @Serializable
-    data object MealAlarmTimeRoute : OnboardingGraph
+    data object BirthRoute : OnboardingGraph
 
     @Serializable
-    data object ExerciseAlarmTimeRoute : OnboardingGraph
+    data object WeightRoute : OnboardingGraph
+
+    @Serializable
+    data object AlarmRoute : OnboardingGraph
 
     @Serializable
     data object OnboardingCompleteRoute : OnboardingGraph

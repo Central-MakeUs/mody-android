@@ -31,6 +31,14 @@ class MainActivity : ComponentActivity() {
                             if (event.popUpTo) popUpTo(0) { inclusive = true }
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
+                        is NavigationEvent.TopLevelTo -> navController.navigate(event.route) {
+                            popUpTo(navController.graph.id) {
+                                inclusive = false
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
             }

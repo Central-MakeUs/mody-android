@@ -31,6 +31,9 @@ val Gray01 = Color(0xFFF0F0F0)
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)
 
+// Brand
+val KakaoYellow = Color(0xFFFEE500)
+
 data class ModyColors(
     val primary100: Color = Primary100,
     val primary200: Color = Primary200,
@@ -52,6 +55,7 @@ data class ModyColors(
     val gray01: Color = Gray01,
     val black: Color = Black,
     val white: Color = White,
+    val kakaoYellow: Color = KakaoYellow,
 )
 
 val LocalModyColors = staticCompositionLocalOf { ModyColors() }

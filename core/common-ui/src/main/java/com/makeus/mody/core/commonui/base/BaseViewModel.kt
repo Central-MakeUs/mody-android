@@ -14,7 +14,7 @@ abstract class BaseViewModel<S : UiState, E : UiIntent>(
     initialState: S,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(initialState)
+    private val _state = MutableStateFlow<S>(initialState)
     val state = _state.asStateFlow()
 
     protected val currentState: S get() = _state.value

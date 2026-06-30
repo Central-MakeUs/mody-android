@@ -35,17 +35,22 @@ class OnboardingViewModel @Inject constructor(
                 }
 
             is OnboardingIntent.ExerciseDayToggled ->
-                setState {
-                    val next = exerciseDays.toMutableSet().apply {
-                        if (!add(intent.day)) remove(intent.day)
+                if (intent.day in 1..7) {
+                    setState {
+                        val next = exerciseDays.toMutableSet().apply {
+                            if (!add(intent.day)) remove(intent.day)
+                        }
+                        copy(exerciseDays = next)
                     }
-                    copy(exerciseDays = next)
                 }
 
-            is OnboardingIntent.NicknameNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
+            // 진행 불변조건을 reducer 에서 강제 (UI 게이팅 우회 방지)
+            is OnboardingIntent.NicknameNext ->
+                if (currentState.isNicknameValid) navigate(OnboardingGraph.MealAlarmTimeRoute)
             is OnboardingIntent.BirthNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
             is OnboardingIntent.WeightNext -> navigate(OnboardingGraph.MealAlarmTimeRoute)
-            is OnboardingIntent.AlarmNext -> complete()
+            is OnboardingIntent.AlarmNext ->
+                if (currentState.isExerciseValid) complete()
         }
     }
 

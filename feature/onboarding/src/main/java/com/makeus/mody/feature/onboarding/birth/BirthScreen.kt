@@ -13,14 +13,26 @@ import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
 import com.makeus.mody.feature.onboarding.component.WheelPicker
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
+import java.time.LocalDate
+import java.time.YearMonth
 
-private val YEARS = (1950..2012).toList()
+// 한국나이 14세 이상 → 출생연도 상한 = 올해 - 13 (매년 자동 반영)
+private const val MIN_KOREAN_AGE = 14
 private val MONTHS = (1..12).toList()
-private val DAYS = (1..31).toList()
+
+private fun maxBirthYear(): Int = LocalDate.now().year - (MIN_KOREAN_AGE - 1)
+
+private fun daysIn(year: Int, month: Int): List<Int> =
+    (1..YearMonth.of(year, month).lengthOfMonth()).toList()
 
 @Composable
 fun BirthScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    val years = remember { (1950..maxBirthYear()).toList() }
+    val days = remember(state.birthYear, state.birthMonth) {
+        daysIn(state.birthYear, state.birthMonth)
+    }
 
     OnboardingScaffold(
         stepIndex = 1,
@@ -29,17 +41,20 @@ fun BirthScreen(viewModel: OnboardingViewModel) {
         subtitle = "한국나이로 14세 이상부터 사용할 수 있어요!",
         onNextClick = { viewModel.onIntent(OnboardingIntent.BirthNext) },
     ) {
-        fun emit(year: Int, month: Int, day: Int) =
-            viewModel.onIntent(OnboardingIntent.BirthChanged(year, month, day))
+        // 월/년 변경 시 존재하지 않는 날(예: 2월 31일)로 새는 것을 막기 위해 day 를 clamp
+        fun emit(year: Int, month: Int, day: Int) {
+            val clampedDay = day.coerceAtMost(YearMonth.of(year, month).lengthOfMonth())
+            viewModel.onIntent(OnboardingIntent.BirthChanged(year, month, clampedDay))
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             WheelPicker(
-                items = YEARS,
-                selectedIndex = remember(state.birthYear) { YEARS.indexOf(state.birthYear).coerceAtLeast(0) },
-                onSelectedChange = { emit(YEARS[it], state.birthMonth, state.birthDay) },
+                items = years,
+                selectedIndex = remember(state.birthYear, years) { years.indexOf(state.birthYear).coerceAtLeast(0) },
+                onSelectedChange = { emit(years[it], state.birthMonth, state.birthDay) },
                 modifier = Modifier.weight(2f),
                 label = { "$it" },
             )
@@ -51,9 +66,9 @@ fun BirthScreen(viewModel: OnboardingViewModel) {
                 label = { "%02d".format(it) },
             )
             WheelPicker(
-                items = DAYS,
-                selectedIndex = remember(state.birthDay) { DAYS.indexOf(state.birthDay).coerceAtLeast(0) },
-                onSelectedChange = { emit(state.birthYear, state.birthMonth, DAYS[it]) },
+                items = days,
+                selectedIndex = remember(state.birthDay, days) { days.indexOf(state.birthDay).coerceAtLeast(0) },
+                onSelectedChange = { emit(state.birthYear, state.birthMonth, days[it]) },
                 modifier = Modifier.weight(1f),
                 label = { "%02d".format(it) },
             )

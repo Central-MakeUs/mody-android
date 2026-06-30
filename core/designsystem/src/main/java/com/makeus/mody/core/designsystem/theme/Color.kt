@@ -29,6 +29,7 @@ val Gray01 = Color(0xFFF0F0F0)
 
 // System
 val Black = Color(0xFF000000)
+val Error = Color(0xFFFC2C30)
 val White = Color(0xFFFFFFFF)
 
 // Brand
@@ -56,6 +57,7 @@ data class ModyColors(
     val black: Color = Black,
     val white: Color = White,
     val kakaoYellow: Color = KakaoYellow,
+    val error: Color = Error,
 )
 
 val LocalModyColors = staticCompositionLocalOf { ModyColors() }

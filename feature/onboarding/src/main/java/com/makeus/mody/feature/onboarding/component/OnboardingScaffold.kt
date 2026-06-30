@@ -48,10 +48,10 @@ fun OnboardingScaffold(
         StepProgressBar(
             stepIndex = stepIndex,
             totalSteps = totalSteps,
-            modifier = Modifier.padding(top = 12.dp),
+            modifier = Modifier.padding(top = 20.dp),
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
         Text(
             text = title,

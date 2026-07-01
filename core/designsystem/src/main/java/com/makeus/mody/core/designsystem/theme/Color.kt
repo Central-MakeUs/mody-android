@@ -25,7 +25,7 @@ val Gray05 = Color(0xFFA5A5A5)
 val Gray04 = Color(0xFFB7B7B7)
 val Gray03 = Color(0xFFC9C9C9)
 val Gray02 = Color(0xFFE4E4E4)
-val Gray01 = Color(0xFFF0F0F0)
+val Gray01 = Color(0xFFF6F6F6)
 
 // System
 val Black = Color(0xFF000000)

@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import kotlin.math.abs
 
@@ -44,6 +45,8 @@ fun <T> WheelPicker(
     visibleCount: Int = 5,
     itemHeight: Dp = 44.dp,
     unit: String? = null,
+    // false면 개별 선택박스 안 그림 (여러 휠이 하나의 공용 바를 공유할 때)
+    showSelectionBox: Boolean = true,
     label: (T) -> String,
 ) {
     val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
@@ -84,13 +87,15 @@ fun <T> WheelPicker(
         contentAlignment = Alignment.Center,
     ) {
         // 중앙 선택 영역 표시
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(itemHeight)
-                .clip(RoundedCornerShape(12.dp))
-                .background(ModyTheme.colors.gray01),
-        )
+        if (showSelectionBox) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ModyTheme.colors.gray01),
+            )
+        }
 
         LazyColumn(
             state = state,
@@ -108,7 +113,12 @@ fun <T> WheelPicker(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = label(item),
-                            style = if (selected) ModyTheme.typography.h3 else ModyTheme.typography.b3,
+                            // 선택: SemiBold 22sp / 비선택: Medium 18sp(b3), 둘 다 line-height 140%
+                            style = if (selected) {
+                                ModyTheme.typography.b1.copy(fontSize = 22.sp, lineHeight = 30.8.sp)
+                            } else {
+                                ModyTheme.typography.b3
+                            },
                             color = if (selected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
                             textAlign = TextAlign.Center,
                         )

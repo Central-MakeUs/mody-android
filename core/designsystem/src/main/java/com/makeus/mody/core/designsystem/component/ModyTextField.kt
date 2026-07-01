@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,6 +41,7 @@ fun ModyTextField(
     trailingIconSize: Dp = 20.dp,
     trailingIconSpacing: Dp = 8.dp,
     onTrailingIconClick: (() -> Unit)? = null,
+    trailingIconContentDescription: String? = null,
     @DrawableRes alertIcon: Int? = null,
     alertIconSize: Dp = 20.dp,
     alertIconSpacing: Dp = 8.dp,
@@ -97,20 +99,26 @@ fun ModyTextField(
 
                 if (trailingIcon != null) {
                     Spacer(modifier = Modifier.width(trailingIconSpacing))
-                    Icon(
-                        painter = painterResource(trailingIcon),
-                        contentDescription = null,
-                        tint = Color.Unspecified,
-                        modifier = Modifier
-                            .size(trailingIconSize)
-                            .then(
-                                if (onTrailingIconClick != null) {
-                                    Modifier.clickable(onClick = onTrailingIconClick)
-                                } else {
-                                    Modifier
-                                }
-                            ),
-                    )
+                    // 클릭 가능한 아이콘은 최소 48dp 터치영역 확보 + enabled 존중
+                    val interactive = onTrailingIconClick != null && enabled
+                    val touchModifier = if (interactive) {
+                        Modifier
+                            .minimumInteractiveComponentSize()
+                            .clickable(onClick = onTrailingIconClick)
+                    } else {
+                        Modifier
+                    }
+                    Box(
+                        modifier = touchModifier,
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(trailingIcon),
+                            contentDescription = trailingIconContentDescription,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(trailingIconSize),
+                        )
+                    }
                 }
             }
         },

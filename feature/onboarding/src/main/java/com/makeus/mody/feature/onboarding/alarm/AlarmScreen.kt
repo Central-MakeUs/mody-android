@@ -66,6 +66,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             MealHourField(
                 label = "아침 식사",
                 hour = state.breakfastHour,
+                defaultHour = 8,
                 onPick = { emitMeal(it, state.lunchHour, state.dinnerHour) },
                 onSkip = { emitMeal(null, state.lunchHour, state.dinnerHour) },
                 modifier = Modifier.weight(1f),
@@ -73,6 +74,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             MealHourField(
                 label = "점심 식사",
                 hour = state.lunchHour,
+                defaultHour = 12,
                 onPick = { emitMeal(state.breakfastHour, it, state.dinnerHour) },
                 onSkip = { emitMeal(state.breakfastHour, null, state.dinnerHour) },
                 modifier = Modifier.weight(1f),
@@ -80,6 +82,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             MealHourField(
                 label = "저녁 식사",
                 hour = state.dinnerHour,
+                defaultHour = 18,
                 onPick = { emitMeal(state.breakfastHour, state.lunchHour, it) },
                 onSkip = { emitMeal(state.breakfastHour, state.lunchHour, null) },
                 modifier = Modifier.weight(1f),
@@ -128,6 +131,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
 private fun MealHourField(
     label: String,
     hour: Int?,
+    defaultHour: Int,
     onPick: (Int) -> Unit,
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
@@ -147,7 +151,7 @@ private fun MealHourField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { if (skipped) onPick(defaultHourFor(label)) else onSkip() },
+                .clickable { if (skipped) onPick(defaultHour) else onSkip() },
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -187,7 +191,7 @@ private fun MealHourField(
 
     if (showSheet) {
         HourPickerSheet(
-            initial = hour ?: defaultHourFor(label),
+            initial = hour ?: defaultHour,
             onPick = {
                 onPick(it)
                 showSheet = false
@@ -195,12 +199,6 @@ private fun MealHourField(
             onDismiss = { showSheet = false },
         )
     }
-}
-
-private fun defaultHourFor(label: String): Int = when (label) {
-    "아침 식사" -> 8
-    "점심 식사" -> 12
-    else -> 18
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

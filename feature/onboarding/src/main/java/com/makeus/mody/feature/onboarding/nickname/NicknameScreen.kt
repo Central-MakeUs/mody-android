@@ -61,6 +61,7 @@ private fun NicknameField(
         alertIcon = if (showAlertIcon) R.drawable.ic_alert_filled else null,
         trailingIcon = if (showClearIcon) R.drawable.ic_clear else null,
         onTrailingIconClick = { onValueChange("") },
+        trailingIconContentDescription = "입력 지우기",
         maxLength = OnboardingState.NICKNAME_MAX,
     )
 

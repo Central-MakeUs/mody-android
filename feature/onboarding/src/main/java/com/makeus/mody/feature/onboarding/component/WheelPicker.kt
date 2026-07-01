@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,6 +24,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,7 @@ fun <T> WheelPicker(
     modifier: Modifier = Modifier,
     visibleCount: Int = 5,
     itemHeight: Dp = 44.dp,
+    unit: String? = null,
     label: (T) -> String,
 ) {
     val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
@@ -100,12 +105,24 @@ fun <T> WheelPicker(
                         .height(itemHeight),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = label(item),
-                        style = if (selected) ModyTheme.typography.h3 else ModyTheme.typography.b3,
-                        color = if (selected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
-                        textAlign = TextAlign.Center,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = label(item),
+                            style = if (selected) ModyTheme.typography.h3 else ModyTheme.typography.b3,
+                            color = if (selected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
+                            textAlign = TextAlign.Center,
+                        )
+                        // 단위는 항상 자리 차지 (선택시에만 보이게 alpha 토글) → 스크롤 중 라벨 흔들림 방지
+                        if (unit != null) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = unit,
+                                style = ModyTheme.typography.b3,
+                                color = ModyTheme.colors.gray05,
+                                modifier = Modifier.alpha(if (selected) 1f else 0f),
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -2,18 +2,19 @@ package com.makeus.mody.feature.onboarding.nickname
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
+import com.makeus.mody.core.designsystem.R
+import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
@@ -41,30 +42,27 @@ fun NicknameScreen(viewModel: OnboardingViewModel) {
 }
 
 @Composable
-private fun ColumnScope.NicknameField(
+private fun NicknameField(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
-    val overLimit = value.length > OnboardingState.NICKNAME_MAX
-    val lineColor = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray03
+    val isAtLimit = value.length == OnboardingState.NICKNAME_MAX
+    val lineColor = if (isAtLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
+    val showClearIcon = value.isNotEmpty()
+    val showAlertIcon = isAtLimit
 
-    BasicTextField(
+    ModyTextField(
         value = value,
         onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = ModyTheme.typography.b2.copy(color = ModyTheme.colors.gray10),
-        cursorBrush = SolidColor(ModyTheme.colors.primary100),
-        modifier = Modifier.fillMaxWidth(),
-        decorationBox = { inner ->
-            if (value.isEmpty()) {
-                Text(
-                    text = "이름 또는 별명을 입력해주세요",
-                    style = ModyTheme.typography.b2,
-                    color = ModyTheme.colors.gray04,
-                )
-            }
-            inner()
-        },
+        placeholder = "이름 또는 별명을 입력해주세요",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        alertIcon = if (showAlertIcon) R.drawable.ic_alert_filled else null,
+        trailingIcon = if (showClearIcon) R.drawable.ic_clear else null,
+        onTrailingIconClick = { onValueChange("") },
+        trailingIconContentDescription = "입력 지우기",
+        maxLength = OnboardingState.NICKNAME_MAX,
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -78,18 +76,29 @@ private fun ColumnScope.NicknameField(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 6.dp),
+            .padding(top = 6.dp, start = 8.dp, end = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = if (overLimit) "${OnboardingState.NICKNAME_MAX}자 이내로 적어주세요" else "",
+            text = if (isAtLimit) "${OnboardingState.NICKNAME_MAX}자 이내로 입력해주세요" else "",
             style = ModyTheme.typography.c1,
-            color = ModyTheme.colors.secondary100,
+            color = ModyTheme.colors.error,
         )
+        val countText = buildAnnotatedString {
+            val limitStr = "/${OnboardingState.NICKNAME_MAX}"
+            val beforeLimit = value.length.toString()
+            
+            append(beforeLimit)
+            append(limitStr)
+            
+            if (isAtLimit) {
+                addStyle(SpanStyle(color = ModyTheme.colors.error), 0, beforeLimit.length)
+            }
+        }
         Text(
-            text = "${value.length}/${OnboardingState.NICKNAME_MAX}",
+            text = countText,
             style = ModyTheme.typography.c1,
-            color = if (overLimit) ModyTheme.colors.secondary100 else ModyTheme.colors.gray05,
+            color = ModyTheme.colors.gray07,
         )
     }
 }

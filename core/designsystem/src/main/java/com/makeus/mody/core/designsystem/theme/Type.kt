@@ -1,5 +1,6 @@
 package com.makeus.mody.core.designsystem.theme
 
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -8,12 +9,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.makeus.mody.core.designsystem.R
 
-// Pretendard 폰트 파일을 core/designsystem/src/main/res/font/ 에 추가 필요
-// pretendard_bold.ttf, pretendard_semibold.ttf, pretendard_medium.ttf
+// Pretendard 폰트: core/designsystem/src/main/res/font/
+// pretendard_regular.otf, pretendard_medium.otf, pretendard_semibold.otf, pretendard_bold.otf
 val PretendardFontFamily = FontFamily(
-    Font(R.font.pretendard_bold, FontWeight.Bold),
-    Font(R.font.pretendard_semibold, FontWeight.SemiBold),
+    Font(R.font.pretendard_regular, FontWeight.Normal),
     Font(R.font.pretendard_medium, FontWeight.Medium),
+    Font(R.font.pretendard_semibold, FontWeight.SemiBold),
+    Font(R.font.pretendard_bold, FontWeight.Bold),
 )
 
 
@@ -84,3 +86,27 @@ data class ModyTypography(
 )
 
 val LocalModyTypography = staticCompositionLocalOf { ModyTypography() }
+
+/**
+ * Material3 컴포넌트(Button, TopAppBar 등) 기본 폰트를 Pretendard 로 강제.
+ * 15개 텍스트 스타일 전부 fontFamily 만 교체.
+ */
+val PretendardMaterialTypography: Typography = Typography().run {
+    copy(
+        displayLarge = displayLarge.copy(fontFamily = PretendardFontFamily),
+        displayMedium = displayMedium.copy(fontFamily = PretendardFontFamily),
+        displaySmall = displaySmall.copy(fontFamily = PretendardFontFamily),
+        headlineLarge = headlineLarge.copy(fontFamily = PretendardFontFamily),
+        headlineMedium = headlineMedium.copy(fontFamily = PretendardFontFamily),
+        headlineSmall = headlineSmall.copy(fontFamily = PretendardFontFamily),
+        titleLarge = titleLarge.copy(fontFamily = PretendardFontFamily),
+        titleMedium = titleMedium.copy(fontFamily = PretendardFontFamily),
+        titleSmall = titleSmall.copy(fontFamily = PretendardFontFamily),
+        bodyLarge = bodyLarge.copy(fontFamily = PretendardFontFamily),
+        bodyMedium = bodyMedium.copy(fontFamily = PretendardFontFamily),
+        bodySmall = bodySmall.copy(fontFamily = PretendardFontFamily),
+        labelLarge = labelLarge.copy(fontFamily = PretendardFontFamily),
+        labelMedium = labelMedium.copy(fontFamily = PretendardFontFamily),
+        labelSmall = labelSmall.copy(fontFamily = PretendardFontFamily),
+    )
+}

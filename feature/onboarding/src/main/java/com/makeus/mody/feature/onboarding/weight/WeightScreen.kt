@@ -34,7 +34,8 @@ fun WeightScreen(viewModel: OnboardingViewModel) {
     OnboardingScaffold(
         stepIndex = 2,
         totalSteps = 4,
-        title = "현재 체중과 목표 체중을\n입력해주세요",
+        title = "체중을 입력해주세요",
+        subtitle = "현재 체중과 목표 체중이 필요해요.",
         onNextClick = { viewModel.onIntent(OnboardingIntent.WeightNext) },
     ) {
         fun emit(current: Int, target: Int) =

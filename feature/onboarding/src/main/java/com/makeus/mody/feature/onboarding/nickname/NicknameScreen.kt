@@ -2,7 +2,6 @@ package com.makeus.mody.feature.onboarding.nickname
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
@@ -44,14 +42,12 @@ fun NicknameScreen(viewModel: OnboardingViewModel) {
 }
 
 @Composable
-private fun ColumnScope.NicknameField(
+private fun NicknameField(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
-    val overLimit = value.length > OnboardingState.NICKNAME_MAX
-    val lineColor = if (value.length == OnboardingState.NICKNAME_MAX) ModyTheme.colors.error else ModyTheme.colors.gray02
-
     val isAtLimit = value.length == OnboardingState.NICKNAME_MAX
+    val lineColor = if (isAtLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
     val showClearIcon = value.isNotEmpty()
     val showAlertIcon = isAtLimit
 

@@ -18,6 +18,7 @@ android {
 
 dependencies {
     implementation(project(":core:domain"))
+    implementation(project(":core:network"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -99,26 +98,19 @@ fun ModyTextField(
 
                 if (trailingIcon != null) {
                     Spacer(modifier = Modifier.width(trailingIconSpacing))
-                    // 클릭 가능한 아이콘은 최소 48dp 터치영역 확보 + enabled 존중
+                    // enabled=false면 클릭 비활성. (터치영역은 시각 크기와 동일 — 필드 높이 유지 위해)
                     val interactive = onTrailingIconClick != null && enabled
-                    val touchModifier = if (interactive) {
-                        Modifier
-                            .minimumInteractiveComponentSize()
-                            .clickable(onClick = onTrailingIconClick)
-                    } else {
-                        Modifier
-                    }
-                    Box(
-                        modifier = touchModifier,
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = painterResource(trailingIcon),
-                            contentDescription = trailingIconContentDescription,
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(trailingIconSize),
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(trailingIcon),
+                        contentDescription = trailingIconContentDescription,
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .size(trailingIconSize)
+                            .then(
+                                if (interactive) Modifier.clickable(onClick = onTrailingIconClick)
+                                else Modifier
+                            ),
+                    )
                 }
             }
         },

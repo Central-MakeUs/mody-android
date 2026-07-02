@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="login_title">친구와 함께하는\n다이어트 습관</string>
+    <string name="login_title_line1">친구와 함께하는</string>
+    <string name="login_title_line2">다이어트 습관</string>
     <string name="login_kakao">카카오로 시작하기</string>
     <string name="login_google">Google로 시작하기</string>
 </resources>

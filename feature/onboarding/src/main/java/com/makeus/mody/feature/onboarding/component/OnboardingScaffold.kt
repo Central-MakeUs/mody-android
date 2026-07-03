@@ -60,7 +60,7 @@ fun OnboardingScaffold(
             .statusBarsPadding()
             // 키보드가 뜨면 하단 버튼이 그 위로 올라오게(ime), 안 뜨면 내비게이션바 위에
             .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
     ) {
         StepProgressBar(
             stepIndex = stepIndex,

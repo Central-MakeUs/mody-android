@@ -193,6 +193,13 @@ abstract class DataModule {
 buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 ```
 
+## PR / 커밋 규칙
+
+- **PR 본문**: `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채워서 올린다 (작업 내용 / 변경 이유 / 주요 변경사항 / 스크린샷 / 리뷰 포인트 / 체크리스트 / 관련 이슈). base 브랜치는 `main`.
+- **PR 올리기 전 1차 셀프 코드리뷰**: 변경 diff를 훑어 버그·부작용(특히 공용 토큰/컴포넌트 리네임이 다른 화면에 미치는 영향)을 먼저 점검하고, 발견 사항을 PR "리뷰어가 집중해서 봐줬으면 하는 부분"에 남긴다.
+- **커밋 단위**: 논리 단위로 분리 (designsystem 변경 / feature UI / fix 등 섞지 않기). 커밋 메시지는 `type(scope): 요약` (Conventional Commits).
+- **커밋 트레일러**: 커밋 메시지 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`, PR 본문 끝에 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+
 ## 핵심 파일 위치
 
 | 역할 | 경로 |

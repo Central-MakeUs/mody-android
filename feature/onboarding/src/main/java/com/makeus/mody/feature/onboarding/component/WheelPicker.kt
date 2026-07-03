@@ -2,12 +2,14 @@ package com.makeus.mody.feature.onboarding.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -28,7 +30,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import kotlin.math.abs
 
@@ -47,6 +48,10 @@ fun <T> WheelPicker(
     unit: String? = null,
     // false면 개별 선택박스 안 그림 (여러 휠이 하나의 공용 바를 공유할 때)
     showSelectionBox: Boolean = true,
+    // true면 아이템/선택박스가 picker 폭을 꽉 채움. false면 내용 폭에 맞춰 래핑(길쭉 pill).
+    fillItemWidth: Boolean = true,
+    // 아이템 내용 좌우 패딩(fillItemWidth=false일 때 선택박스가 숫자보다 넓어지는 크기)
+    itemHorizontalPadding: Dp = 0.dp,
     label: (T) -> String,
 ) {
     val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
@@ -86,38 +91,47 @@ fun <T> WheelPicker(
         modifier = modifier.height(itemHeight * visibleCount),
         contentAlignment = Alignment.Center,
     ) {
-        // 중앙 선택 영역 표시
+        // 중앙 선택 영역 표시. matchParentSize라 picker 폭을 강제하지 않음
+        // (picker 폭은 LazyColumn 아이템이 결정 → fillItemWidth=false면 내용 폭에 맞춰 pill)
         if (showSelectionBox) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(itemHeight)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ModyTheme.colors.gray01),
-            )
+                modifier = Modifier.matchParentSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(ModyTheme.colors.gray01),
+                )
+            }
         }
 
         LazyColumn(
             state = state,
             flingBehavior = fling,
             contentPadding = PaddingValues(vertical = sidePadding),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             itemsIndexed(items) { index, item ->
                 val selected = index == centerIndex
+                val adjacent = index == centerIndex - 1 || index == centerIndex + 1
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(itemHeight),
+                        .then(if (fillItemWidth) Modifier.fillMaxWidth() else Modifier)
+                        .height(itemHeight)
+                        .padding(horizontal = itemHorizontalPadding),
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = label(item),
-                            // 선택: SemiBold 22sp / 비선택: Medium 18sp(b3), 둘 다 line-height 140%
-                            style = if (selected) {
-                                ModyTheme.typography.b1.copy(fontSize = 22.sp, lineHeight = 30.8.sp)
-                            } else {
-                                ModyTheme.typography.b3
+                            // 선택: SemiBold 22sp / 위아래 비선택: Medium 18sp(b4) / 그 외: Regular 14sp(c1)
+                            style = when {
+                                selected -> ModyTheme.typography.b1
+                                adjacent -> ModyTheme.typography.b4
+                                else -> ModyTheme.typography.c1
                             },
                             color = if (selected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
                             textAlign = TextAlign.Center,

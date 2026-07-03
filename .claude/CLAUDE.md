@@ -196,7 +196,16 @@ buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 ## PR / 커밋 규칙
 
 - **PR 본문**: `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채워서 올린다 (작업 내용 / 변경 이유 / 주요 변경사항 / 스크린샷 / 리뷰 포인트 / 체크리스트 / 관련 이슈). base 브랜치는 `main`.
-- **PR 올리기 전 1차 셀프 코드리뷰**: 변경 diff를 훑어 버그·부작용(특히 공용 토큰/컴포넌트 리네임이 다른 화면에 미치는 영향)을 먼저 점검하고, 발견 사항을 PR "리뷰어가 집중해서 봐줬으면 하는 부분"에 남긴다.
+- **PR 올리기 전 1차 셀프 코드리뷰**: 변경 diff를 훑어 (1) 버그·부작용(특히 공용 토큰/컴포넌트 리네임이 다른 화면에 미치는 영향)과 (2) 아래 **아키텍처 적합성**을 함께 점검하고, 발견 사항을 PR "리뷰어가 집중해서 봐줬으면 하는 부분"에 남긴다.
+
+### 아키텍처 셀프 점검 체크리스트 (Clean Architecture + MVI)
+
+- **의존성 방향**: 역방향 참조 없음. `:core:domain`은 아무 데도 의존 안 함. Screen/ViewModel이 `:core:data`·`:core:network` 구현체를 직접 참조하지 않고 `:core:domain`의 Repository 인터페이스만 본다.
+- **레이어 분리**: Screen(@Composable)은 UI 렌더링만 — 비즈니스 로직·조건 분기·데이터 가공 없음. 로직은 ViewModel `processIntent()`에 있고, 데이터 접근은 Repository 경유.
+- **MVI 단방향 흐름**: 상태 변경은 오직 `setState { copy(...) }`로만. State는 `data class : UiState`(immutable). Intent는 `sealed class : UiIntent`이고 사용자 액션은 전부 `onIntent(...)`로 진입 — Screen이 ViewModel 내부 메서드 직접 호출 금지.
+- **화면 이동**: ViewModel에서 `navigationHelper.navigate(NavigationEvent.*)`로만. Screen에서 NavController 직접 조작 금지.
+- **DI**: ViewModel `@HiltViewModel`+`@Inject`, Repository 구현체 `@Singleton`+`@Binds`, 모듈은 각 모듈 `di/` 패키지.
+- **네이밍/구조**: 네이밍 컨벤션 표 준수, 새 기능은 `feature/xxx` 파일 구조(navigation·screen·viewmodel·contract) 따름.
 - **커밋 단위**: 논리 단위로 분리 (designsystem 변경 / feature UI / fix 등 섞지 않기). 커밋 메시지는 `type(scope): 요약` (Conventional Commits).
 - **커밋 트레일러**: 커밋 메시지 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`, PR 본문 끝에 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 

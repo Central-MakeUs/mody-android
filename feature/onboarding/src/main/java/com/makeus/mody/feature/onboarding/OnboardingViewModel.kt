@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.onboarding
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraph
@@ -60,6 +61,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun complete() {
-        navigationHelper.navigate(NavigationEvent.To(OnboardingGraph.OnboardingCompleteRoute))
+        // 온보딩 완료 → 그룹 그래프로 핸드오프. 온보딩/로그인 백스택 제거(뒤로가기로 복귀 방지).
+        navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute, popUpTo = true))
     }
 }

@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.onboarding.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,9 +30,6 @@ fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
         composable<OnboardingGraph.AlarmRoute> { entry ->
             AlarmScreen(entry.sharedViewModel(navController))
         }
-        composable<OnboardingGraph.OnboardingCompleteRoute> {
-            OnboardingCompleteScreen()
-        }
     }
 }
 
@@ -49,11 +45,4 @@ private fun NavBackStackEntry.sharedViewModel(
         navController.getBackStackEntry(OnboardingGraphBaseRoute)
     }
     return hiltViewModel(parentEntry)
-}
-
-// TODO(onboarding): 완료 화면은 임시 placeholder. 메인/그룹 그래프 구현 후
-//  complete() 흐름을 실제 post-onboarding 그래프로 핸드오프하도록 연결할 것.
-@Composable
-private fun OnboardingCompleteScreen() {
-    Text(text = "OnboardingCompleteScreen")
 }

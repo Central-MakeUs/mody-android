@@ -31,9 +31,6 @@ sealed interface OnboardingGraph : Route {
 
     @Serializable
     data object AlarmRoute : OnboardingGraph
-
-    @Serializable
-    data object OnboardingCompleteRoute : OnboardingGraph
 }
 
 @Serializable

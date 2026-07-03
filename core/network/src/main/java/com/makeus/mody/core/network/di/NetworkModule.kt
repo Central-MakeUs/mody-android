@@ -2,6 +2,7 @@ package com.makeus.mody.core.network.di
 
 import com.makeus.mody.core.network.BuildConfig
 import com.makeus.mody.core.network.api.ModyApi
+import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
 import com.makeus.mody.core.network.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -48,10 +49,12 @@ object NetworkModule {
     fun provideModyApi(
         okHttpClient: OkHttpClient,
         json: Json,
+        callAdapterFactory: ModyCallAdapterFactory,
     ): ModyApi = Retrofit.Builder()
         .baseUrl(BuildConfig.BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .addCallAdapterFactory(callAdapterFactory)
         .build()
         .create(ModyApi::class.java)
 }

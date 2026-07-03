@@ -54,7 +54,7 @@ private fun LoginContent(
         Image(
             painter = painterResource(R.drawable.ic_logo),
             contentDescription = "MODY",
-            modifier = Modifier.size(96.dp),
+            modifier = Modifier.size(78.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))

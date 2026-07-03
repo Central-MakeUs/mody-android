@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +48,7 @@ fun ModyTextField(
     cursorBrush: Brush = SolidColor(ModyTheme.colors.primary100),
     enabled: Boolean = true,
     maxLength: Int? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     BasicTextField(
         value = value,
@@ -59,6 +61,7 @@ fun ModyTextField(
         textStyle = textStyle,
         cursorBrush = cursorBrush,
         enabled = enabled,
+        keyboardOptions = keyboardOptions,
         modifier = modifier.fillMaxWidth(),
         decorationBox = { innerTextField ->
             Row(

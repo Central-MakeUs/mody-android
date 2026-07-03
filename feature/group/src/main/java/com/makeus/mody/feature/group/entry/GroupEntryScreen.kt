@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -28,13 +27,10 @@ import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
 import com.makeus.mody.feature.group.component.GroupScaffold
+import com.makeus.mody.feature.group.component.HighlightGold
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
 import com.makeus.mody.feature.group.contract.JoinCodeError
-
-// TODO(designsystem): Figma "모디"/"최대 N명" 하이라이트 골드. 네임드 토큰 아님(primary100 #FFE24A와 다름).
-//  디자인 토큰 확정되면 ModyColors 로 이관.
-internal val HighlightGold = Color(0xFFFBD406)
 
 @Composable
 fun GroupEntryScreen(viewModel: GroupViewModel) {

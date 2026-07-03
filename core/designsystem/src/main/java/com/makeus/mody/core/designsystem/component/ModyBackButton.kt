@@ -19,8 +19,11 @@ import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
+/** 뒤로가기 버튼 히트영역(접근성 권장 최소 터치 타깃). */
+val ModyBackButtonSize = 48.dp
+
 /**
- * 상단 뒤로가기 "<" 버튼. 24dp 히트영역 안에 ic_chevron_left 배치.
+ * 상단 뒤로가기 "<" 버튼. 48dp 히트영역(접근성) 안에 10x17 ic_chevron_left 배치.
  */
 @Composable
 fun ModyBackButton(
@@ -31,7 +34,7 @@ fun ModyBackButton(
 ) {
     Box(
         modifier = modifier
-            .size(24.dp)
+            .size(ModyBackButtonSize)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

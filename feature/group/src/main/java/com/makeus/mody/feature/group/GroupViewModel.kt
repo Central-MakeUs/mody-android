@@ -24,7 +24,8 @@ class GroupViewModel @Inject constructor(
     override suspend fun processIntent(intent: GroupIntent) {
         when (intent) {
             is GroupIntent.JoinCodeChanged ->
-                setState { copy(joinCode = intent.value, joinError = null) }
+                // 코드는 영문 대문자 기준 → 입력 소스(붙여넣기/하드웨어) 무관하게 정규화
+                setState { copy(joinCode = intent.value.uppercase(), joinError = null) }
 
             is GroupIntent.JoinClicked -> join()
 

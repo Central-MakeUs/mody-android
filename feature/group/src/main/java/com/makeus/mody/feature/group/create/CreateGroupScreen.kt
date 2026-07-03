@@ -25,9 +25,9 @@ import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
 import com.makeus.mody.feature.group.component.GroupScaffold
+import com.makeus.mody.feature.group.component.HighlightGold
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
-import com.makeus.mody.feature.group.entry.HighlightGold
 
 @Composable
 fun CreateGroupScreen(viewModel: GroupViewModel) {

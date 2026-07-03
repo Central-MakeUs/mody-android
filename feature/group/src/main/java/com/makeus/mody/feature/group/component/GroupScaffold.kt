@@ -1,11 +1,13 @@
 package com.makeus.mody.feature.group.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
@@ -15,12 +17,16 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.ModyBackButton
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+
+// 상태바 아래 타이틀 시작 지점(온보딩 진행바+간격과 동일). 상단 영역 고정 높이.
+private val TitleTopOffset = 72.dp
 
 /**
  * 그룹 플로우 공통 골격.
@@ -55,13 +61,17 @@ fun GroupScaffold(
             // 좌우 24 (Figma). 위아래(타이틀/서브 위치)는 온보딩과 동일.
             .padding(horizontal = 24.dp),
     ) {
-        // 온보딩 진행바 자리(상태바 아래 20 + 요소높이 + 48 = 타이틀 72dp)를 동일하게 확보.
-        Spacer(modifier = Modifier.height(20.dp))
-        if (onBackClick != null) {
-            ModyBackButton(onClick = onBackClick)
-            Spacer(modifier = Modifier.height(28.dp)) // 20 + 24(back) + 28 = 72
-        } else {
-            Spacer(modifier = Modifier.height(52.dp)) // 20 + 52 = 72
+        // 온보딩 진행바 자리를 고정 높이 상단 영역으로 대체 → 타이틀이 항상 동일 지점에서 시작.
+        // (뒤로가기 버튼 크기 변경과 무관하게 위치 유지)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TitleTopOffset),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (onBackClick != null) {
+                ModyBackButton(onClick = onBackClick)
+            }
         }
 
         Text(

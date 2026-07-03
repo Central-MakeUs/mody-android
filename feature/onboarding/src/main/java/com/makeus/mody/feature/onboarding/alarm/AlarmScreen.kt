@@ -93,7 +93,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
 
         Text(
             text = "운동 일정",
-            style = ModyTheme.typography.b4,
+            style = ModyTheme.typography.b6,
             color = ModyTheme.colors.gray08,
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -142,7 +142,7 @@ private fun MealHourField(
     Column(modifier = modifier) {
         Text(
             text = label,
-            style = ModyTheme.typography.b4,
+            style = ModyTheme.typography.b6,
             color = ModyTheme.colors.gray08,
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -176,7 +176,7 @@ private fun MealHourField(
         ) {
             Text(
                 text = hour?.let { "%02d시".format(it) } ?: "--시",
-                style = ModyTheme.typography.b3,
+                style = ModyTheme.typography.b4,
                 color = if (skipped) ModyTheme.colors.gray04 else ModyTheme.colors.gray10,
             )
             ChevronDown(tint = if (skipped) ModyTheme.colors.gray04 else ModyTheme.colors.gray08)
@@ -253,7 +253,7 @@ private fun DayChip(
     ) {
         Text(
             text = label,
-            style = ModyTheme.typography.b5,
+            style = ModyTheme.typography.b7,
             color = if (selected) ModyTheme.colors.gray10 else ModyTheme.colors.gray06,
             textAlign = TextAlign.Center,
         )

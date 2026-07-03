@@ -1,0 +1,111 @@
+package com.makeus.mody.feature.group.create
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.designsystem.R
+import com.makeus.mody.core.designsystem.component.ModyButton
+import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyTextField
+import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.group.GroupViewModel
+import com.makeus.mody.feature.group.component.GroupScaffold
+import com.makeus.mody.feature.group.contract.GroupIntent
+import com.makeus.mody.feature.group.contract.GroupState
+import com.makeus.mody.feature.group.entry.HighlightGold
+
+@Composable
+fun CreateGroupScreen(viewModel: GroupViewModel) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    GroupScaffold(
+        title = "그룹 이름을 정해볼까요?",
+        subtitle = buildAnnotatedString {
+            append("친구들과 함께할 그룹의 이름이에요.\n")
+            withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) {
+                append("최대 ${GroupState.MAX_MEMBERS}명")
+            }
+            append("까지 초대할 수 있어요!")
+        },
+        onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
+    ) {
+        GroupNameField(
+            value = state.groupName,
+            onValueChange = { viewModel.onIntent(GroupIntent.GroupNameChanged(it)) },
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        ModyButton(
+            text = "다음으로",
+            onClick = { viewModel.onIntent(GroupIntent.GroupNameNext) },
+            variant = ModyButtonVariant.Primary,
+            enabled = state.isGroupNameValid,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun ColumnScope.GroupNameField(
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    val isAtLimit = value.length == GroupState.GROUP_NAME_MAX
+    val lineColor = if (isAtLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
+
+    ModyTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = "이름 또는 별명을 입력해주세요",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        trailingIcon = if (value.isNotEmpty()) R.drawable.ic_clear else null,
+        onTrailingIconClick = { onValueChange("") },
+        trailingIconContentDescription = "입력 지우기",
+        maxLength = GroupState.GROUP_NAME_MAX,
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(lineColor),
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, start = 8.dp, end = 8.dp),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        val countText = buildAnnotatedString {
+            val before = value.length.toString()
+            append(before)
+            append("/${GroupState.GROUP_NAME_MAX}")
+            if (isAtLimit) addStyle(SpanStyle(color = ModyTheme.colors.error), 0, before.length)
+        }
+        Text(
+            text = countText,
+            style = ModyTheme.typography.c1,
+            color = ModyTheme.colors.gray07,
+        )
+    }
+}

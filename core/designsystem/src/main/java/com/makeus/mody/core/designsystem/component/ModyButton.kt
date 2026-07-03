@@ -91,7 +91,7 @@ fun ModyButton(
             }
             Text(
                 text = text,
-                style = ModyTheme.typography.b4,
+                style = ModyTheme.typography.b6,
             )
         }
     }

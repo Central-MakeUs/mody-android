@@ -3,18 +3,20 @@ package com.makeus.mody.core.network.model
 import kotlinx.serialization.Serializable
 
 /**
- * 서버 공통 응답 봉투. 실제 페이로드는 [data].
- * 백엔드 스펙에 맞춰 필드명 조정할 것.
+ * 서버 공통 응답 봉투. 실제 페이로드는 [result].
+ * 예: { "isSuccess": true, "code": "COMMON200", "message": "성공", "result": {...} }
  */
 @Serializable
 data class ApiResponse<T>(
-    val status: String? = null,
+    val isSuccess: Boolean = false,
+    val code: String? = null,
     val message: String? = null,
-    val data: T? = null,
+    val result: T? = null,
 )
 
 @Serializable
 data class ApiErrorResponse(
+    val isSuccess: Boolean = false,
     val code: String? = null,
     val message: String? = null,
     val errors: List<ErrorDetail>? = emptyList(),
@@ -27,8 +29,8 @@ data class ErrorDetail(
 )
 
 /**
- * DataSource 에서 봉투 벗겨 순수 data 반환.
- * data 가 null 이면 (204 등 바디 없는 성공) Unit 으로 취급.
+ * DataSource 에서 봉투 벗겨 순수 result 반환.
+ * result 가 null 이면 (바디 없는 성공) Unit 으로 취급.
  */
 @Suppress("UNCHECKED_CAST")
-fun <T> ApiResponse<T>.unwrapData(): T = data ?: Unit as T
+fun <T> ApiResponse<T>.unwrapResult(): T = result ?: Unit as T

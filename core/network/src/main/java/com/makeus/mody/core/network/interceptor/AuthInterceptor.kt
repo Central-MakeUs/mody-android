@@ -35,10 +35,10 @@ class AuthInterceptor @Inject constructor(
     }
 
     /** 인증 헤더 없이 호출해야 하는 엔드포인트. 백엔드 경로 확정되면 채울 것. */
-    private fun isAccessTokenUsed(request: Request): Boolean =
-        when (request.url.encodedPath) {
-            // "/api/auth/login" -> false
-            // "/api/auth/token/refresh" -> false
-            else -> true
-        }
+    private fun isAccessTokenUsed(request: Request): Boolean {
+        val path = request.url.encodedPath
+        val noAuth = path.startsWith("/api/v1/oauth/") ||
+            path == "/api/v1/auth/reissue"
+        return !noAuth
+    }
 }

@@ -13,8 +13,11 @@ val localProperties = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
-val kakaoNativeKeyDev: String = localProperties.getProperty("KAKAO_NATIVE_KEY_DEV", "")
-val kakaoNativeKeyProd: String = localProperties.getProperty("KAKAO_NATIVE_KEY_PROD", "")
+// CI/빌드서버(local.properties 없음) 대비 env var fallback
+val kakaoNativeKeyDev: String =
+    System.getenv("KAKAO_NATIVE_KEY_DEV") ?: localProperties.getProperty("KAKAO_NATIVE_KEY_DEV", "")
+val kakaoNativeKeyProd: String =
+    System.getenv("KAKAO_NATIVE_KEY_PROD") ?: localProperties.getProperty("KAKAO_NATIVE_KEY_PROD", "")
 
 android {
     namespace = "com.makeus.mody"

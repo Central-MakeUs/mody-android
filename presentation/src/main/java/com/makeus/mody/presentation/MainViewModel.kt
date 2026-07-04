@@ -30,7 +30,10 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _startRoute.value = when (resolveStartDestination()) {
+            // 세션 조회 실패(DataStore/토큰) 시 스플래시에 갇히지 않도록 로그인으로 폴백
+            val destination = runCatching { resolveStartDestination() }
+                .getOrDefault(StartDestination.AUTH)
+            _startRoute.value = when (destination) {
                 StartDestination.AUTH -> AuthGraphBaseRoute
                 StartDestination.ONBOARDING -> OnboardingGraphBaseRoute
                 StartDestination.GROUP -> GroupGraphBaseRoute

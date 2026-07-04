@@ -13,6 +13,9 @@ interface SessionRepository {
     /** 로그인 성공 시 토큰 저장(영속). */
     suspend fun saveTokens(accessToken: String, refreshToken: String)
 
+    /** 저장된 refresh token(로그아웃/재발급용). 없으면 빈 문자열. */
+    suspend fun getRefreshToken(): String
+
     /** 진행 상태 flag 저장(로그인/온보딩 진행에 따라 갱신). */
     suspend fun saveStatus(status: AuthStatus)
 

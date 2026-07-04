@@ -30,7 +30,11 @@ data class ErrorDetail(
 
 /**
  * DataSource 에서 봉투 벗겨 순수 result 반환.
+ * HTTP 200 이어도 isSuccess=false 면 실패로 간주해 예외를 던진다.
  * result 가 null 이면 (바디 없는 성공) Unit 으로 취급.
  */
 @Suppress("UNCHECKED_CAST")
-fun <T> ApiResponse<T>.unwrapResult(): T = result ?: Unit as T
+fun <T> ApiResponse<T>.unwrapResult(): T {
+    if (!isSuccess) error(message ?: code ?: "API 응답 실패")
+    return result ?: Unit as T
+}

@@ -4,11 +4,14 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,6 +39,8 @@ class SessionRepositoryImpl @Inject constructor(
         tokenManager.setRefreshToken(refreshToken)
     }
 
+    override suspend fun getRefreshToken(): String = tokenManager.getRefreshToken()
+
     override suspend fun saveStatus(status: AuthStatus) {
         dataStore.edit {
             it[Keys.PERSONAL_INFO_COMPLETED] = status.personalInfoCompleted
@@ -45,7 +50,9 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getStatus(): AuthStatus =
-        dataStore.data.map {
+        dataStore.data
+            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+            .map {
             AuthStatus(
                 personalInfoCompleted = it[Keys.PERSONAL_INFO_COMPLETED] ?: false,
                 groupOnboardingCompleted = it[Keys.GROUP_ONBOARDING_COMPLETED] ?: false,

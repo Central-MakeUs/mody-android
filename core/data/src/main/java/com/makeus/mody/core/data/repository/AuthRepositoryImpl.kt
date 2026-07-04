@@ -5,7 +5,6 @@ import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.AuthApi
-import com.makeus.mody.core.network.interceptor.TokenManager
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -15,7 +14,6 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
     private val sessionRepository: SessionRepository,
-    private val tokenManager: TokenManager,
 ) : AuthRepository {
 
     override suspend fun loginWithSocial(
@@ -38,7 +36,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout() {
-        val refreshToken = tokenManager.getRefreshToken()
+        val refreshToken = sessionRepository.getRefreshToken()
         if (refreshToken.isNotBlank()) {
             runCatching { authApi.logout(TokenLogoutRequest(refreshToken)) }
         }

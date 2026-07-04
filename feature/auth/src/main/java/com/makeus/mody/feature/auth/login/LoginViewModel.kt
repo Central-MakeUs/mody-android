@@ -14,6 +14,7 @@ import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.login.contract.LoginIntent
 import com.makeus.mody.feature.auth.login.contract.LoginState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,15 +32,17 @@ class LoginViewModel @Inject constructor(
     }
 
     private suspend fun login(type: SocialLoginType) {
-        runCatching {
+        setState { copy(isLoading = true, errorMessage = null) }
+        try {
             val socialAccessToken = socialLoginProvider.getAccessToken(type)
-            authRepository.loginWithSocial(type, socialAccessToken)
-        }.onSuccess { status ->
+            val status = authRepository.loginWithSocial(type, socialAccessToken)
             navigationHelper.navigate(
                 NavigationEvent.To(routeAfterLogin(status), popUpTo = true),
             )
-        }.onFailure {
-            // TODO(auth): 로그인 실패 UI 처리(에러 상태/토스트). 현재는 무시.
+        } catch (e: CancellationException) {
+            throw e // 구조적 동시성 유지 — 취소는 전파
+        } catch (e: Exception) {
+            setState { copy(isLoading = false, errorMessage = "로그인에 실패했어요. 다시 시도해주세요.") }
         }
     }
 

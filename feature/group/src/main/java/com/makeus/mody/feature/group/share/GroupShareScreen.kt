@@ -39,7 +39,6 @@ fun GroupShareScreen(viewModel: GroupViewModel) {
     GroupScaffold(
         title = "그룹에 함께할 친구를\n초대해보세요!",
         subtitle = buildAnnotatedString { append("코드를 클릭해 복사하거나 카카오톡으로 공유하세요.") },
-        onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
         imeAware = false,
     ) {
         InviteCodeRow(

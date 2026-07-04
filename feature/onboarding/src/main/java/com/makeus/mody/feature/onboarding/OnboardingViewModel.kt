@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.onboarding
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -8,11 +9,13 @@ import com.makeus.mody.core.navigation.OnboardingGraph
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import com.makeus.mody.feature.onboarding.contract.OnboardingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
+    private val sessionRepository: SessionRepository,
 ) : BaseViewModel<OnboardingState, OnboardingIntent>(OnboardingState()) {
 
     override suspend fun processIntent(intent: OnboardingIntent) {
@@ -60,8 +63,19 @@ class OnboardingViewModel @Inject constructor(
         navigationHelper.navigate(NavigationEvent.To(route))
     }
 
-    private fun complete() {
-        // 온보딩 완료 → 그룹 그래프로 핸드오프. 온보딩/로그인 백스택 제거(뒤로가기로 복귀 방지).
+    private suspend fun complete() {
+        // 프로필(온보딩) 완료 표시. TODO(P3): 서버 /onboarding/profile 성공 응답 상태로 대체.
+        // 로컬 저장 실패해도 진행은 막지 않음(best-effort). 취소는 전파.
+        try {
+            sessionRepository.saveStatus(
+                sessionRepository.getStatus().copy(personalInfoCompleted = true),
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // 저장 실패 시에도 다음 화면으로 진행
+        }
+        // 그룹 그래프로 핸드오프. 온보딩/로그인 백스택 제거(뒤로가기로 복귀 방지).
         navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute, popUpTo = true))
     }
 }

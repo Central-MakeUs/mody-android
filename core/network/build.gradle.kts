@@ -19,10 +19,11 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"\"") // TODO: dev URL 입력
+            buildConfigField("String", "BASE_URL", "\"https://dev-mody.store/\"")
         }
         release {
-            buildConfigField("String", "BASE_URL", "\"\"") // TODO: prod URL 입력
+            // TODO: prod URL 확정되면 교체 (현재 dev 동일)
+            buildConfigField("String", "BASE_URL", "\"https://dev-mody.store/\"")
         }
     }
 }

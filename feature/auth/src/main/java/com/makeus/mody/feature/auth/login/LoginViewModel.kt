@@ -1,9 +1,16 @@
 package com.makeus.mody.feature.auth.login
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.model.AuthStatus
+import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.domain.repository.AuthRepository
+import com.makeus.mody.core.domain.repository.SocialLoginProvider
+import com.makeus.mody.core.navigation.GroupGraphBaseRoute
+import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
-import com.makeus.mody.core.navigation.OnboardingGraph
+import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
+import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.login.contract.LoginIntent
 import com.makeus.mody.feature.auth.login.contract.LoginState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,23 +19,34 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
+    private val authRepository: AuthRepository,
+    private val socialLoginProvider: SocialLoginProvider,
 ) : BaseViewModel<LoginState, LoginIntent>(LoginState()) {
 
     override suspend fun processIntent(intent: LoginIntent) {
         when (intent) {
-            // TODO(auth): 실제 Kakao/Google 인증 미구현. 현재는 화면 전환 테스트용으로
-            //  클릭 즉시 온보딩으로 이동. 인증 도입 시 로그인 성공 콜백에서만 navigate 하도록 변경할 것.
-            is LoginIntent.KakaoLoginClicked -> navigateToOnboarding()
-            is LoginIntent.GoogleLoginClicked -> navigateToOnboarding()
+            is LoginIntent.KakaoLoginClicked -> login(SocialLoginType.KAKAO)
+            is LoginIntent.GoogleLoginClicked -> login(SocialLoginType.GOOGLE)
         }
     }
 
-    private fun navigateToOnboarding() {
-        navigationHelper.navigate(
-            NavigationEvent.To(
-                route = OnboardingGraph.NicknameRoute,
-                popUpTo = true,
+    private suspend fun login(type: SocialLoginType) {
+        runCatching {
+            val socialAccessToken = socialLoginProvider.getAccessToken(type)
+            authRepository.loginWithSocial(type, socialAccessToken)
+        }.onSuccess { status ->
+            navigationHelper.navigate(
+                NavigationEvent.To(routeAfterLogin(status), popUpTo = true),
             )
-        )
+        }.onFailure {
+            // TODO(auth): 로그인 실패 UI 처리(에러 상태/토스트). 현재는 무시.
+        }
+    }
+
+    /** 로그인 응답 상태에 따른 진입 화면. */
+    private fun routeAfterLogin(status: AuthStatus): Route = when {
+        !status.personalInfoCompleted -> OnboardingGraphBaseRoute
+        !status.groupOnboardingCompleted -> GroupGraphBaseRoute
+        else -> MainRoute
     }
 }

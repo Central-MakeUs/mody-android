@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".ModyApplication"
         android:allowBackup="true"
@@ -13,6 +15,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mody"
         tools:targetApi="31">
+
+        <!-- 카카오 로그인 리다이렉트 처리 (scheme = kakao{네이티브키}) -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="oauth"
+                    android:scheme="kakao${KAKAO_NATIVE_KEY}" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

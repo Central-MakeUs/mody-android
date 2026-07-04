@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,14 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
 }
+
+// local.properties(gitignore)에서 카카오 네이티브 키 로드. 없으면 빈 문자열(컴파일은 됨).
+val localProperties = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val kakaoNativeKeyDev: String = localProperties.getProperty("KAKAO_NATIVE_KEY_DEV", "")
+val kakaoNativeKeyProd: String = localProperties.getProperty("KAKAO_NATIVE_KEY_PROD", "")
 
 android {
     namespace = "com.makeus.mody"
@@ -21,6 +31,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures { buildConfig = true }
+
     signingConfigs {
         create("release") {
             storeFile = file(System.getenv("SIGNING_STORE_FILE") ?: "keystore.jks")
@@ -33,10 +45,14 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
+            buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyDev\"")
+            manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyDev
         }
         release {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("release")
+            buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyProd\"")
+            manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyProd
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -54,8 +70,13 @@ android {
 
 dependencies {
     implementation(project(":presentation"))
+    // DI 조립: Repository/DataSource 구현 바인딩(:core:data)을 Hilt 그래프에 포함
+    implementation(project(":core:data"))
+    implementation(project(":core:common-ui")) // CurrentActivityHolder 등록용
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.kakao.user) // KakaoSdk.init
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -46,10 +46,10 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    /** 로그인 응답 상태에 따른 진입 화면. */
+    /** 로그인 응답 상태에 따른 진입 화면(ResolveStartDestinationUseCase 와 동일 규칙). */
     private fun routeAfterLogin(status: AuthStatus): Route = when {
         !status.personalInfoCompleted -> OnboardingGraphBaseRoute
-        !status.groupOnboardingCompleted -> GroupGraphBaseRoute
-        else -> MainRoute
+        status.mainAccessible -> MainRoute
+        else -> GroupGraphBaseRoute
     }
 }

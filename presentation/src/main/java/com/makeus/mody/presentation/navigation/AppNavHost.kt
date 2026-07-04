@@ -24,7 +24,7 @@ fun AppNavHost(
     ) {
         authNavGraph()
         onboardingNavGraph(navController)
-        groupNavGraph()
+        groupNavGraph(navController)
         composable<MainRoute> { MainScreen() }
     }
 }

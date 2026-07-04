@@ -29,6 +29,8 @@ class MainActivity : ComponentActivity() {
                     when (event) {
                         is NavigationEvent.To -> navController.navigate(event.route) {
                             if (event.popUpTo) popUpTo(0) { inclusive = true }
+                            // 같은 목적지가 스택 최상단이면 중복 push 방지(빠른 연타 대응)
+                            launchSingleTop = true
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
                         is NavigationEvent.TopLevelTo -> navController.navigate(event.route) {

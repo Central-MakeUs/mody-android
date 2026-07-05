@@ -13,8 +13,10 @@ sealed class OnboardingIntent : UiIntent {
         val lunch: Int?,
         val dinner: Int?,
     ) : OnboardingIntent()
-    data class ExerciseDayToggled(val day: Int) : OnboardingIntent()
-    data class ExerciseTimeChanged(val hour: Int, val minute: Int) : OnboardingIntent()
+    // 운동요일 선택/시간설정. day: 1(월)~7(일)
+    data class ExerciseDaySet(val day: Int, val hour: Int, val minute: Int) : OnboardingIntent()
+    data class ExerciseDayRemoved(val day: Int) : OnboardingIntent()
+    data class ExerciseAllTimesSet(val hour: Int, val minute: Int) : OnboardingIntent()
 
     // 스텝 이동 ("다음으로")
     data object NicknameNext : OnboardingIntent()

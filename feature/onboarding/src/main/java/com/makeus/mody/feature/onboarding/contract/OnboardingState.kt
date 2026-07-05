@@ -2,6 +2,9 @@ package com.makeus.mody.feature.onboarding.contract
 
 import com.makeus.mody.core.commonui.base.UiState
 
+/** 시각(24h). 운동 요일별 알림 시간. */
+data class TimeOfDay(val hour: Int, val minute: Int)
+
 /**
  * 온보딩 전체 스텝에서 누적되는 단일 상태.
  * nav graph 에 scope 된 OnboardingViewModel 이 보유한다.
@@ -17,18 +20,21 @@ data class OnboardingState(
     val breakfastHour: Int? = 8,
     val lunchHour: Int? = 12,
     val dinnerHour: Int? = 18,
-    val exerciseDays: Set<Int> = emptySet(), // 1(월) ~ 7(일)
-    val exerciseHour: Int = 9, // 선택 운동요일 공통 시각(24h)
-    val exerciseMinute: Int = 0,
+    // 선택된 운동요일 → 알림 시각. key: 1(월)~7(일)
+    val exerciseTimes: Map<Int, TimeOfDay> = emptyMap(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) : UiState {
+
+    /** 선택된 운동요일 집합(시각 map 의 key). */
+    val exerciseDays: Set<Int>
+        get() = exerciseTimes.keys
 
     val isNicknameValid: Boolean
         get() = nickname.isNotBlank() && nickname.length <= NICKNAME_MAX
 
     val isExerciseValid: Boolean
-        get() = exerciseDays.size >= EXERCISE_MIN_DAYS
+        get() = exerciseTimes.size >= EXERCISE_MIN_DAYS
 
     /** 목표 - 현재 체중 차이(kg). 양수=증량, 음수=감량, 0=유지 */
     val weightDiff: Int

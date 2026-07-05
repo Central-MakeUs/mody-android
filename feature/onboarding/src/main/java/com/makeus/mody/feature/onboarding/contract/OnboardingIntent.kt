@@ -14,6 +14,7 @@ sealed class OnboardingIntent : UiIntent {
         val dinner: Int?,
     ) : OnboardingIntent()
     data class ExerciseDayToggled(val day: Int) : OnboardingIntent()
+    data class ExerciseTimeChanged(val hour: Int, val minute: Int) : OnboardingIntent()
 
     // 스텝 이동 ("다음으로")
     data object NicknameNext : OnboardingIntent()

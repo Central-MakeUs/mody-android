@@ -7,6 +7,7 @@ import com.makeus.mody.core.network.api.ModyApi
 import com.makeus.mody.core.network.api.OnboardingApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
 import com.makeus.mody.core.network.interceptor.AuthInterceptor
+import com.makeus.mody.core.network.interceptor.TokenAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,8 +35,10 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .authenticator(tokenAuthenticator)
         .addInterceptor(
             HttpLoggingInterceptor().apply {
                 level = if (BuildConfig.DEBUG) {

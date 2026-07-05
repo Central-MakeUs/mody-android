@@ -1,24 +1,26 @@
 package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
+import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
+import com.makeus.mody.feature.group.contract.JoinCodeError
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 /**
  * 그룹 그래프 백스택에 scope 된 단일 ViewModel.
  * 참여/생성/초대 화면이 같은 인스턴스를 공유한다.
- *
- * NOTE: 현재는 UI-first 스캐폴드. 서버 연동(코드 검증/그룹 생성/초대코드 발급/
- *       클립보드/카카오 공유)은 TODO 로 표시. 백엔드 스펙 확정 후 연결.
  */
 @HiltViewModel
 class GroupViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
+    private val groupRepository: GroupRepository,
 ) : BaseViewModel<GroupState, GroupIntent>(GroupState()) {
 
     override suspend fun processIntent(intent: GroupIntent) {
@@ -36,13 +38,7 @@ class GroupViewModel @Inject constructor(
                 setState { copy(groupName = intent.value) }
 
             is GroupIntent.GroupNameNext ->
-                if (currentState.isGroupNameValid) {
-                    // TODO(group): 실제 서버 그룹 생성 API 로 교체.
-                    //  응답 result.code (영문+숫자 6자리) 를 inviteCode 로 세팅.
-                    val mockCode = generateMockInviteCode()
-                    setState { copy(inviteCode = mockCode, codeCopied = false) }
-                    navigationHelper.navigate(NavigationEvent.To(GroupGraph.GroupShareRoute))
-                }
+                if (currentState.isGroupNameValid) createGroup()
 
             is GroupIntent.CopyCodeClicked ->
                 // 실제 클립보드 쓰기는 Screen(LocalClipboardManager)에서 처리. 여기선 상태만.
@@ -52,23 +48,41 @@ class GroupViewModel @Inject constructor(
                 // TODO(group): 카카오톡 공유 SDK 연동
             }
 
-            is GroupIntent.ShareDoneClicked -> {
-                // TODO(group): 온보딩/그룹 완료 → 메인 그래프로 핸드오프
-            }
+            is GroupIntent.ShareDoneClicked ->
+                // 그룹 생성 완료 → 메인으로. 온보딩/그룹 백스택 제거.
+                navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))
 
             is GroupIntent.BackClicked ->
                 navigationHelper.navigate(NavigationEvent.Up)
         }
     }
 
-    private fun join() {
-        // TODO(group): 서버에 joinCode 검증 요청.
-        //  성공 → 메인 그래프, 실패 → setState { copy(joinError = ...) }
+    private suspend fun createGroup() {
+        if (currentState.isLoading) return
+        setState { copy(isLoading = true) }
+        try {
+            val group = groupRepository.createGroup(currentState.groupName)
+            setState { copy(isLoading = false, inviteCode = group.code, codeCopied = false) }
+            navigationHelper.navigate(NavigationEvent.To(GroupGraph.GroupShareRoute))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // TODO(group): 생성 실패 UX(에러 메시지) 추가. 지금은 로딩만 해제.
+            setState { copy(isLoading = false) }
+        }
     }
 
-    // TODO(group): 서버 응답 result.code 로 대체할 mock. 영문 대문자 + 숫자 6자리.
-    private fun generateMockInviteCode(): String {
-        val chars = ('A'..'Z') + ('0'..'9')
-        return (1..6).map { chars.random() }.joinToString("")
+    private suspend fun join() {
+        if (currentState.isLoading) return
+        setState { copy(isLoading = true, joinError = null) }
+        try {
+            groupRepository.joinGroup(currentState.joinCode)
+            navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // TODO(group): 서버 에러코드로 NOT_FOUND / FULL 구분. 지금은 일괄 NOT_FOUND.
+            setState { copy(isLoading = false, joinError = JoinCodeError.NOT_FOUND) }
+        }
     }
 }

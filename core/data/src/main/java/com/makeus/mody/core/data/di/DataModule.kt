@@ -1,10 +1,12 @@
 package com.makeus.mody.core.data.di
 
 import com.makeus.mody.core.data.repository.AuthRepositoryImpl
+import com.makeus.mody.core.data.repository.GroupRepositoryImpl
 import com.makeus.mody.core.data.repository.OnboardingRepositoryImpl
 import com.makeus.mody.core.data.repository.SessionRepositoryImpl
 import com.makeus.mody.core.data.repository.TokenManagerImpl
 import com.makeus.mody.core.domain.repository.AuthRepository
+import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
@@ -37,4 +39,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindOnboardingRepository(impl: OnboardingRepositoryImpl): OnboardingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGroupRepository(impl: GroupRepositoryImpl): GroupRepository
 }

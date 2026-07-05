@@ -14,9 +14,12 @@ data class GroupState(
     // 친구 초대 - 내 그룹 초대 코드 (null = 로딩중)
     val inviteCode: String? = null,
     val codeCopied: Boolean = false,
+    // 생성/참여 네트워크 진행중
+    val isLoading: Boolean = false,
 ) : UiState {
 
-    val isJoinEnabled: Boolean get() = joinCode.length == JOIN_CODE_LENGTH && joinError == null
+    val isJoinEnabled: Boolean
+        get() = joinCode.length == JOIN_CODE_LENGTH && joinError == null && !isLoading
     val isGroupNameValid: Boolean get() = groupName.isNotBlank() && groupName.length <= GROUP_NAME_MAX
 
     companion object {

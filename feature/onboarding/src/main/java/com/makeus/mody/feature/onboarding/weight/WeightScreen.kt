@@ -15,13 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
@@ -97,9 +95,10 @@ private fun WeightColumn(
                 items = WEIGHTS,
                 selectedIndex = remember(value) { WEIGHTS.indexOf(value).coerceAtLeast(0) },
                 onSelectedChange = { onChange(WEIGHTS[it]) },
+                modifier = Modifier.width(72.dp),
                 itemHeight = 36.dp,
-                fillItemWidth = false,
-                itemHorizontalPadding = 26.dp,
+                // 고정폭 + 꽉채움 → 행별 자릿수/폰트크기 달라도 가로 흔들림 없이 중앙정렬
+                fillItemWidth = true,
                 label = { "$it" },
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -131,11 +130,8 @@ private fun WeightGuide(
         buildAnnotatedString {
             append("목표까지 ")
             withStyle(
-                SpanStyle(
-                    color = ModyTheme.colors.secondary100,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                ),
+                ModyTheme.typography.b6.toSpanStyle()
+                    .copy(color = ModyTheme.colors.secondary100),
             ) {
                 append("${amount}kg")
             }
@@ -145,7 +141,15 @@ private fun WeightGuide(
 
     Text(
         text = text,
-        style = ModyTheme.typography.c1,
+        // 강조 span(b6, 16sp)이 있는 줄과 "유지" 문구(14sp) 줄의 세로 위치를 맞추려
+        // 줄높이를 b6(22.4sp)로 고정하고 leading 을 위아래 균등 배치(Center)한다.
+        style = ModyTheme.typography.c1.copy(
+            lineHeight = ModyTheme.typography.b6.lineHeight,
+            lineHeightStyle = LineHeightStyle(
+                alignment = LineHeightStyle.Alignment.Center,
+                trim = LineHeightStyle.Trim.None,
+            ),
+        ),
         color = ModyTheme.colors.gray07,
         textAlign = TextAlign.Center,
         modifier = modifier,

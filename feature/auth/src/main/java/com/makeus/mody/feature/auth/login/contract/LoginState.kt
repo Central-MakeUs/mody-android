@@ -4,4 +4,5 @@ import com.makeus.mody.core.commonui.base.UiState
 
 data class LoginState(
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
 ) : UiState

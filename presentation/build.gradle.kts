@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:navigation"))
     implementation(project(":core:common-ui"))
+    implementation(project(":core:domain"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:group"))

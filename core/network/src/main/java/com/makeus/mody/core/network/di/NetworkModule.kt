@@ -2,6 +2,7 @@ package com.makeus.mody.core.network.di
 
 import com.makeus.mody.core.network.BuildConfig
 import com.makeus.mody.core.network.api.AuthApi
+import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
 import com.makeus.mody.core.network.api.OnboardingApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
@@ -73,4 +74,9 @@ object NetworkModule {
     @Singleton
     fun provideOnboardingApi(retrofit: Retrofit): OnboardingApi =
         retrofit.create(OnboardingApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideGroupApi(retrofit: Retrofit): GroupApi =
+        retrofit.create(GroupApi::class.java)
 }

@@ -12,6 +12,7 @@ import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraph
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import com.makeus.mody.feature.onboarding.contract.OnboardingState
+import com.makeus.mody.feature.onboarding.contract.TimeOfDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
@@ -42,18 +43,21 @@ class OnboardingViewModel @Inject constructor(
                     )
                 }
 
-            is OnboardingIntent.ExerciseDayToggled ->
+            is OnboardingIntent.ExerciseDaySet ->
                 if (intent.day in 1..7) {
                     setState {
-                        val next = exerciseDays.toMutableSet().apply {
-                            if (!add(intent.day)) remove(intent.day)
-                        }
-                        copy(exerciseDays = next)
+                        copy(exerciseTimes = exerciseTimes + (intent.day to TimeOfDay(intent.hour, intent.minute)))
                     }
                 }
 
-            is OnboardingIntent.ExerciseTimeChanged ->
-                setState { copy(exerciseHour = intent.hour, exerciseMinute = intent.minute) }
+            is OnboardingIntent.ExerciseDayRemoved ->
+                setState { copy(exerciseTimes = exerciseTimes - intent.day) }
+
+            is OnboardingIntent.ExerciseAllTimesSet ->
+                setState {
+                    val t = TimeOfDay(intent.hour, intent.minute)
+                    copy(exerciseTimes = exerciseTimes.mapValues { t })
+                }
 
             // 스텝 순서: 닉네임 → 생년월일 → 체중 → 알림 → 완료
             // 진행 불변조건을 reducer 에서 강제 (UI 게이팅 우회 방지)
@@ -97,8 +101,8 @@ private fun OnboardingState.toProfile(): OnboardingProfile = OnboardingProfile(
         meal(MealType.LUNCH, lunchHour),
         meal(MealType.DINNER, dinnerHour),
     ),
-    exercises = exerciseDays.sorted().map {
-        ExerciseSchedule(dayOfWeek = it, hour = exerciseHour, minute = exerciseMinute)
+    exercises = exerciseTimes.toSortedMap().map { (day, t) ->
+        ExerciseSchedule(dayOfWeek = day, hour = t.hour, minute = t.minute)
     },
 )
 

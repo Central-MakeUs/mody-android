@@ -18,7 +18,10 @@ data class OnboardingState(
     val lunchHour: Int? = 12,
     val dinnerHour: Int? = 18,
     val exerciseDays: Set<Int> = emptySet(), // 1(월) ~ 7(일)
+    val exerciseHour: Int = 9, // 선택 운동요일 공통 시각(24h)
+    val exerciseMinute: Int = 0,
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
 ) : UiState {
 
     val isNicknameValid: Boolean

@@ -1,5 +1,6 @@
 package com.makeus.mody.core.network.di
 
+import android.util.Log
 import com.makeus.mody.core.network.BuildConfig
 import com.makeus.mody.core.network.api.AuthApi
 import com.makeus.mody.core.network.api.GroupApi
@@ -19,6 +20,8 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Singleton
+
+private const val API_LOG_TAG = "MODY-API"
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -40,13 +43,16 @@ object NetworkModule {
         .addInterceptor(authInterceptor)
         .authenticator(tokenAuthenticator)
         .addInterceptor(
-            HttpLoggingInterceptor().apply {
+            // 전용 태그로 로깅 → `adb logcat -s MODY-API` 로 API 만 필터.
+            // 토큰은 마스킹, debug 에서만 BODY.
+            HttpLoggingInterceptor { message -> Log.d(API_LOG_TAG, message) }.apply {
                 level = if (BuildConfig.DEBUG) {
                     HttpLoggingInterceptor.Level.BODY
                 } else {
                     HttpLoggingInterceptor.Level.NONE
                 }
-            }
+                redactHeader("Authorization")
+            },
         )
         .build()
 

@@ -1,15 +1,18 @@
 package com.makeus.mody.feature.group.entry
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -52,12 +55,24 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ModyButton(
-            text = "그룹 참여하기",
-            onClick = { viewModel.onIntent(GroupIntent.JoinClicked) },
-            variant = ModyButtonVariant.Primary,
-            enabled = state.isJoinEnabled,
-        )
+        // 참여 요청 진행중이면 스피너, 아니면 버튼
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = ModyTheme.colors.primary100)
+            }
+        } else {
+            ModyButton(
+                text = "그룹 참여하기",
+                onClick = { viewModel.onIntent(GroupIntent.JoinClicked) },
+                variant = ModyButtonVariant.Primary,
+                enabled = state.isJoinEnabled,
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 

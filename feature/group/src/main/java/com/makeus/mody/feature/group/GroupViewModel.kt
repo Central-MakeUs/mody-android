@@ -44,10 +44,6 @@ class GroupViewModel @Inject constructor(
                 // 실제 클립보드 쓰기는 Screen(LocalClipboardManager)에서 처리. 여기선 상태만.
                 setState { copy(codeCopied = true) }
 
-            is GroupIntent.KakaoShareClicked -> {
-                // TODO(group): 카카오톡 공유 SDK 연동
-            }
-
             is GroupIntent.ShareDoneClicked ->
                 // 그룹 생성 완료 → 메인으로. 온보딩/그룹 백스택 제거.
                 navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))

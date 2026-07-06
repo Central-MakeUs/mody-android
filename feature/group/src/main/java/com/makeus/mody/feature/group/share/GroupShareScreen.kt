@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.group.share
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,10 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
@@ -35,6 +36,7 @@ import com.makeus.mody.feature.group.contract.GroupIntent
 fun GroupShareScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
 
     GroupScaffold(
         title = "그룹에 함께할 친구를\n초대해보세요!",
@@ -53,7 +55,14 @@ fun GroupShareScreen(viewModel: GroupViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         ModyButton(
             text = "카카오톡으로 공유하기",
-            onClick = { viewModel.onIntent(GroupIntent.KakaoShareClicked) },
+            onClick = {
+                // 카카오 공유는 Context 필요한 플랫폼 side-effect → clipboard 처럼 Screen 에서 처리.
+                state.inviteCode?.let { code ->
+                    KakaoInviteSharer.share(context, code) {
+                        Toast.makeText(context, "공유에 실패했어요.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             variant = ModyButtonVariant.Dark,
         )
 
@@ -62,9 +71,9 @@ fun GroupShareScreen(viewModel: GroupViewModel) {
             Text(
                 text = "코드가 복사되었어요.",
                 style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.gray06,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                color = ModyTheme.colors.gray08,
+                modifier = Modifier
+                    .fillMaxWidth()
             )
         }
 

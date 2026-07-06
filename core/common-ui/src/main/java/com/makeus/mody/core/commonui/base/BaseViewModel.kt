@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 abstract class BaseViewModel<S : UiState, E : UiIntent>(
@@ -20,15 +21,10 @@ abstract class BaseViewModel<S : UiState, E : UiIntent>(
     protected val currentState: S get() = _state.value
 
     private val _intents = Channel<E>(Channel.BUFFERED)
-    private val _reducer = Channel<S.() -> S>(Channel.BUFFERED)
 
     init {
         _intents.receiveAsFlow()
             .onEach(::processIntent)
-            .launchIn(viewModelScope)
-
-        _reducer.receiveAsFlow()
-            .onEach { reduce -> _state.value = currentState.reduce() }
             .launchIn(viewModelScope)
     }
 
@@ -36,6 +32,7 @@ abstract class BaseViewModel<S : UiState, E : UiIntent>(
 
     protected abstract suspend fun processIntent(intent: E)
 
-    protected fun setState(reduce: S.() -> S) =
-        viewModelScope.launch { _reducer.send(reduce) }
+    protected fun setState(reduce: S.() -> S) {
+        _state.update { state -> state.reduce() }
+    }
 }

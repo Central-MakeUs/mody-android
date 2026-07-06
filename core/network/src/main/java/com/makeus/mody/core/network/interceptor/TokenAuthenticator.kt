@@ -23,6 +23,9 @@ class TokenAuthenticator @Inject constructor(
     private val authApi: Lazy<AuthApi>,
 ) : Authenticator {
 
+    // 동시 401 재발급 직렬화. 한 번만 재발급하고 나머지는 갱신된 토큰으로 재시도.
+    private val reissueLock = Any()
+
     override fun authenticate(route: Route?, response: Response): Request? {
         // reissue 호출 자체가 401 이면 재귀 방지
         if (response.request.url.encodedPath == REISSUE_PATH) return null
@@ -32,19 +35,33 @@ class TokenAuthenticator @Inject constructor(
         val refreshToken = runBlocking { tokenManager.getRefreshToken() }
         if (refreshToken.isBlank()) return null
 
-        val reissued = runBlocking {
-            runCatching { authApi.get().reissue(TokenReissueRequest(refreshToken)) }.getOrNull()
-        }
-        val tokens = reissued?.takeIf { it.isSuccess }?.result ?: return null
+        synchronized(reissueLock) {
+            // 락 획득 사이 다른 스레드가 이미 재발급했으면, 실패한 요청의 토큰과
+            // 현재 저장된 토큰이 다름 → 재발급 없이 최신 토큰으로 재시도.
+            val currentAccess = runBlocking { tokenManager.getAccessToken() }
+            val failedAuth = response.request.header("Authorization")
+            if (currentAccess.isNotBlank() && failedAuth != "Bearer $currentAccess") {
+                return response.request.newBuilder()
+                    .header("Authorization", "Bearer $currentAccess")
+                    .build()
+            }
 
-        runBlocking {
-            tokenManager.setAccessToken(tokens.accessToken)
-            tokenManager.setRefreshToken(tokens.refreshToken)
-        }
+            // 최신 refresh 로 재발급(락 안에서 한 번만).
+            val latestRefresh = runBlocking { tokenManager.getRefreshToken() }
+            val reissued = runBlocking {
+                runCatching { authApi.get().reissue(TokenReissueRequest(latestRefresh)) }.getOrNull()
+            }
+            val tokens = reissued?.takeIf { it.isSuccess }?.result ?: return null
 
-        return response.request.newBuilder()
-            .header("Authorization", "Bearer ${tokens.accessToken}")
-            .build()
+            runBlocking {
+                tokenManager.setAccessToken(tokens.accessToken)
+                tokenManager.setRefreshToken(tokens.refreshToken)
+            }
+
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer ${tokens.accessToken}")
+                .build()
+        }
     }
 
     private fun responseCount(response: Response): Int {

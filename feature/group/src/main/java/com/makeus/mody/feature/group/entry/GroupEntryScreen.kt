@@ -60,7 +60,7 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(48.dp), // ModyButton 높이와 동일 → 로딩/idle 전환 시 점프 없음
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = ModyTheme.colors.primary100)

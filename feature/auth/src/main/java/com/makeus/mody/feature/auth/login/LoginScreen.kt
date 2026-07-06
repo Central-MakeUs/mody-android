@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -31,7 +33,10 @@ import com.makeus.mody.feature.auth.login.contract.LoginIntent
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     LoginContent(
+        isLoading = state.isLoading,
         onKakaoLoginClick = { viewModel.onIntent(LoginIntent.KakaoLoginClicked) },
         onGoogleLoginClick = { viewModel.onIntent(LoginIntent.GoogleLoginClicked) },
     )
@@ -39,6 +44,7 @@ fun LoginScreen(
 
 @Composable
 private fun LoginContent(
+    isLoading: Boolean,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
 ) {
@@ -94,12 +100,14 @@ private fun LoginContent(
             ModyButton(
                 text = stringResource(R.string.login_kakao),
                 onClick = onKakaoLoginClick,
+                enabled = !isLoading,
                 variant = ModyButtonVariant.Kakao,
                 leadingIcon = R.drawable.ic_kakao,
             )
             ModyButton(
                 text = stringResource(R.string.login_google),
                 onClick = onGoogleLoginClick,
+                enabled = !isLoading,
                 variant = ModyButtonVariant.Google,
                 leadingIcon = R.drawable.ic_google,
             )

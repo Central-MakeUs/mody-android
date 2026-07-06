@@ -74,6 +74,20 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
             )
         }
 
+        // 참여 실패 사유: 버튼 아래 좌측정렬(scaffold 좌우 24 그대로)
+        state.joinError?.let { error ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = when (error) {
+                    JoinCodeError.NOT_FOUND -> "존재하지 않는 코드입니다."
+                    JoinCodeError.FULL -> "이미 인원이 꽉 찬 그룹이에요."
+                },
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.error,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
@@ -127,17 +141,4 @@ private fun ColumnScope.JoinCodeField(
             .height(1.dp)
             .background(lineColor),
     )
-
-    if (error != null) {
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = when (error) {
-                JoinCodeError.NOT_FOUND -> "존재하지 않는 코드입니다."
-                JoinCodeError.FULL -> "이미 인원이 꽉 찬 그룹이에요."
-            },
-            style = ModyTheme.typography.c1,
-            color = ModyTheme.colors.error,
-            modifier = Modifier.padding(start = 8.dp),
-        )
-    }
 }

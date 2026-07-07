@@ -14,6 +14,9 @@ sealed class GroupIntent : UiIntent {
     data class GroupNameChanged(val value: String) : GroupIntent()
     data object GroupNameNext : GroupIntent()
 
+    // 그룹 생성 실패 토스트 표시 완료 → 상태 소비
+    data object CreateErrorShown : GroupIntent()
+
     // 친구 초대 (카카오 공유는 Context 필요 → Screen 에서 직접 처리)
     data object CopyCodeClicked : GroupIntent()
     data object ShareDoneClicked : GroupIntent()

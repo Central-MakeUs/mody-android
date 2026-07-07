@@ -40,6 +40,9 @@ class GroupViewModel @Inject constructor(
             is GroupIntent.GroupNameNext ->
                 if (currentState.isGroupNameValid) createGroup()
 
+            is GroupIntent.CreateErrorShown ->
+                setState { copy(createError = null) }
+
             is GroupIntent.CopyCodeClicked ->
                 // 실제 클립보드 쓰기는 Screen(LocalClipboardManager)에서 처리. 여기선 상태만.
                 setState { copy(codeCopied = true) }
@@ -63,8 +66,13 @@ class GroupViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // TODO(group): 생성 실패 UX(에러 메시지) 추가. 지금은 로딩만 해제.
-            setState { copy(isLoading = false) }
+            // 서버 메시지(GROUP304 "참여 가능한 그룹 수를 초과했습니다." 등)를 토스트로 노출.
+            setState {
+                copy(
+                    isLoading = false,
+                    createError = e.message ?: "그룹 생성에 실패했어요.",
+                )
+            }
         }
     }
 

@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
@@ -132,6 +133,8 @@ private fun ColumnScope.JoinCodeField(
             keyboardType = KeyboardType.Ascii,
             capitalization = KeyboardCapitalization.Characters,
         ),
+        // 이모지/특수문자/한글 차단 → 영대문자+숫자만
+        inputFilter = ModyInputFilter::upperAlphaNumeric,
     )
 
     Spacer(modifier = Modifier.height(8.dp))

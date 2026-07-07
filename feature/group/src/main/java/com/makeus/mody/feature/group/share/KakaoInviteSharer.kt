@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.Intent
 import com.kakao.sdk.share.ShareClient
 import com.kakao.sdk.share.WebSharerClient
+import com.kakao.sdk.template.model.Button
+import com.kakao.sdk.template.model.Content
+import com.kakao.sdk.template.model.FeedTemplate
 import com.kakao.sdk.template.model.Link
-import com.kakao.sdk.template.model.TextTemplate
 
 /**
  * 그룹 초대 코드를 카카오톡으로 공유.
@@ -19,10 +21,22 @@ object KakaoInviteSharer {
     // TODO(group): 초대 랜딩/딥링크 URL 확정 시 교체. 도메인은 카카오 콘솔에 등록 필요.
     private const val INVITE_URL = "https://dev-mody.store"
 
+    // TODO(group): 초대 카드 대표 이미지(2:1). 현재는 카카오 공식 샘플로 테스트.
+    private const val SHARE_IMAGE_URL =
+        "https://mud-kage.kakao.com/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png"
+
     fun share(context: Context, code: String, onError: (Throwable) -> Unit) {
-        val template = TextTemplate(
-            text = "모디에 초대되었어요!\n초대 코드: $code\n함께 건강한 다이어트 습관을 만들어요.",
-            link = Link(mobileWebUrl = INVITE_URL, webUrl = INVITE_URL),
+        val link = Link(mobileWebUrl = INVITE_URL, webUrl = INVITE_URL)
+        val template = FeedTemplate(
+            content = Content(
+                title = "모디에 초대되었어요!",
+                description = "초대 코드: $code\n함께 건강한 다이어트 습관을 만들어요.",
+                imageUrl = SHARE_IMAGE_URL,
+                link = link,
+            ),
+            buttons = listOf(
+                Button(title = "앱에서 열기", link = link),
+            ),
         )
 
         if (ShareClient.instance.isKakaoTalkSharingAvailable(context)) {

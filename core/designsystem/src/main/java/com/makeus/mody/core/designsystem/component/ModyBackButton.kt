@@ -17,6 +17,8 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
  * Material3 IconButton 사용 → 48dp 터치 타깃 + ripple + 버튼 semantics 기본 제공.
  * 아이콘은 10x17 ic_chevron_left.
  */
+// 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
+@Suppress("unused")
 @Composable
 fun ModyBackButton(
     onClick: () -> Unit,

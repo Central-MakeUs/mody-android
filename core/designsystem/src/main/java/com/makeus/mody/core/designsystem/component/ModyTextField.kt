@@ -49,10 +49,13 @@ fun ModyTextField(
     enabled: Boolean = true,
     maxLength: Int? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    // 입력 정제(이모지/특수문자 차단 등). null이면 필터 없음. 예: ModyInputFilter::hangulAlphaNumeric
+    inputFilter: ((String) -> String)? = null,
 ) {
     BasicTextField(
         value = value,
-        onValueChange = { newValue ->
+        onValueChange = { raw ->
+            val newValue = inputFilter?.invoke(raw) ?: raw
             if (maxLength == null || newValue.length <= maxLength) {
                 onValueChange(newValue)
             }

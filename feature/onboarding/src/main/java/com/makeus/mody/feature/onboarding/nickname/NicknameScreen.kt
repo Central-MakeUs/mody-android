@@ -14,6 +14,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.R
+import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
@@ -63,6 +64,7 @@ private fun NicknameField(
         onTrailingIconClick = { onValueChange("") },
         trailingIconContentDescription = "입력 지우기",
         maxLength = OnboardingState.NICKNAME_MAX,
+        inputFilter = ModyInputFilter::hangulAlphaNumeric,
     )
 
     Spacer(modifier = Modifier.height(8.dp))

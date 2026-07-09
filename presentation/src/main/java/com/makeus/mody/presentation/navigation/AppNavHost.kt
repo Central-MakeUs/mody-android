@@ -1,6 +1,5 @@
 package com.makeus.mody.presentation.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -11,6 +10,7 @@ import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.navigation.authNavGraph
 import com.makeus.mody.feature.group.navigation.groupNavGraph
 import com.makeus.mody.feature.onboarding.navigation.onboardingNavGraph
+import com.makeus.mody.presentation.main.MainScreen
 
 @Composable
 fun AppNavHost(
@@ -28,9 +28,4 @@ fun AppNavHost(
         groupNavGraph(navController)
         composable<MainRoute> { MainScreen() }
     }
-}
-
-@Composable
-private fun MainScreen() {
-    Text(text = "Main")
 }

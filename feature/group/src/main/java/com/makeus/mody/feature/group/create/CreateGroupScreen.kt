@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import android.widget.Toast
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -21,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
@@ -32,6 +36,15 @@ import com.makeus.mody.feature.group.contract.GroupState
 @Composable
 fun CreateGroupScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // 생성 실패(GROUP304 등) → 토스트 1회 표시 후 상태 소비
+    LaunchedEffect(state.createError) {
+        state.createError?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.onIntent(GroupIntent.CreateErrorShown)
+        }
+    }
 
     GroupScaffold(
         title = "그룹 이름을 정해볼까요?",
@@ -80,6 +93,7 @@ private fun ColumnScope.GroupNameField(
         onTrailingIconClick = { onValueChange("") },
         trailingIconContentDescription = "입력 지우기",
         maxLength = GroupState.GROUP_NAME_MAX,
+        inputFilter = ModyInputFilter::hangulAlphaNumeric,
     )
 
     Spacer(modifier = Modifier.height(8.dp))

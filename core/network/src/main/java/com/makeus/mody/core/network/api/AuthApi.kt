@@ -7,6 +7,7 @@ import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.auth.TokenReissueRequest
 import com.makeus.mody.core.network.model.auth.TokenReissueResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -38,4 +39,8 @@ interface AuthApi {
     suspend fun logout(
         @Body request: TokenLogoutRequest,
     ): ApiResponse<Unit>
+
+    /** 회원탈퇴. 인증 헤더로 본인 식별, 바디 없음. */
+    @DELETE("api/v1/mypage/me")
+    suspend fun withdraw(): ApiResponse<Unit>
 }

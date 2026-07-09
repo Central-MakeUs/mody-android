@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.MainRoute
@@ -40,13 +41,12 @@ class GroupViewModel @Inject constructor(
             is GroupIntent.GroupNameNext ->
                 if (currentState.isGroupNameValid) createGroup()
 
+            is GroupIntent.CreateErrorShown ->
+                setState { copy(createError = null) }
+
             is GroupIntent.CopyCodeClicked ->
                 // 실제 클립보드 쓰기는 Screen(LocalClipboardManager)에서 처리. 여기선 상태만.
                 setState { copy(codeCopied = true) }
-
-            is GroupIntent.KakaoShareClicked -> {
-                // TODO(group): 카카오톡 공유 SDK 연동
-            }
 
             is GroupIntent.ShareDoneClicked ->
                 // 그룹 생성 완료 → 메인으로. 온보딩/그룹 백스택 제거.
@@ -67,8 +67,10 @@ class GroupViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // TODO(group): 생성 실패 UX(에러 메시지) 추가. 지금은 로딩만 해제.
-            setState { copy(isLoading = false) }
+            // HTTP 예외의 서버 메시지(GROUP304 "참여 가능한 그룹 수를 초과했습니다." 등)만 노출.
+            // IOException 등 기술적 메시지가 토스트로 새지 않게 나머지는 폴백 문구.
+            val message = (e as? HttpResponseException)?.msg ?: "그룹 생성에 실패했어요."
+            setState { copy(isLoading = false, createError = message) }
         }
     }
 

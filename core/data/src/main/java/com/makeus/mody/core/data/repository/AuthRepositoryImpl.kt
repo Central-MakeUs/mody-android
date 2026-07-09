@@ -42,4 +42,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
         sessionRepository.clear()
     }
+
+    override suspend fun withdraw() {
+        // 서버 계정 삭제 성공 후에만 로컬 세션 초기화(실패 시 예외 전파 → 화면에서 처리).
+        authApi.withdraw().unwrapResult()
+        sessionRepository.clear()
+    }
 }

@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
@@ -74,6 +75,20 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
             )
         }
 
+        // 참여 실패 사유: 버튼 아래 좌측정렬(scaffold 좌우 24 그대로)
+        state.joinError?.let { error ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = when (error) {
+                    JoinCodeError.NOT_FOUND -> "존재하지 않는 코드입니다."
+                    JoinCodeError.FULL -> "이미 인원이 꽉 찬 그룹이에요."
+                },
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.error,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
@@ -118,6 +133,8 @@ private fun ColumnScope.JoinCodeField(
             keyboardType = KeyboardType.Ascii,
             capitalization = KeyboardCapitalization.Characters,
         ),
+        // 이모지/특수문자/한글 차단 → 영대문자+숫자만
+        inputFilter = ModyInputFilter::upperAlphaNumeric,
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -127,17 +144,4 @@ private fun ColumnScope.JoinCodeField(
             .height(1.dp)
             .background(lineColor),
     )
-
-    if (error != null) {
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = when (error) {
-                JoinCodeError.NOT_FOUND -> "존재하지 않는 코드입니다."
-                JoinCodeError.FULL -> "이미 인원이 꽉 찬 그룹이에요."
-            },
-            style = ModyTheme.typography.c1,
-            color = ModyTheme.colors.error,
-            modifier = Modifier.padding(start = 8.dp),
-        )
-    }
 }

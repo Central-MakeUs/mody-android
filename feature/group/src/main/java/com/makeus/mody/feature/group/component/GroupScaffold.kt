@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.union
@@ -70,7 +71,12 @@ fun GroupScaffold(
             contentAlignment = Alignment.CenterStart,
         ) {
             if (onBackClick != null) {
-                ModyBackButton(onClick = onBackClick)
+                // IconButton 48dp 터치타깃 안에서 10dp 아이콘이 가운데 정렬 → 좌측 19dp 여백.
+                // 그만큼 왼쪽으로 당겨 chevron 왼쪽을 타이틀(좌측 24dp)과 정렬.
+                ModyBackButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.offset(x = (-19).dp),
+                )
             }
         }
 

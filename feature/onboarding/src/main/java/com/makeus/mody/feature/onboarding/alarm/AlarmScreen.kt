@@ -128,12 +128,12 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             style = ModyTheme.typography.b6,
             color = ModyTheme.colors.gray08,
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = buildAnnotatedString {
                 append("운동은 일주일에 ")
                 withStyle(SpanStyle(color = ModyTheme.colors.secondary100)) {
-                    append("최소 ${OnboardingState.EXERCISE_MIN_DAYS}번")
+                    append("최소 ${nativeKoreanNumber(OnboardingState.EXERCISE_MIN_DAYS)} 번")
                 }
                 append("은 해야해요!")
             },
@@ -215,6 +215,12 @@ private fun formatTime(hour24: Int, minute: Int): String {
     val hour12 = ((hour24 + 11) % 12) + 1
     return "%s %d:%02d".format(amPm, hour12, minute)
 }
+
+// 고유어 수사(한/두/세/네/다섯/여섯/일곱). 범위 밖이면 숫자 그대로.
+private val NATIVE_KOREAN_NUMBERS = listOf("한", "두", "세", "네", "다섯", "여섯", "일곱")
+
+private fun nativeKoreanNumber(n: Int): String =
+    NATIVE_KOREAN_NUMBERS.getOrElse(n - 1) { n.toString() }
 
 @Composable
 private fun RowScope.MealColumn(

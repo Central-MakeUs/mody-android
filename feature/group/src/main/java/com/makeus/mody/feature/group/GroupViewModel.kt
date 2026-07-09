@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.MainRoute
@@ -66,13 +67,10 @@ class GroupViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // 서버 메시지(GROUP304 "참여 가능한 그룹 수를 초과했습니다." 등)를 토스트로 노출.
-            setState {
-                copy(
-                    isLoading = false,
-                    createError = e.message ?: "그룹 생성에 실패했어요.",
-                )
-            }
+            // HTTP 예외의 서버 메시지(GROUP304 "참여 가능한 그룹 수를 초과했습니다." 등)만 노출.
+            // IOException 등 기술적 메시지가 토스트로 새지 않게 나머지는 폴백 문구.
+            val message = (e as? HttpResponseException)?.msg ?: "그룹 생성에 실패했어요."
+            setState { copy(isLoading = false, createError = message) }
         }
     }
 

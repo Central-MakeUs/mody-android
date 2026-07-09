@@ -16,4 +16,7 @@ interface AuthRepository {
 
     /** 로그아웃(서버 통지 + 로컬 세션 초기화). */
     suspend fun logout()
+
+    /** 회원탈퇴(서버 계정 삭제 + 로컬 세션 초기화). 되돌릴 수 없음. */
+    suspend fun withdraw()
 }

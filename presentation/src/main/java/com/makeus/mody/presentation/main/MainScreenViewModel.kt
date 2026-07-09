@@ -35,6 +35,17 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
+    fun withdraw() {
+        viewModelScope.launch {
+            // 서버 탈퇴 성공해야 세션 clear + 로그인으로. 실패하면 로그만 남기고 화면 유지.
+            val result = runCatching { authRepository.withdraw() }
+                .onFailure { Log.w(TAG, "회원탈퇴 실패", it) }
+            if (result.isSuccess) {
+                navigationHelper.navigate(NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true))
+            }
+        }
+    }
+
     // TODO(temp): 개발 중 화면 이동 확인용 임시 버튼. 플로우 완성 후 제거.
     fun goToGroup() {
         navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute))

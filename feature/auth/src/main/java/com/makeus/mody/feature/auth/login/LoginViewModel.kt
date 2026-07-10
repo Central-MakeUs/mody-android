@@ -44,7 +44,7 @@ class LoginViewModel @Inject constructor(
             )
         } catch (e: CancellationException) {
             throw e // 구조적 동시성 유지 — 취소는 전파
-        } catch (e: SocialLoginCancelledException) {
+        } catch (_: SocialLoginCancelledException) {
             // 사용자가 소셜 로그인 UI를 취소 → 에러 아님, 조용히 종료
             setState { copy(isLoading = false) }
         } catch (e: Exception) {

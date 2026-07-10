@@ -20,6 +20,13 @@ val PretendardFontFamily = FontFamily(
 
 
 data class ModyTypography(
+    val h0: TextStyle = TextStyle(
+        fontFamily = PretendardFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 50.4.sp,
+        letterSpacing = 0.36.sp, // 1% of 36sp
+    ),
     val h1: TextStyle = TextStyle(
         fontFamily = PretendardFontFamily,
         fontWeight = FontWeight.Bold,

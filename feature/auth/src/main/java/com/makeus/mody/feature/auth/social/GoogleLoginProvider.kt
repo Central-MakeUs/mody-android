@@ -60,6 +60,10 @@ class GoogleLoginProvider @Inject constructor(
         result: AuthorizationResult,
         continuation: CancellableContinuation<String>,
     ) {
+        // 이미 취소된 경우 register/launch 하지 않는다.
+        // (register 직후 invokeOnCancellation 이 즉시 unregister → launch 시 IllegalStateException 방지)
+        if (!continuation.isActive) return
+
         val pendingIntent = result.pendingIntent
             ?: run {
                 continuation.resumeWithException(IllegalStateException("동의 화면 인텐트 없음"))

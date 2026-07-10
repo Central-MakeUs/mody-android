@@ -35,7 +35,7 @@ class KakaoLoginProvider @Inject constructor(
             UserApiClient.instance.loginWithKakaoTalk(activity) { token, error ->
                 // 사용자가 취소한 경우 중단하고, 그 외 카카오톡 오류는 계정 로그인으로 폴백한다.
                 if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
-                    continuation.resumeWithException(error)
+                    continuation.resumeWithException(SocialLoginCancelledException())
                 } else if (error != null) {
                     UserApiClient.instance.loginWithKakaoAccount(activity, callback = callback)
                 } else {

@@ -28,6 +28,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.kakao.user)
+    // 구글 access token 획득(Identity Authorization API) + Activity Result 사용
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(platform(libs.androidx.compose.bom))

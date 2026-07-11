@@ -18,15 +18,17 @@ import com.kakao.sdk.template.model.Link
  */
 object KakaoInviteSharer {
 
-    // TODO(group): 초대 랜딩/딥링크 URL 확정 시 교체. 도메인은 카카오 콘솔에 등록 필요.
-    private const val INVITE_URL = "https://dev-mody.store"
+    // 초대 App Link. iOS(Universal Link)와 동일 포맷: /invite?code=XXX.
+    // 도메인은 카카오 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 등록 필요.
+    private const val INVITE_BASE_URL = "https://dev-mody.store/invite"
 
     // TODO(group): 초대 카드 대표 이미지(2:1). 현재는 카카오 공식 샘플로 테스트.
     private const val SHARE_IMAGE_URL =
         "https://mud-kage.kakao.com/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png"
 
     fun share(context: Context, code: String, onError: (Throwable) -> Unit) {
-        val link = Link(mobileWebUrl = INVITE_URL, webUrl = INVITE_URL)
+        val inviteUrl = "$INVITE_BASE_URL?code=$code"
+        val link = Link(mobileWebUrl = inviteUrl, webUrl = inviteUrl)
         val template = FeedTemplate(
             content = Content(
                 title = "모디에 초대되었어요!",

@@ -6,12 +6,28 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.Mody"
             android:windowSoftInputMode="adjustResize"
             tools:targetApi="31">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              그룹 초대 App Links: https://dev-mody.store/invite?code=XXX
+              autoVerify = 앱 배포 + 서버 /.well-known/assetlinks.json(릴리스 SHA-256) 서빙 시
+              브라우저/카카오에서 앱 자동 열림. 미배포 동안은 검증 안 되어 브라우저 랜딩으로 폴백.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="dev-mody.store"
+                    android:pathPrefix="/invite" />
             </intent-filter>
         </activity>
     </application>

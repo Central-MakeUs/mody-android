@@ -42,6 +42,6 @@ data class OnboardingState(
 
     companion object {
         const val NICKNAME_MAX = 14
-        const val EXERCISE_MIN_DAYS = 3
+        const val EXERCISE_MIN_DAYS = 1
     }
 }

@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.onboarding.alarm
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -46,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
@@ -156,7 +155,8 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
                         if (day in state.exerciseDays) {
                             viewModel.onIntent(OnboardingIntent.ExerciseDayRemoved(day))
                         } else {
-                            exerciseModal = ExerciseModal.Day(day, TimeOfDay(9, 0))
+                            // 요일 선택 시 기본 오전 9:00로 바로 지정(모달 없이). 시간 변경은 아래 시간 행 탭.
+                            viewModel.onIntent(OnboardingIntent.ExerciseDaySet(day, 9, 0))
                         }
                     },
                 )
@@ -179,7 +179,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             Text(
                 text = "모두 같은 시간으로 설정",
                 style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.gray07,
+                color = ModyTheme.colors.gray09,
                 textAlign = TextAlign.Center,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier
@@ -253,8 +253,8 @@ private fun RowScope.MealColumn(
         ) {
             Text(
                 text = "식사 안 함",
-                style = ModyTheme.typography.c1,
-                color = if (skipped) ModyTheme.colors.gray08 else ModyTheme.colors.gray05,
+                style = ModyTheme.typography.c1.copy(fontWeight = FontWeight.SemiBold),
+                color = if (skipped) ModyTheme.colors.gray10 else ModyTheme.colors.gray05,
             )
             Spacer(modifier = Modifier.size(4.dp))
             CheckMark(checked = skipped)
@@ -276,9 +276,11 @@ private fun RowScope.MealColumn(
                     style = ModyTheme.typography.b4,
                     color = if (skipped) ModyTheme.colors.gray04 else ModyTheme.colors.gray10,
                 )
-                ChevronDown(
-                    tint = ModyTheme.colors.gray03,
-                    flipped = expanded,
+                Icon(
+                    painter = painterResource(if (expanded) ModyIcons.Down else ModyIcons.Up),
+                    contentDescription = null,
+                    tint = if (expanded) ModyTheme.colors.gray09 else ModyTheme.colors.gray03,
+                    modifier = Modifier.size(20.dp),
                 )
             }
 
@@ -489,28 +491,3 @@ private fun CheckMark(checked: Boolean) {
     )
 }
 
-@Composable
-private fun ChevronDown(tint: Color, flipped: Boolean = false) {
-    Canvas(
-        modifier = Modifier
-            .size(20.dp)
-            .rotate(if (flipped) 180f else 0f),
-    ) {
-        val w = size.width
-        val h = size.height
-        drawLine(
-            color = tint,
-            start = Offset(w * 0.3f, h * 0.42f),
-            end = Offset(w * 0.5f, h * 0.62f),
-            strokeWidth = 1.6.dp.toPx(),
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = tint,
-            start = Offset(w * 0.5f, h * 0.62f),
-            end = Offset(w * 0.7f, h * 0.42f),
-            strokeWidth = 1.6.dp.toPx(),
-            cap = StrokeCap.Round,
-        )
-    }
-}

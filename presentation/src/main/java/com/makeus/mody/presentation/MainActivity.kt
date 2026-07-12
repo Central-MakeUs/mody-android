@@ -1,5 +1,6 @@
 package com.makeus.mody.presentation
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.Box
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.presentation.navigation.AppNavHost
@@ -24,9 +26,12 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var navigationHelper: NavigationHelper
+    @Inject lateinit var inviteCodeHolder: InviteCodeHolder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 초대 링크로 실행된 경우 코드 보관 → 그룹 참여 화면에서 소비.
+        handleInviteDeepLink(intent)
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
@@ -67,5 +72,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    // 앱 실행 중 새 초대 링크 수신(singleTop).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleInviteDeepLink(intent)
+    }
+
+    /** https://dev-mody.store/invite?code=XXX 에서 초대 코드 추출 후 보관. */
+    private fun handleInviteDeepLink(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.host != INVITE_HOST) return
+        val code = data.getQueryParameter("code")?.takeIf { it.isNotBlank() } ?: return
+        inviteCodeHolder.set(code)
+    }
+
+    private companion object {
+        const val INVITE_HOST = "dev-mody.store"
     }
 }

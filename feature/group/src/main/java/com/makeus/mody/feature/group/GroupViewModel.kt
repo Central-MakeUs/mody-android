@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
@@ -22,7 +23,15 @@ import javax.inject.Inject
 class GroupViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val groupRepository: GroupRepository,
+    inviteCodeHolder: InviteCodeHolder,
 ) : BaseViewModel<GroupState, GroupIntent>(GroupState()) {
+
+    init {
+        // 딥링크로 들어온 초대 코드가 있으면 참여 코드 필드에 자동 입력(1회성).
+        inviteCodeHolder.consume()?.let { code ->
+            setState { copy(joinCode = code.uppercase()) }
+        }
+    }
 
     override suspend fun processIntent(intent: GroupIntent) {
         when (intent) {

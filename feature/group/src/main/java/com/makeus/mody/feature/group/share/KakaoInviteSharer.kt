@@ -2,6 +2,7 @@ package com.makeus.mody.feature.group.share
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import com.kakao.sdk.share.ShareClient
 import com.kakao.sdk.share.WebSharerClient
 import com.kakao.sdk.template.model.Button
@@ -27,7 +28,7 @@ object KakaoInviteSharer {
         "https://mud-kage.kakao.com/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png"
 
     fun share(context: Context, code: String, onError: (Throwable) -> Unit) {
-        val inviteUrl = "$INVITE_BASE_URL?code=$code"
+        val inviteUrl = "$INVITE_BASE_URL?code=${Uri.encode(code)}"
         val link = Link(mobileWebUrl = inviteUrl, webUrl = inviteUrl)
         val template = FeedTemplate(
             content = Content(

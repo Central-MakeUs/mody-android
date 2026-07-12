@@ -11,6 +11,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class InviteCodeHolder @Inject constructor() {
+    // @Singleton — 향후 백그라운드 스레드 접근 대비 가시성 보장.
+    @Volatile
     private var pending: String? = null
 
     fun set(code: String) {

@@ -52,6 +52,9 @@ jobs:
           echo "VERSION_CODE=$((10#$MAJOR*10000 + 10#$MINOR*100 + 10#$PATCH))" >> "$GITHUB_ENV"
 
       - name: Build Debug APK
+        env:
+          # 카카오 네이티브 키 주입(미주입 시 빈 값으로 빌드되어 카카오 로그인/공유 동작 안 함)
+          KAKAO_NATIVE_KEY_DEV: ${{ secrets.KAKAO_NATIVE_KEY_DEV }}
         run: ./gradlew assembleDebug
 
       - name: Upload to Firebase App Distribution
@@ -62,6 +65,21 @@ jobs:
           groups: mody
           file: app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: "버전: ${{ github.ref_name }}\n커밋: ${{ github.sha }}\n작성자: ${{ github.actor }}"
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ job.status }}
+        run: |
+          if [ "$STATUS" = "success" ]; then
+            EMOJI=":rocket:"; TITLE="테스트앱 배포 완료"
+          else
+            EMOJI=":x:"; TITLE="테스트앱 배포 실패"
+          fi
+          curl -sf -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"${EMOJI} Mody ${TITLE}\n버전: ${GITHUB_REF_NAME}\n커밋: ${GITHUB_SHA:0:7} (${GITHUB_ACTOR})\nFirebase App Distribution · 그룹 mody\"}" \
+            "$SLACK_WEBHOOK_URL" || true
 
   playstore:
     name: Play Store (release)

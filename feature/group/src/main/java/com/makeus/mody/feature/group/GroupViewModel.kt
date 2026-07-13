@@ -10,7 +10,6 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
-import com.makeus.mody.feature.group.contract.JoinCodeError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
@@ -92,8 +91,10 @@ class GroupViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // TODO(group): 서버 에러코드로 NOT_FOUND / FULL 구분. 지금은 일괄 NOT_FOUND.
-            setState { copy(isLoading = false, joinError = JoinCodeError.NOT_FOUND) }
+            // HTTP 예외의 서버 message(존재하지 않는 코드/인원 초과 등)를 그대로 노출.
+            // 그 외(네트워크 등)는 기술 메시지가 새지 않게 폴백 문구.
+            val message = (e as? HttpResponseException)?.msg ?: "그룹 참여에 실패했어요."
+            setState { copy(isLoading = false, joinError = message) }
         }
     }
 }

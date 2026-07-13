@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,7 +33,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
+import com.makeus.mody.feature.feed.feed.component.FeedCalendarSheet
+import com.makeus.mody.feature.feed.feed.component.FeedCard
+import com.makeus.mody.feature.feed.feed.component.FeedWriteFab
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
+import com.makeus.mody.feature.feed.feed.contract.FeedState
 
 @Composable
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
@@ -53,37 +59,64 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                 onClick = { viewModel.onIntent(FeedIntent.DateClicked) },
             )
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (state.isEmpty) {
+            if (state.isEmpty) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     FeedEmptyContent(
                         onPokeClick = { viewModel.onIntent(FeedIntent.PokeClicked) },
                     )
                 }
-                // TODO(feed): 피드 목록(Feed2~4 시안) 구현
+            } else {
+                FeedList(
+                    state = state,
+                    onCardClick = { id -> viewModel.onIntent(FeedIntent.FeedCardClicked(id)) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
-        // 피드 작성 FAB
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 12.dp)
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(ModyTheme.colors.gray10)
-                .clickable { viewModel.onIntent(FeedIntent.WriteClicked) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(ModyIcons.Edit),
-                contentDescription = "피드 작성",
-                tint = ModyTheme.colors.white,
-                modifier = Modifier.size(24.dp),
+        FeedWriteFab(
+            expanded = state.isFabExpanded,
+            onFabClick = { viewModel.onIntent(FeedIntent.FabClicked) },
+            onDismiss = { viewModel.onIntent(FeedIntent.FabDismissed) },
+            onWriteExercise = { viewModel.onIntent(FeedIntent.WriteExerciseClicked) },
+            onWriteMeal = { viewModel.onIntent(FeedIntent.WriteMealClicked) },
+        )
+    }
+
+    if (state.isCalendarVisible) {
+        FeedCalendarSheet(
+            title = state.calendarTitle,
+            days = state.calendarDays,
+            onPrevMonth = { viewModel.onIntent(FeedIntent.CalendarPrevMonth) },
+            onNextMonth = { viewModel.onIntent(FeedIntent.CalendarNextMonth) },
+            onDaySelected = { day -> viewModel.onIntent(FeedIntent.CalendarDaySelected(day)) },
+            onConfirm = { viewModel.onIntent(FeedIntent.CalendarConfirmClicked) },
+            onDismiss = { viewModel.onIntent(FeedIntent.CalendarDismissed) },
+        )
+    }
+}
+
+/** 피드 카드 목록 (Feed2 시안). */
+@Composable
+private fun FeedList(
+    state: FeedState,
+    onCardClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 80.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        items(state.feeds, key = { it.id }) { card ->
+            FeedCard(
+                card = card,
+                onClick = { onCardClick(card.id) },
             )
         }
     }
@@ -129,7 +162,7 @@ private fun FeedTopBar(
     }
 }
 
-/** 날짜 셀렉터: "7월 18일" + 아래 화살표. */
+/** 날짜 셀렉터: "7월 18일" + 아래 화살표. 탭 → 캘린더(Feed3). */
 @Composable
 private fun DateSelector(
     label: String,

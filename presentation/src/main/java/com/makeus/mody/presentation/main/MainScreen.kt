@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.feed.feed.FeedScreen
 
 @Composable
 fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
@@ -37,7 +38,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
     ) {
         Box(modifier = Modifier.weight(1f)) {
             when (selectedTab) {
-                MainTab.FEED -> FeedTabPlaceholder()
+                MainTab.FEED -> FeedScreen()
                 MainTab.CHALLENGE -> ChallengeTabPlaceholder()
                 MainTab.MY -> MyTab(viewModel)
             }
@@ -45,18 +46,6 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
         MainBottomBar(
             selected = selectedTab,
             onSelect = viewModel::selectTab,
-        )
-    }
-}
-
-// TODO(feed): 피드 화면 구현 시 교체.
-@Composable
-private fun FeedTabPlaceholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = "피드",
-            style = ModyTheme.typography.b6,
-            color = ModyTheme.colors.gray06,
         )
     }
 }

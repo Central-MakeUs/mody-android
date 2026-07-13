@@ -35,7 +35,13 @@ jobs:
     if: endsWith(github.ref_name, '-dev')
     runs-on: ubuntu-latest
     steps:
+      # 태그 메시지(annotated tag)를 출시노트로 쓰기 위해 전체 히스토리 + 태그 fetch
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          # 이후 스텝에 인증 git 작업 없음 → 토큰을 .git/config 에 남기지 않는다
+          persist-credentials: false
 
       - uses: actions/setup-java@v4
         with:
@@ -51,6 +57,16 @@ jobs:
           echo "VERSION_NAME=$CORE" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$((10#$MAJOR*10000 + 10#$MINOR*100 + 10#$PATCH))" >> "$GITHUB_ENV"
 
+      - name: Resolve release notes
+        run: |
+          # annotated 태그면 메시지 본문, lightweight 태그면 빈값 → 폴백
+          NOTES="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")"
+          if [ -z "${NOTES//[[:space:]]/}" ]; then
+            NOTES="$GITHUB_REF_NAME (커밋 ${GITHUB_SHA:0:7})"
+          fi
+          printf '%s\n' "$NOTES" > release_notes.txt
+          echo "----- release notes -----"; cat release_notes.txt
+
       - name: Build Debug APK
         env:
           # 카카오 네이티브 키 주입(미주입 시 빈 값으로 빌드되어 카카오 로그인/공유 동작 안 함)
@@ -62,9 +78,9 @@ jobs:
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           token: ${{ secrets.FIREBASE_TOKEN }}
-          groups: mody
+          groups: jagsim
           file: app/build/outputs/apk/debug/app-debug.apk
-          releaseNotes: "버전: ${{ github.ref_name }}\n커밋: ${{ github.sha }}\n작성자: ${{ github.actor }}"
+          releaseNotesFile: release_notes.txt
 
       - name: Notify Slack
         if: always()
@@ -78,7 +94,7 @@ jobs:
             EMOJI=":x:"; TITLE="테스트앱 배포 실패"
           fi
           curl -sf -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"${EMOJI} Mody ${TITLE}\n버전: ${GITHUB_REF_NAME}\n커밋: ${GITHUB_SHA:0:7} (${GITHUB_ACTOR})\nFirebase App Distribution · 그룹 mody\"}" \
+            --data "{\"text\":\"${EMOJI} Mody ${TITLE}\n버전: ${GITHUB_REF_NAME}\n커밋: ${GITHUB_SHA:0:7} (${GITHUB_ACTOR})\nFirebase App Distribution · 그룹 jagsim\"}" \
             "$SLACK_WEBHOOK_URL" || true
 
   playstore:

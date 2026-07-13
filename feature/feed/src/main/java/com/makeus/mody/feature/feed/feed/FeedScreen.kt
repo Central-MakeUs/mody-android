@@ -99,9 +99,8 @@ private fun FeedTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            painter = painterResource(ModyIcons.Logo),
+            painter = painterResource(ModyIcons.LogoWordmark),
             contentDescription = "MODY",
-            modifier = Modifier.height(16.dp),
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),

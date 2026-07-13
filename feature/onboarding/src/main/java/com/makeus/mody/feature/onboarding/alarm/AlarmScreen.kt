@@ -277,7 +277,7 @@ private fun RowScope.MealColumn(
                     color = if (skipped) ModyTheme.colors.gray04 else ModyTheme.colors.gray10,
                 )
                 Icon(
-                    painter = painterResource(if (expanded) ModyIcons.Down else ModyIcons.Up),
+                    painter = painterResource(if (expanded) ModyIcons.Up else ModyIcons.Down),
                     contentDescription = null,
                     tint = if (expanded) ModyTheme.colors.gray09 else ModyTheme.colors.gray03,
                     modifier = Modifier.size(20.dp),

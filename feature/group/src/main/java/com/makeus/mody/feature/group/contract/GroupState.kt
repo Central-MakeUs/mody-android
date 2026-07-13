@@ -25,7 +25,7 @@ data class GroupState(
     val isGroupNameValid: Boolean get() = groupName.isNotBlank() && groupName.length <= GROUP_NAME_MAX
 
     companion object {
-        const val JOIN_CODE_LENGTH = 6
+        const val JOIN_CODE_LENGTH = 8
         const val GROUP_NAME_MAX = 14
         const val MAX_MEMBERS = 12
     }

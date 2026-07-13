@@ -34,7 +34,6 @@ import com.makeus.mody.feature.group.component.GroupScaffold
 import com.makeus.mody.feature.group.component.HighlightGold
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
-import com.makeus.mody.feature.group.contract.JoinCodeError
 
 @Composable
 fun GroupEntryScreen(viewModel: GroupViewModel) {
@@ -79,10 +78,7 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
         state.joinError?.let { error ->
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = when (error) {
-                    JoinCodeError.NOT_FOUND -> "존재하지 않는 코드입니다."
-                    JoinCodeError.FULL -> "이미 인원이 꽉 찬 그룹이에요."
-                },
+                text = error,
                 style = ModyTheme.typography.c1,
                 color = ModyTheme.colors.error,
                 modifier = Modifier.fillMaxWidth(),
@@ -111,7 +107,7 @@ fun GroupEntryScreen(viewModel: GroupViewModel) {
 @Composable
 private fun ColumnScope.JoinCodeField(
     value: String,
-    error: JoinCodeError?,
+    error: String?,
     onValueChange: (String) -> Unit,
 ) {
     val lineColor = if (error != null) ModyTheme.colors.error else ModyTheme.colors.gray02

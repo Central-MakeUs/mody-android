@@ -1,5 +1,8 @@
 package com.makeus.mody.core.network.model
 
+import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.HttpResponseStatus
+import com.makeus.mody.core.domain.model.error.ModyErrorCode
 import kotlinx.serialization.Serializable
 
 /**
@@ -30,11 +33,18 @@ data class ErrorDetail(
 
 /**
  * DataSource 에서 봉투 벗겨 순수 result 반환.
- * HTTP 200 이어도 isSuccess=false 면 실패로 간주해 예외를 던진다.
+ * HTTP 200 이어도 isSuccess=false 면 실패로 간주해 [HttpResponseException] 을 던진다.
+ * (non-2xx 는 CallAdapter 가 이미 같은 예외로 던지므로, 두 경로가 동일 예외로 일원화된다.
+ *  → ViewModel 은 `(e as? HttpResponseException)?.msg` 하나로 서버 message 를 노출 가능.)
  * result 가 null 이면 (바디 없는 성공) Unit 으로 취급.
  */
 @Suppress("UNCHECKED_CAST")
 fun <T> ApiResponse<T>.unwrapResult(): T {
-    if (!isSuccess) error(message ?: code ?: "API 응답 실패")
+    if (!isSuccess) throw HttpResponseException(
+        status = HttpResponseStatus.Ok, // 전송은 200이나 논리적 실패
+        errorCode = ModyErrorCode.create(code),
+        // msg 는 그대로 UI 에 노출되므로 기술 문자열(code)이나 빈 문자열은 폴백 문구로 대체
+        msg = message?.takeIf { it.isNotBlank() } ?: "요청에 실패했어요. 잠시 후 다시 시도해주세요.",
+    )
     return result ?: Unit as T
 }

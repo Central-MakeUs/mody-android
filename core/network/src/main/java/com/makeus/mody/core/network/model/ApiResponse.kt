@@ -43,7 +43,8 @@ fun <T> ApiResponse<T>.unwrapResult(): T {
     if (!isSuccess) throw HttpResponseException(
         status = HttpResponseStatus.Ok, // 전송은 200이나 논리적 실패
         errorCode = ModyErrorCode.create(code),
-        msg = message ?: code ?: "API 응답 실패",
+        // msg 는 그대로 UI 에 노출되므로 기술 문자열(code)이나 빈 문자열은 폴백 문구로 대체
+        msg = message?.takeIf { it.isNotBlank() } ?: "요청에 실패했어요. 잠시 후 다시 시도해주세요.",
     )
     return result ?: Unit as T
 }

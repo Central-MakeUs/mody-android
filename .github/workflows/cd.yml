@@ -40,6 +40,8 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          # 이후 스텝에 인증 git 작업 없음 → 토큰을 .git/config 에 남기지 않는다
+          persist-credentials: false
 
       - uses: actions/setup-java@v4
         with:

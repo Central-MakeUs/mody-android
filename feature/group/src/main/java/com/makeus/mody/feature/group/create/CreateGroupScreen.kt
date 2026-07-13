@@ -89,6 +89,7 @@ private fun ColumnScope.GroupNameField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
+        alertIcon = if (isAtLimit) R.drawable.ic_alert_filled else null,
         trailingIcon = if (value.isNotEmpty()) R.drawable.ic_clear else null,
         onTrailingIconClick = { onValueChange("") },
         trailingIconContentDescription = "입력 지우기",
@@ -108,8 +109,13 @@ private fun ColumnScope.GroupNameField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 6.dp, start = 8.dp, end = 8.dp),
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
+        Text(
+            text = if (isAtLimit) "${GroupState.GROUP_NAME_MAX}자 이내로 입력해주세요" else "",
+            style = ModyTheme.typography.c1,
+            color = ModyTheme.colors.error,
+        )
         val countText = buildAnnotatedString {
             val before = value.length.toString()
             append(before)

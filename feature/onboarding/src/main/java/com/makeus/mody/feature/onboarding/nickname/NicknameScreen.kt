@@ -47,10 +47,11 @@ private fun NicknameField(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
-    val isAtLimit = value.length == OnboardingState.NICKNAME_MAX
-    val lineColor = if (isAtLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
+    // 최대 글자수는 유효값(NICKNAME_MAX). 한 글자 더(초과) 입력되면 경고 표시 → 다음 버튼은 비활성.
+    val isOverLimit = value.length > OnboardingState.NICKNAME_MAX
+    val lineColor = if (isOverLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
     val showClearIcon = value.isNotEmpty()
-    val showAlertIcon = isAtLimit
+    val showAlertIcon = isOverLimit
 
     ModyTextField(
         value = value,
@@ -63,7 +64,7 @@ private fun NicknameField(
         trailingIcon = if (showClearIcon) R.drawable.ic_clear else null,
         onTrailingIconClick = { onValueChange("") },
         trailingIconContentDescription = "입력 지우기",
-        maxLength = OnboardingState.NICKNAME_MAX,
+        maxLength = OnboardingState.NICKNAME_MAX + 1,
         inputFilter = ModyInputFilter::hangulAlphaNumeric,
     )
 
@@ -82,7 +83,7 @@ private fun NicknameField(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = if (isAtLimit) "${OnboardingState.NICKNAME_MAX}자 이내로 입력해주세요" else "",
+            text = if (isOverLimit) "${OnboardingState.NICKNAME_MAX}자 이내로 입력해주세요" else "",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.error,
         )
@@ -93,7 +94,7 @@ private fun NicknameField(
             append(beforeLimit)
             append(limitStr)
             
-            if (isAtLimit) {
+            if (isOverLimit) {
                 addStyle(SpanStyle(color = ModyTheme.colors.error), 0, beforeLimit.length)
             }
         }

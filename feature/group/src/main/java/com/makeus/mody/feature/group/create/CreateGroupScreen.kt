@@ -79,8 +79,9 @@ private fun ColumnScope.GroupNameField(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
-    val isAtLimit = value.length == GroupState.GROUP_NAME_MAX
-    val lineColor = if (isAtLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
+    // 최대 글자수는 유효값(GROUP_NAME_MAX). 한 글자 더(초과) 입력되면 경고 표시 → 다음 버튼은 비활성.
+    val isOverLimit = value.length > GroupState.GROUP_NAME_MAX
+    val lineColor = if (isOverLimit) ModyTheme.colors.error else ModyTheme.colors.gray02
 
     ModyTextField(
         value = value,
@@ -89,11 +90,11 @@ private fun ColumnScope.GroupNameField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        alertIcon = if (isAtLimit) R.drawable.ic_alert_filled else null,
+        alertIcon = if (isOverLimit) R.drawable.ic_alert_filled else null,
         trailingIcon = if (value.isNotEmpty()) R.drawable.ic_clear else null,
         onTrailingIconClick = { onValueChange("") },
         trailingIconContentDescription = "입력 지우기",
-        maxLength = GroupState.GROUP_NAME_MAX,
+        maxLength = GroupState.GROUP_NAME_MAX + 1,
         inputFilter = ModyInputFilter::hangulAlphaNumeric,
     )
 
@@ -112,7 +113,7 @@ private fun ColumnScope.GroupNameField(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = if (isAtLimit) "${GroupState.GROUP_NAME_MAX}자 이내로 입력해주세요" else "",
+            text = if (isOverLimit) "${GroupState.GROUP_NAME_MAX}자 이내로 입력해주세요" else "",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.error,
         )
@@ -120,7 +121,7 @@ private fun ColumnScope.GroupNameField(
             val before = value.length.toString()
             append(before)
             append("/${GroupState.GROUP_NAME_MAX}")
-            if (isAtLimit) addStyle(SpanStyle(color = ModyTheme.colors.error), 0, before.length)
+            if (isOverLimit) addStyle(SpanStyle(color = ModyTheme.colors.error), 0, before.length)
         }
         Text(
             text = countText,

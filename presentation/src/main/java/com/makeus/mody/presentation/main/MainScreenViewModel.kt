@@ -10,6 +10,9 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,6 +24,13 @@ class MainScreenViewModel @Inject constructor(
 
     private companion object {
         const val TAG = "MainScreenViewModel"
+    }
+
+    private val _selectedTab = MutableStateFlow(MainTab.FEED)
+    val selectedTab: StateFlow<MainTab> = _selectedTab.asStateFlow()
+
+    fun selectTab(tab: MainTab) {
+        _selectedTab.value = tab
     }
 
     fun logout() {

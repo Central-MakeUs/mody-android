@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.auth.R
 import com.makeus.mody.feature.auth.login.contract.LoginIntent
@@ -70,7 +71,7 @@ private fun LoginContent(
         Spacer(modifier = Modifier.weight(1f))
 
         Image(
-            painter = painterResource(R.drawable.ic_logo),
+            painter = painterResource(ModyIcons.Logo),
             contentDescription = "MODY",
             modifier = Modifier.size(78.dp),
         )

@@ -35,11 +35,8 @@ jobs:
     if: endsWith(github.ref_name, '-dev')
     runs-on: ubuntu-latest
     steps:
-      # 태그 메시지(annotated tag)를 출시노트로 쓰기 위해 전체 히스토리 + 태그 fetch
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          fetch-tags: true
           # 이후 스텝에 인증 git 작업 없음 → 토큰을 .git/config 에 남기지 않는다
           persist-credentials: false
 
@@ -58,9 +55,18 @@ jobs:
           echo "VERSION_CODE=$((10#$MAJOR*10000 + 10#$MINOR*100 + 10#$PATCH))" >> "$GITHUB_ENV"
 
       - name: Resolve release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # annotated 태그면 메시지 본문, lightweight 태그면 빈값 → 폴백
-          NOTES="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")"
+          # actions/checkout이 태그 ref를 커밋 SHA로 덮어써 annotated 메시지가 유실되므로
+          # (actions/checkout#290) 로컬 git이 아닌 GitHub API로 태그 객체의 메시지를 조회한다.
+          # annotated 태그면 ref가 tag 객체를 가리키고, lightweight면 commit → 빈값 → 폴백.
+          NOTES=""
+          TAG_OBJ_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" \
+            --jq 'select(.object.type == "tag") | .object.sha' 2>/dev/null || true)
+          if [ -n "$TAG_OBJ_SHA" ]; then
+            NOTES=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJ_SHA}" --jq '.message' 2>/dev/null || true)
+          fi
           if [ -z "${NOTES//[[:space:]]/}" ]; then
             NOTES="$GITHUB_REF_NAME (커밋 ${GITHUB_SHA:0:7})"
           fi

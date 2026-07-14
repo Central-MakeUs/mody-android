@@ -35,4 +35,5 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.coil.compose)
 }

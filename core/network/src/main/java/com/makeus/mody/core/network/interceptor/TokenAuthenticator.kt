@@ -1,5 +1,7 @@
 package com.makeus.mody.core.network.interceptor
 
+import com.makeus.mody.core.domain.repository.SessionReauthenticator
+import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.network.api.AuthApi
 import com.makeus.mody.core.network.model.auth.TokenReissueRequest
 import dagger.Lazy
@@ -8,19 +10,27 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 401 응답 시 refresh token 으로 access token 재발급 후 원 요청을 재시도한다.
- * 재발급 실패(refresh 만료 등)거나 이미 재시도한 요청이면 포기(null) → 요청은 401 그대로.
+ * 401 응답 시 3단계로 세션을 살린다:
+ *  1) refresh token 으로 access token 재발급 후 원 요청 재시도
+ *  2) refresh 까지 만료면 소셜 SDK 세션으로 무음 재로그인([SessionReauthenticator]) 후 재시도
+ *  3) 그것도 실패면 토큰 정리 + 세션 만료 이벤트 발행([SessionExpiredNotifier]) → 로그인 화면 유도
  *
- * AuthApi 는 [Lazy] 로 주입해 OkHttp ↔ Retrofit ↔ AuthApi DI 순환을 끊는다.
+ * 재발급 호출이 네트워크 오류 등 일시 장애로 실패한 경우는 세션을 건드리지 않고
+ * 이번 요청만 포기한다(다음 요청에서 재시도).
+ *
+ * AuthApi/SessionReauthenticator 는 [Lazy] 로 주입해 OkHttp ↔ Retrofit DI 순환을 끊는다.
  */
 @Singleton
 class TokenAuthenticator @Inject constructor(
     private val tokenManager: TokenManager,
     private val authApi: Lazy<AuthApi>,
+    private val sessionReauthenticator: Lazy<SessionReauthenticator>,
+    private val sessionExpiredNotifier: SessionExpiredNotifier,
 ) : Authenticator {
 
     // 동시 401 재발급 직렬화. 한 번만 재발급하고 나머지는 갱신된 토큰으로 재시도.
@@ -41,28 +51,50 @@ class TokenAuthenticator @Inject constructor(
             val currentAccess = runBlocking { tokenManager.getAccessToken() }
             val failedAuth = response.request.header("Authorization")
             if (currentAccess.isNotBlank() && failedAuth != "Bearer $currentAccess") {
-                return response.request.newBuilder()
-                    .header("Authorization", "Bearer $currentAccess")
-                    .build()
+                return response.request.retryWith(currentAccess)
             }
 
-            // 최신 refresh 로 재발급(락 안에서 한 번만).
+            // 1) 최신 refresh 로 재발급(락 안에서 한 번만).
             val latestRefresh = runBlocking { tokenManager.getRefreshToken() }
-            val reissued = runBlocking {
-                runCatching { authApi.get().reissue(TokenReissueRequest(latestRefresh)) }.getOrNull()
-            }
-            val tokens = reissued?.takeIf { it.isSuccess }?.result ?: return null
-
-            runBlocking {
-                tokenManager.setAccessToken(tokens.accessToken)
-                tokenManager.setRefreshToken(tokens.refreshToken)
+            val reissueResult = runBlocking {
+                runCatching { authApi.get().reissue(TokenReissueRequest(latestRefresh)) }
             }
 
-            return response.request.newBuilder()
-                .header("Authorization", "Bearer ${tokens.accessToken}")
-                .build()
+            reissueResult.getOrNull()?.takeIf { it.isSuccess }?.result?.let { tokens ->
+                runBlocking {
+                    tokenManager.setAccessToken(tokens.accessToken)
+                    tokenManager.setRefreshToken(tokens.refreshToken)
+                }
+                return response.request.retryWith(tokens.accessToken)
+            }
+
+            // 재발급 실패 분류: 401/403 또는 isSuccess=false 만 "refresh 만료"로 취급.
+            // 그 외(네트워크 오류 등)는 일시 장애 → 세션 유지한 채 이번 요청만 포기.
+            val refreshDead = when (val e = reissueResult.exceptionOrNull()) {
+                null -> true // HTTP 200 인데 isSuccess=false → 서버가 refresh 거부
+                is HttpException -> e.code() == 401 || e.code() == 403
+                else -> false
+            }
+            if (!refreshDead) return null
+
+            // 2) 소셜 SDK 세션으로 무음 재로그인. 성공 시 새 JWT 가 저장돼 있다.
+            val relogged = runBlocking {
+                runCatching { sessionReauthenticator.get().reauthenticate() }.getOrDefault(false)
+            }
+            if (relogged) {
+                val newAccess = runBlocking { tokenManager.getAccessToken() }
+                if (newAccess.isNotBlank()) return response.request.retryWith(newAccess)
+            }
+
+            // 3) 세션 완전 만료 → 토큰 정리 + 로그인 화면 유도.
+            runBlocking { tokenManager.clear() }
+            sessionExpiredNotifier.notifySessionExpired()
+            return null
         }
     }
+
+    private fun Request.retryWith(accessToken: String): Request =
+        newBuilder().header("Authorization", "Bearer $accessToken").build()
 
     private fun responseCount(response: Response): Int {
         var count = 1

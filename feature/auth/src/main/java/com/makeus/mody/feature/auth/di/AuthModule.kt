@@ -1,6 +1,8 @@
 package com.makeus.mody.feature.auth.di
 
+import com.makeus.mody.core.domain.repository.SessionReauthenticator
 import com.makeus.mody.core.domain.repository.SocialLoginProvider
+import com.makeus.mody.feature.auth.social.SessionReauthenticatorImpl
 import com.makeus.mody.feature.auth.social.SocialLoginProviderImpl
 import dagger.Binds
 import dagger.Module
@@ -15,4 +17,8 @@ abstract class AuthModule {
     @Binds
     @Singleton
     abstract fun bindSocialLoginProvider(impl: SocialLoginProviderImpl): SocialLoginProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionReauthenticator(impl: SessionReauthenticatorImpl): SessionReauthenticator
 }

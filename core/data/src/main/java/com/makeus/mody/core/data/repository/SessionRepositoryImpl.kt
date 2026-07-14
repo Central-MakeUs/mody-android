@@ -5,7 +5,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.makeus.mody.core.domain.model.AuthStatus
+import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
 import kotlinx.coroutines.flow.catch
@@ -29,6 +31,7 @@ class SessionRepositoryImpl @Inject constructor(
         val PERSONAL_INFO_COMPLETED = booleanPreferencesKey("personal_info_completed")
         val GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
         val MAIN_ACCESSIBLE = booleanPreferencesKey("main_accessible")
+        val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
     }
 
     override suspend fun isLoggedIn(): Boolean =
@@ -60,12 +63,24 @@ class SessionRepositoryImpl @Inject constructor(
             )
         }.first()
 
+    override suspend fun saveLastLoginType(type: SocialLoginType) {
+        dataStore.edit { it[Keys.LAST_LOGIN_TYPE] = type.value }
+    }
+
+    override suspend fun getLastLoginType(): SocialLoginType? =
+        dataStore.data
+            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+            .map { prefs ->
+                SocialLoginType.entries.firstOrNull { it.value == prefs[Keys.LAST_LOGIN_TYPE] }
+            }.first()
+
     override suspend fun clear() {
         tokenManager.clear()
         dataStore.edit {
             it.remove(Keys.PERSONAL_INFO_COMPLETED)
             it.remove(Keys.GROUP_ONBOARDING_COMPLETED)
             it.remove(Keys.MAIN_ACCESSIBLE)
+            it.remove(Keys.LAST_LOGIN_TYPE)
         }
     }
 }

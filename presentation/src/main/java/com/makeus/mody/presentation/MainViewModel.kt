@@ -3,10 +3,14 @@ package com.makeus.mody.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.domain.model.StartDestination
+import com.makeus.mody.core.domain.repository.SessionRepository
+import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.domain.usecase.ResolveStartDestinationUseCase
 import com.makeus.mody.core.navigation.AuthGraphBaseRoute
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.MainRoute
+import com.makeus.mody.core.navigation.NavigationEvent
+import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.core.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,10 +23,14 @@ import javax.inject.Inject
  * 앱 시작 시 진입 목적지 결정.
  * 세션 상태(로그인/온보딩)를 읽어 도메인 결과를 네비게이션 Route 로 매핑.
  * startRoute == null 이면 아직 판정 중(스플래시).
+ * 세션 완전 만료(재발급/무음 재로그인 실패) 이벤트를 받으면 로그인 화면으로 보낸다.
  */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val resolveStartDestination: ResolveStartDestinationUseCase,
+    private val sessionExpiredNotifier: SessionExpiredNotifier,
+    private val sessionRepository: SessionRepository,
+    private val navigationHelper: NavigationHelper,
 ) : ViewModel() {
 
     private val _startRoute = MutableStateFlow<Route?>(null)
@@ -38,6 +46,14 @@ class MainViewModel @Inject constructor(
                 StartDestination.ONBOARDING -> OnboardingGraphBaseRoute
                 StartDestination.GROUP -> GroupGraphBaseRoute
                 StartDestination.MAIN -> MainRoute
+            }
+        }
+        viewModelScope.launch {
+            sessionExpiredNotifier.events.collect {
+                runCatching { sessionRepository.clear() }
+                navigationHelper.navigate(
+                    NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true),
+                )
             }
         }
     }

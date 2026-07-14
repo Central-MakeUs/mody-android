@@ -10,4 +10,9 @@ data class RecordFoodState(
     val hour24: Int = 12,
     val minute: Int = 0,
     val isPhotoSheetVisible: Boolean = false,
-) : UiState
+    val isSubmitting: Boolean = false,
+) : UiState {
+    /** 작성 완료 활성 조건: 사진 + 메뉴 필수. */
+    val canSubmit: Boolean
+        get() = photoUri != null && menu.isNotBlank() && !isSubmitting
+}

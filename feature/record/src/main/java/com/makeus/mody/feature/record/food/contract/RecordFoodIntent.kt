@@ -12,4 +12,6 @@ sealed class RecordFoodIntent : UiIntent {
 
     data class MenuChanged(val value: String) : RecordFoodIntent()
     data class TimeChanged(val hour24: Int, val minute: Int) : RecordFoodIntent()
+
+    data object SubmitClicked : RecordFoodIntent()
 }

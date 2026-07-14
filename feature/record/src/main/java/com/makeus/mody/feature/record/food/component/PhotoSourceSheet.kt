@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.record.food.component
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -33,17 +35,25 @@ fun PhotoSourceSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = ModyTheme.colors.white,
+        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
                 .padding(top = 8.dp, bottom = 32.dp),
         ) {
             PhotoSourceItem(
                 label = "사진 촬영하기",
                 icon = ModyIcons.Camera,
                 onClick = onTakePhoto,
+            )
+            // 구분선 (시안: 좌우 24 인셋)
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(1.dp)
+                    .background(ModyTheme.colors.gray01),
             )
             PhotoSourceItem(
                 label = "갤러리에서 선택하기",
@@ -63,8 +73,8 @@ private fun PhotoSourceItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -73,10 +83,10 @@ private fun PhotoSourceItem(
             tint = ModyTheme.colors.gray10,
             modifier = Modifier.size(24.dp),
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = label,
-            style = ModyTheme.typography.b7,
+            style = ModyTheme.typography.b4,
             color = ModyTheme.colors.gray10,
         )
     }

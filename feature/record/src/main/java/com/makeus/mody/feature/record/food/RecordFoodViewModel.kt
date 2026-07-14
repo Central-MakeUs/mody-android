@@ -34,6 +34,9 @@ class RecordFoodViewModel @Inject constructor(
             is RecordFoodIntent.MenuChanged -> setState { copy(menu = intent.value) }
             is RecordFoodIntent.TimeChanged ->
                 setState { copy(hour24 = intent.hour24, minute = intent.minute) }
+
+            // TODO(record): 기록 업로드 API 연동 (사진 presigned 업로드 + 기록 생성) 후 피드 복귀
+            is RecordFoodIntent.SubmitClicked -> Unit
         }
     }
 }

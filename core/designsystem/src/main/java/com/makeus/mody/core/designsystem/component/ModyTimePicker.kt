@@ -33,6 +33,9 @@ fun ModyTimePicker(
     onTimeChange: (hour24: Int, minute: Int) -> Unit,
     modifier: Modifier = Modifier,
     itemHeight: Dp = 40.dp,
+    // 공용 선택 바 크기. null 이면 itemHeight 와 동일 (알림 시트 기본).
+    selectionBarHeight: Dp? = null,
+    selectionBarCornerRadius: Dp = 12.dp,
 ) {
     val amPmIndex = if (hour24 < 12) 0 else 1
     val hour12 = ((hour24 + 11) % 12) + 1
@@ -46,8 +49,8 @@ fun ModyTimePicker(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(itemHeight)
-                    .clip(RoundedCornerShape(12.dp))
+                    .height(selectionBarHeight ?: itemHeight)
+                    .clip(RoundedCornerShape(selectionBarCornerRadius))
                     .background(ModyTheme.colors.gray01),
             )
         }

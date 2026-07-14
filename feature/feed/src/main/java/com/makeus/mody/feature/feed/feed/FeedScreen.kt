@@ -2,6 +2,7 @@ package com.makeus.mody.feature.feed.feed
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,12 +18,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +48,7 @@ import com.makeus.mody.feature.feed.feed.component.FeedWriteFab
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
+import com.makeus.mody.feature.feed.feed.contract.GroupUi
 import com.makeus.mody.feature.feed.feed.contract.WeekDayUi
 import java.time.LocalDate
 
@@ -92,6 +101,7 @@ private fun FeedContent(
                 FeedList(
                     state = state,
                     onCardClick = { id -> onIntent(FeedIntent.FeedCardClicked(id)) },
+                    onLoadMore = { onIntent(FeedIntent.LoadMoreFeeds) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -105,16 +115,40 @@ private fun FeedContent(
             onWriteMeal = { onIntent(FeedIntent.WriteMealClicked) },
         )
     }
+
+    if (state.isGroupSheetVisible) {
+        GroupSelectSheet(
+            groups = state.groups,
+            onSelect = { id -> onIntent(FeedIntent.GroupSelected(id)) },
+            onAddGroup = { onIntent(FeedIntent.AddGroupClicked) },
+            onDismiss = { onIntent(FeedIntent.GroupSheetDismissed) },
+        )
+    }
 }
 
-/** 피드 카드 목록 (Feed_기본 시안). */
+/** 피드 카드 목록 (Feed_기본 시안). 끝에 다다르면 다음 페이지 로드. */
 @Composable
 private fun FeedList(
     state: FeedState,
     onCardClick: (Long) -> Unit,
+    onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+
+    // 마지막에서 3칸 이내로 스크롤되면 다음 페이지 요청.
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
+            state.hasMoreFeeds && !state.isLoadingMore && last >= state.feeds.size - 3
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) onLoadMore()
+    }
+
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -124,6 +158,21 @@ private fun FeedList(
                 card = card,
                 onClick = { onCardClick(card.id) },
             )
+        }
+        if (state.isLoadingMore) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        color = ModyTheme.colors.primary100,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -182,6 +231,105 @@ private fun GroupSelector(
                 tint = ModyTheme.colors.gray10,
                 modifier = Modifier.size(24.dp),
             )
+        }
+    }
+}
+
+/** 그룹 선택 바텀시트 (Feed_그룹 선택 시안). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GroupSelectSheet(
+    groups: List<GroupUi>,
+    onSelect: (Long) -> Unit,
+    onAddGroup: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = ModyTheme.colors.white,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            groups.forEach { group ->
+                GroupSelectRow(group = group, onClick = { onSelect(group.id) })
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ModyTheme.colors.gray01)
+                    .clickable(onClick = onAddGroup),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "그룹 추가하기 +",
+                    style = ModyTheme.typography.b5,
+                    color = ModyTheme.colors.gray06,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    val base = Modifier
+        .fillMaxWidth()
+        .clip(shape)
+        .then(
+            if (group.isCurrent) {
+                Modifier
+                    .background(ModyTheme.colors.primary0)
+                    .border(1.dp, ModyTheme.colors.secondary100, shape)
+            } else {
+                Modifier.background(ModyTheme.colors.gray01)
+            },
+        )
+        .clickable(onClick = onClick)
+        .padding(horizontal = 16.dp, vertical = 14.dp)
+    Row(
+        modifier = base,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = group.name,
+                    style = ModyTheme.typography.b3,
+                    color = ModyTheme.colors.gray10,
+                )
+                Text(
+                    text = " 그룹",
+                    style = ModyTheme.typography.b6,
+                    color = ModyTheme.colors.gray06,
+                )
+            }
+            Text(
+                text = "그룹코드 ${group.code}",
+                style = ModyTheme.typography.b7,
+                color = ModyTheme.colors.gray06,
+            )
+        }
+        if (group.isCurrent) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(100.dp))
+                    .background(ModyTheme.colors.secondary100)
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+            ) {
+                Text(
+                    text = "현재 보는 중",
+                    style = ModyTheme.typography.b7,
+                    color = ModyTheme.colors.gray10,
+                )
+            }
         }
     }
 }

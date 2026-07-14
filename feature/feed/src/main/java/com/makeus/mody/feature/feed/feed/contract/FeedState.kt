@@ -26,6 +26,14 @@ data class WeekDayUi(
     val hasFeed: Boolean,
 )
 
+/** 그룹 선택 시트 한 줄. */
+data class GroupUi(
+    val id: Long,
+    val name: String,
+    val code: String,
+    val isCurrent: Boolean,
+)
+
 data class FeedState(
     // 상단 그룹 셀렉터 (예: "아자아자")
     val groupName: String = "",
@@ -35,8 +43,14 @@ data class FeedState(
     val weekDays: List<WeekDayUi> = emptyList(),
     val feeds: List<FeedCardUi> = emptyList(),
     val isLoading: Boolean = false,
+    // 커서 페이지네이션(무한 스크롤)
+    val hasMoreFeeds: Boolean = false,
+    val isLoadingMore: Boolean = false,
     // 피드 작성 FAB 확장
     val isFabExpanded: Boolean = false,
+    // 그룹 선택 시트
+    val groups: List<GroupUi> = emptyList(),
+    val isGroupSheetVisible: Boolean = false,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

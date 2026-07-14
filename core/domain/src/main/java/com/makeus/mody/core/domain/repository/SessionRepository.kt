@@ -1,6 +1,7 @@
 package com.makeus.mody.core.domain.repository
 
 import com.makeus.mody.core.domain.model.AuthStatus
+import com.makeus.mody.core.domain.model.SocialLoginType
 
 /**
  * 로그인/온보딩 세션 상태 저장소.
@@ -21,6 +22,12 @@ interface SessionRepository {
 
     /** 저장된 진행 상태 flag. 없으면 전부 false. */
     suspend fun getStatus(): AuthStatus
+
+    /** 마지막 로그인 소셜 타입 저장(무음 재로그인 시 provider 선택용). */
+    suspend fun saveLastLoginType(type: SocialLoginType)
+
+    /** 마지막 로그인 소셜 타입. 로그인 이력 없으면 null. */
+    suspend fun getLastLoginType(): SocialLoginType?
 
     /** 로그아웃 등 세션 초기화(토큰 + 상태 제거). */
     suspend fun clear()

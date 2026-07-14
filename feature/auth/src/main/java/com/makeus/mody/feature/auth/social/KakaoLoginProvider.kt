@@ -1,5 +1,7 @@
 package com.makeus.mody.feature.auth.social
 
+import com.kakao.sdk.auth.AuthApiClient
+import com.kakao.sdk.auth.TokenManagerProvider
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
@@ -44,6 +46,25 @@ class KakaoLoginProvider @Inject constructor(
             }
         } else {
             UserApiClient.instance.loginWithKakaoAccount(activity, callback = callback)
+        }
+    }
+
+    /**
+     * UI 없이 카카오 SDK에 저장된 세션으로 access token 획득. 무음 재로그인용.
+     * SDK 세션이 없거나 만료(카카오 refresh까지 죽음)면 null.
+     * accessTokenInfo 호출은 만료된 카카오 access token 을 SDK 가 자동 갱신하는 부수효과가 있다.
+     */
+    suspend fun getAccessTokenSilently(): String? = suspendCancellableCoroutine { continuation ->
+        if (!AuthApiClient.instance.hasToken()) {
+            continuation.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        UserApiClient.instance.accessTokenInfo { _, error ->
+            if (error != null) {
+                continuation.resume(null)
+            } else {
+                continuation.resume(TokenManagerProvider.instance.manager.getToken()?.accessToken)
+            }
         }
     }
 }

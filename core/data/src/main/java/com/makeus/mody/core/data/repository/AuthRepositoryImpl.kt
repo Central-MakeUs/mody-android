@@ -26,6 +26,7 @@ class AuthRepositoryImpl @Inject constructor(
         ).unwrapResult()
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
+        sessionRepository.saveLastLoginType(type)
         val status = AuthStatus(
             personalInfoCompleted = response.personalInfoCompleted,
             groupOnboardingCompleted = response.groupOnboardingCompleted,

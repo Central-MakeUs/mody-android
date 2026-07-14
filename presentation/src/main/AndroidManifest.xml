@@ -29,6 +29,20 @@
                     android:host="dev-mody.store"
                     android:pathPrefix="/invite" />
             </intent-filter>
+
+            <!--
+              카카오톡 공유 버튼(executionParams) 실행:
+              kakao{네이티브키}://kakaolink?code=XXX
+              수신자 카카오톡이 이 스킴으로 설치 여부를 판단해 앱 실행/마켓 이동을 분기한다.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="kakao${KAKAO_NATIVE_KEY}"
+                    android:host="kakaolink" />
+            </intent-filter>
         </activity>
     </application>
 

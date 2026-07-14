@@ -81,15 +81,24 @@ class MainActivity : ComponentActivity() {
         handleInviteDeepLink(intent)
     }
 
-    /** https://dev-mody.store/invite?code=XXX 에서 초대 코드 추출 후 보관. */
+    /**
+     * 초대 코드 추출 후 보관. 두 경로를 처리한다:
+     *  - App Link: https://dev-mody.store/invite?code=XXX
+     *  - 카카오톡 공유 executionParams: kakao{네이티브키}://kakaolink?code=XXX
+     */
     private fun handleInviteDeepLink(intent: Intent?) {
         val data = intent?.data ?: return
-        if (data.host != INVITE_HOST) return
+        val isInviteLink = data.host == INVITE_HOST
+        val isKakaoLink =
+            data.scheme.orEmpty().startsWith(KAKAO_SCHEME_PREFIX) && data.host == KAKAO_LINK_HOST
+        if (!isInviteLink && !isKakaoLink) return
         val code = data.getQueryParameter("code")?.takeIf { it.isNotBlank() } ?: return
         inviteCodeHolder.set(code)
     }
 
     private companion object {
         const val INVITE_HOST = "dev-mody.store"
+        const val KAKAO_SCHEME_PREFIX = "kakao"
+        const val KAKAO_LINK_HOST = "kakaolink"
     }
 }

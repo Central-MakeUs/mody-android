@@ -20,3 +20,17 @@ data class GroupResponse(
     val name: String = "",
     val memberCount: Int = 0,
 )
+
+/** 내 그룹 목록 응답. */
+@Serializable
+data class GroupListResponse(
+    val groups: List<GroupSummaryResponse> = emptyList(),
+)
+
+@Serializable
+data class GroupSummaryResponse(
+    val groupId: Long = 0,
+    val name: String = "",
+    val code: String = "",
+    val memberCount: Int = 0,
+)

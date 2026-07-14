@@ -29,6 +29,16 @@ class GroupRepositoryImpl @Inject constructor(
         return response.toGroup()
     }
 
+    override suspend fun getMyGroups(): List<Group> =
+        groupApi.getMyGroups().unwrapResult().groups.map { summary ->
+            Group(
+                groupId = summary.groupId,
+                code = summary.code,
+                name = summary.name,
+                memberCount = summary.memberCount,
+            )
+        }
+
     // 그룹 보유 → 재접속 시 시작 라우팅이 MAIN 으로 가도록 세션 갱신
     private suspend fun markGroupJoined() {
         sessionRepository.saveStatus(

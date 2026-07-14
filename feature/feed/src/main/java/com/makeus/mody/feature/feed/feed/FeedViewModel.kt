@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.core.navigation.NotificationGraph
 import com.makeus.mody.core.navigation.RecordGraph
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
@@ -60,7 +61,8 @@ class FeedViewModel @Inject constructor(
 
             // TODO(feed): 각 액션 화면/API 연결
             is FeedIntent.GroupSelectorClicked -> Unit
-            is FeedIntent.AlarmClicked -> Unit
+            is FeedIntent.AlarmClicked ->
+                navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is FeedIntent.PokeClicked -> Unit
             is FeedIntent.FeedCardClicked -> Unit
             is FeedIntent.WriteExerciseClicked -> {

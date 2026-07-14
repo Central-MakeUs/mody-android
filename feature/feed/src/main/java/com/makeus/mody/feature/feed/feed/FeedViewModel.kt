@@ -2,22 +2,20 @@ package com.makeus.mody.feature.feed.feed
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.FeedRecord
-import com.makeus.mody.core.domain.model.RecordType
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
 import com.makeus.mody.core.navigation.RecordGraph
-import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
 import com.makeus.mody.feature.feed.feed.contract.WeekDayUi
+import com.makeus.mody.feature.feed.feed.contract.toFeedCardUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -64,7 +62,12 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is FeedIntent.PokeClicked -> Unit
-            is FeedIntent.FeedCardClicked -> Unit
+            is FeedIntent.FeedCardClicked -> {
+                val groupId = currentGroupId ?: return
+                navigationHelper.navigate(
+                    NavigationEvent.To(FeedGraph.RecordDetailRoute(groupId, intent.id)),
+                )
+            }
             is FeedIntent.WriteExerciseClicked -> {
                 setState { copy(isFabExpanded = false) }
                 navigationHelper.navigate(NavigationEvent.To(RecordGraph.HealthRoute))
@@ -122,7 +125,7 @@ class FeedViewModel @Inject constructor(
         setState { copy(isLoading = true) }
         runCatching { feedRepository.getRecords(groupId, date) }
             .onSuccess { page ->
-                setState { copy(feeds = page.records.map { it.toCardUi() }, isLoading = false) }
+                setState { copy(feeds = page.records.map { it.toFeedCardUi() }, isLoading = false) }
             }
             .onFailure {
                 // TODO(feed): 에러 노출 정책. 지금은 빈 목록.
@@ -151,34 +154,7 @@ class FeedViewModel @Inject constructor(
         return "${sunday.monthValue}월 ${weekOrdinal}주차"
     }
 
-    /** 도메인 기록 → 카드 표시 모델. 식사/운동에 따라 라벨·값 구성. */
-    private fun FeedRecord.toCardUi(): FeedCardUi = when (type) {
-        RecordType.MEAL -> FeedCardUi(
-            id = recordId,
-            authorName = nickname,
-            dayCount = streakDays,
-            primaryLabel = "식사 시간",
-            primaryValue = recordedTime?.format(TIME_FORMAT).orEmpty(),
-            secondaryLabel = "메뉴",
-            secondaryValue = menu.orEmpty(),
-            avatarUrl = profileImageUrl,
-            imageUrl = imageUrl,
-        )
-        else -> FeedCardUi(
-            id = recordId,
-            authorName = nickname,
-            dayCount = streakDays,
-            primaryLabel = "운동 시간",
-            primaryValue = exerciseDurationMinutes?.let { "${it}분" }.orEmpty(),
-            secondaryLabel = "운동종류",
-            secondaryValue = exerciseName.orEmpty(),
-            avatarUrl = profileImageUrl,
-            imageUrl = imageUrl,
-        )
-    }
-
     private companion object {
         val WEEKDAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
-        val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }
 }

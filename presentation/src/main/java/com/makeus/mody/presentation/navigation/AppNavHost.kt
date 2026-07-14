@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.navigation.authNavGraph
+import com.makeus.mody.feature.feed.navigation.feedNavGraph
 import com.makeus.mody.feature.group.navigation.groupNavGraph
 import com.makeus.mody.feature.notification.navigation.notificationNavGraph
 import com.makeus.mody.feature.onboarding.navigation.onboardingNavGraph
@@ -30,6 +31,7 @@ fun AppNavHost(
         groupNavGraph(navController)
         recordNavGraph()
         notificationNavGraph()
+        feedNavGraph()
         composable<MainRoute> { MainScreen() }
     }
 }

@@ -60,6 +60,12 @@ sealed interface RecordGraph : Route {
     data object HealthRoute : RecordGraph
 }
 
+sealed interface FeedGraph : Route {
+    /** 기록 상세(좌우 슬라이드) + 댓글. 탭한 카드의 groupId/recordId 로 진입. */
+    @Serializable
+    data class RecordDetailRoute(val groupId: Long, val recordId: Long) : FeedGraph
+}
+
 @Serializable
 data object NotificationGraphBaseRoute : Route
 

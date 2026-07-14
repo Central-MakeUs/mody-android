@@ -286,19 +286,19 @@ private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
         .then(
             if (group.isCurrent) {
                 Modifier
-                    .background(ModyTheme.colors.primary0)
-                    .border(1.dp, ModyTheme.colors.secondary100, shape)
+                    .background(ModyTheme.colors.primary400)
+                    .border(2.dp, ModyTheme.colors.primary100, shape)
             } else {
                 Modifier.background(ModyTheme.colors.gray01)
             },
         )
         .clickable(onClick = onClick)
-        .padding(horizontal = 16.dp, vertical = 14.dp)
+        .padding(horizontal = 16.dp, vertical = 16.dp)
     Row(
         modifier = base,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = group.name,
@@ -321,7 +321,7 @@ private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(100.dp))
-                    .background(ModyTheme.colors.secondary100)
+                    .background(ModyTheme.colors.primary100)
                     .padding(horizontal = 10.dp, vertical = 5.dp),
             ) {
                 Text(

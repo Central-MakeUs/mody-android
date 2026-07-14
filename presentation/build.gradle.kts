@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":feature:group"))
     implementation(project(":feature:feed"))
     implementation(project(":feature:record"))
+    implementation(project(":feature:notification"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -29,7 +29,16 @@ object KakaoInviteSharer {
 
     fun share(context: Context, code: String, onError: (Throwable) -> Unit) {
         val inviteUrl = "$INVITE_BASE_URL?code=${Uri.encode(code)}"
-        val link = Link(mobileWebUrl = inviteUrl, webUrl = inviteUrl)
+        // executionParams: 수신자 카카오톡이 설치 여부를 판단해
+        // 설치 → kakao{키}://kakaolink?code=XXX 로 앱 즉시 실행 / 미설치 → 마켓 이동.
+        // web/mobileWebUrl 은 PC 카카오톡·웹 공유 폴백용으로 유지.
+        val executionParams = mapOf("code" to code)
+        val link = Link(
+            mobileWebUrl = inviteUrl,
+            webUrl = inviteUrl,
+            androidExecutionParams = executionParams,
+            iosExecutionParams = executionParams,
+        )
         val template = FeedTemplate(
             content = Content(
                 title = "모디에 초대되었어요!",

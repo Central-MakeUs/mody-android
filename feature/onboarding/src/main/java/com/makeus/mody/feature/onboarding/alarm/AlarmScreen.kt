@@ -48,7 +48,7 @@ import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
-import com.makeus.mody.core.designsystem.component.WheelPicker
+import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import com.makeus.mody.feature.onboarding.contract.OnboardingState
 import com.makeus.mody.feature.onboarding.contract.TimeOfDay
@@ -349,12 +349,7 @@ private fun ExerciseTimeRow(
     }
 }
 
-private val AM_PM = listOf("오전", "오후")
-private val HOURS_12 = (1..12).toList()
-private val MINUTES = (0..59).toList()
-private val SHEET_ITEM_HEIGHT = 40.dp
-
-/** 오전/오후 · 시(1~12) · 분(0~59) 3열 휠. 공용 선택 바 위에 겹쳐 그림. */
+/** 오전/오후 · 시(1~12) · 분(0~59) 3열 휠 시트. 휠 UI는 공용 ModyTimePicker 사용. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerSheet(
@@ -363,8 +358,7 @@ private fun TimePickerSheet(
     onPick: (hour: Int, minute: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var amPmIndex by remember { mutableStateOf(if (initialHour < 12) 0 else 1) }
-    var hour12 by remember { mutableStateOf(((initialHour + 11) % 12) + 1) }
+    var hour24 by remember { mutableStateOf(initialHour) }
     var minute by remember { mutableStateOf(initialMinute) }
 
     ModalBottomSheet(
@@ -376,86 +370,23 @@ private fun TimePickerSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                // 공용 선택 바 (세 휠이 하나의 바를 공유)
-                Box(
-                    modifier = Modifier.matchParentSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(SHEET_ITEM_HEIGHT)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(ModyTheme.colors.gray01),
-                    )
-                }
-                // 간격 스펙: 오전↔시 27.5, 시↔":" 19.5, ":"↔분 19.5
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    WheelPicker(
-                        items = AM_PM,
-                        selectedIndex = amPmIndex,
-                        onSelectedChange = { amPmIndex = it },
-                        itemHeight = SHEET_ITEM_HEIGHT,
-                        showSelectionBox = false,
-                        fillItemWidth = false,
-                        label = { it },
-                    )
-                    Spacer(modifier = Modifier.width(27.5.dp))
-                    WheelPicker(
-                        items = HOURS_12,
-                        selectedIndex = remember(hour12) {
-                            HOURS_12.indexOf(hour12).coerceAtLeast(0)
-                        },
-                        onSelectedChange = { hour12 = HOURS_12[it] },
-                        itemHeight = SHEET_ITEM_HEIGHT,
-                        showSelectionBox = false,
-                        fillItemWidth = false,
-                        loop = true,
-                        label = { "$it" },
-                    )
-                    Spacer(modifier = Modifier.width(19.5.dp))
-                    Text(
-                        text = ":",
-                        style = ModyTheme.typography.b1,
-                        color = ModyTheme.colors.gray10,
-                    )
-                    Spacer(modifier = Modifier.width(19.5.dp))
-                    WheelPicker(
-                        items = MINUTES,
-                        selectedIndex = remember(minute) {
-                            MINUTES.indexOf(minute).coerceAtLeast(0)
-                        },
-                        onSelectedChange = { minute = MINUTES[it] },
-                        itemHeight = SHEET_ITEM_HEIGHT,
-                        showSelectionBox = false,
-                        fillItemWidth = false,
-                        loop = true,
-                        label = { "%02d".format(it) },
-                    )
-                }
-            }
+            ModyTimePicker(
+                hour24 = hour24,
+                minute = minute,
+                onTimeChange = { h, m ->
+                    hour24 = h
+                    minute = m
+                },
+            )
             Spacer(modifier = Modifier.height(16.dp))
             ModyButton(
                 text = "확인",
-                onClick = { onPick(to24(amPmIndex, hour12), minute) },
+                onClick = { onPick(hour24, minute) },
                 variant = ModyButtonVariant.Primary,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
     }
-}
-
-/** (오전/오후, 12h) → 24h. 오전 12시=0시, 오후 12시=12시. */
-private fun to24(amPmIndex: Int, hour12: Int): Int = when {
-    amPmIndex == 0 && hour12 == 12 -> 0
-    amPmIndex == 0 -> hour12
-    hour12 == 12 -> 12
-    else -> hour12 + 12
 }
 
 @Composable

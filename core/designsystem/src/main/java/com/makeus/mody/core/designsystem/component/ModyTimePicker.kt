@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.food.component
+package com.makeus.mody.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,25 +14,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.makeus.mody.core.designsystem.component.WheelPicker
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 private val AM_PM = listOf("오전", "오후")
 private val HOURS_12 = (1..12).toList()
 private val MINUTES = (0..59).toList()
-private val ITEM_HEIGHT = 40.dp
 
 /**
- * 식사 시간 인라인 휠 피커. 오전/오후 · 시(1~12) · 분(0~59) 3열이 하나의 선택 바를 공유.
- * (온보딩 알림 TimePickerSheet과 동일 패턴, 시트가 아닌 본문 인라인)
+ * 오전/오후 · 시(1~12) · 분(0~59) 3열 시간 휠 피커. 세 휠이 하나의 선택 바를 공유.
+ * 온보딩 알림 시트/기록 화면에서 공용. 값은 24h 기준으로 주고받는다.
  */
 @Composable
-fun MealTimePicker(
+fun ModyTimePicker(
     hour24: Int,
     minute: Int,
     onTimeChange: (hour24: Int, minute: Int) -> Unit,
     modifier: Modifier = Modifier,
+    itemHeight: Dp = 40.dp,
 ) {
     val amPmIndex = if (hour24 < 12) 0 else 1
     val hour12 = ((hour24 + 11) % 12) + 1
@@ -46,11 +46,12 @@ fun MealTimePicker(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(ITEM_HEIGHT)
+                    .height(itemHeight)
                     .clip(RoundedCornerShape(12.dp))
                     .background(ModyTheme.colors.gray01),
             )
         }
+        // 간격 스펙: 오전↔시 27.5, 시↔":" 19.5, ":"↔분 19.5
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -60,7 +61,7 @@ fun MealTimePicker(
                 items = AM_PM,
                 selectedIndex = amPmIndex,
                 onSelectedChange = { onTimeChange(to24(it, hour12), minute) },
-                itemHeight = ITEM_HEIGHT,
+                itemHeight = itemHeight,
                 showSelectionBox = false,
                 fillItemWidth = false,
                 label = { it },
@@ -70,7 +71,7 @@ fun MealTimePicker(
                 items = HOURS_12,
                 selectedIndex = hour12 - 1,
                 onSelectedChange = { onTimeChange(to24(amPmIndex, HOURS_12[it]), minute) },
-                itemHeight = ITEM_HEIGHT,
+                itemHeight = itemHeight,
                 showSelectionBox = false,
                 fillItemWidth = false,
                 loop = true,
@@ -87,7 +88,7 @@ fun MealTimePicker(
                 items = MINUTES,
                 selectedIndex = minute,
                 onSelectedChange = { onTimeChange(hour24, MINUTES[it]) },
-                itemHeight = ITEM_HEIGHT,
+                itemHeight = itemHeight,
                 showSelectionBox = false,
                 fillItemWidth = false,
                 loop = true,

@@ -37,9 +37,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackButton
 import com.makeus.mody.core.designsystem.component.ModyTextField
+import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.feature.record.food.component.MealTimePicker
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
 
@@ -80,7 +80,7 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
 
             SectionHeader(icon = ModyIcons.Clock, label = "식사 시간")
             Spacer(modifier = Modifier.height(8.dp))
-            MealTimePicker(
+            ModyTimePicker(
                 hour24 = state.hour24,
                 minute = state.minute,
                 onTimeChange = { hour24, minute ->

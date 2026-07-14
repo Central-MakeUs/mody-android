@@ -15,6 +15,7 @@ object ModyIcons {
     @DrawableRes val AlertFilled = R.drawable.ic_alert_filled
     @DrawableRes val Award = R.drawable.ic_award
     @DrawableRes val AwardFill = R.drawable.ic_award_fill
+    @DrawableRes val Camera = R.drawable.ic_camera
     @DrawableRes val Check = R.drawable.ic_check
     @DrawableRes val CheckFill = R.drawable.ic_check_fill
     @DrawableRes val CheckFill1 = R.drawable.ic_check_fill_1

@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.feed.feed.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +77,11 @@ private fun DayCountChip(dayCount: Int) {
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
             .background(ModyTheme.colors.gray01)
+            .border(
+                width = 0.4.dp,
+                color = ModyTheme.colors.gray03,
+                shape = RoundedCornerShape(100.dp),
+            )
             .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,

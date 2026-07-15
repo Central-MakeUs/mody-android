@@ -209,6 +209,8 @@ class FeedViewModel @Inject constructor(
         setState { copy(isLoading = true) }
         runCatching { feedRepository.getRecords(groupId, date) }
             .onSuccess { page ->
+                // 조회 중 날짜가 바뀌었으면(늦게 도착한 이전 날짜 응답) 무시 — 엉뚱한 날짜 결과 덮어쓰기 방지.
+                if (date != selectedDate) return@onSuccess
                 feedsCursor = page.nextCursor.takeIf { page.hasNext }
                 setState {
                     copy(
@@ -219,6 +221,7 @@ class FeedViewModel @Inject constructor(
                 }
             }
             .onFailure {
+                if (date != selectedDate) return@onFailure
                 // TODO(feed): 에러 노출 정책. 지금은 빈 목록.
                 setState { copy(feeds = emptyList(), isLoading = false, hasMoreFeeds = false) }
             }
@@ -229,9 +232,12 @@ class FeedViewModel @Inject constructor(
         val groupId = currentGroupId ?: return@launch
         val cursor = feedsCursor ?: return@launch
         if (currentState.isLoadingMore) return@launch
+        val date = selectedDate // 요청 시점 날짜 고정 — 조회 중 날짜 바뀌면 이어붙이기 취소.
         setState { copy(isLoadingMore = true) }
-        runCatching { feedRepository.getRecords(groupId, selectedDate, cursor = cursor) }
+        runCatching { feedRepository.getRecords(groupId, date, cursor = cursor) }
             .onSuccess { page ->
+                // 날짜가 바뀌었으면 다른 날짜 목록에 이어붙는 것 방지.
+                if (date != selectedDate) return@onSuccess
                 feedsCursor = page.nextCursor.takeIf { page.hasNext }
                 setState {
                     copy(
@@ -242,6 +248,7 @@ class FeedViewModel @Inject constructor(
                 }
             }
             .onFailure {
+                if (date != selectedDate) return@onFailure
                 setState { copy(isLoadingMore = false) }
             }
     }

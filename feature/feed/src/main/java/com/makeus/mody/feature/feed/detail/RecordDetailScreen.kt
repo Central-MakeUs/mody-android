@@ -38,14 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackButton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -114,14 +113,9 @@ private fun DetailTopBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         ModyBackButton(onClick = onBack)
-        AsyncImage(
-            model = authorAvatarUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(ModyTheme.colors.gray03),
+        ModyAvatar(
+            imageUrl = authorAvatarUrl,
+            size = 32.dp,
         )
         Text(
             text = authorName,
@@ -263,7 +257,7 @@ private fun CommentBubble(comment: CommentUi) {
                     style = ModyTheme.typography.c1,
                     color = ModyTheme.colors.gray06,
                 )
-                Avatar(comment.avatarUrl)
+                ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -280,10 +274,10 @@ private fun CommentBubble(comment: CommentUi) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Avatar(comment.avatarUrl)
+            ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
             Column {
                 Text(
                     text = comment.authorName,
@@ -303,19 +297,6 @@ private fun CommentBubble(comment: CommentUi) {
             }
         }
     }
-}
-
-@Composable
-private fun Avatar(url: String?) {
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(ModyTheme.colors.gray03),
-    )
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.feed.component
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -27,6 +30,8 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 /**
  * 피드 작성 FAB + 확장 스피드다이얼 (Feed4 시안).
  * 확장 시 딤 오버레이 위에 "운동 기록"/"식사 기록" 항목 노출.
+ * 딤은 항상 fillMaxSize (하단바/상태바까지 덮도록 화면 최상위에서 그려짐을 전제),
+ * FAB 버튼/메뉴만 [fabBottomPadding] 으로 하단바 위로 띄운다.
  */
 @Composable
 fun FeedWriteFab(
@@ -36,7 +41,13 @@ fun FeedWriteFab(
     onWriteExercise: () -> Unit,
     onWriteMeal: () -> Unit,
     modifier: Modifier = Modifier,
+    fabBottomPadding: Dp = 12.dp,
 ) {
+    // 확장 상태에서 시스템 뒤로가기 → 화면 이탈 대신 메뉴만 닫기.
+    if (expanded) {
+        BackHandler(onBack = onDismiss)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         if (expanded) {
             Box(
@@ -54,7 +65,8 @@ fun FeedWriteFab(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 12.dp),
+                .navigationBarsPadding()
+                .padding(end = 24.dp, bottom = fabBottomPadding),
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

@@ -38,14 +38,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
 import com.makeus.mody.feature.feed.feed.component.FeedCard
 import com.makeus.mody.feature.feed.feed.component.FeedWeekSection
-import com.makeus.mody.feature.feed.feed.component.FeedWriteFab
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
@@ -53,10 +55,17 @@ import com.makeus.mody.feature.feed.feed.contract.GroupUi
 import com.makeus.mody.feature.feed.feed.contract.WeekDayUi
 import java.time.LocalDate
 
+/** 유저가 속할 수 있는 그룹 최대 개수. */
+private const val MAX_GROUP_COUNT = 4
+
 /** 실제 진입점: ViewModel 상태를 stateless [FeedContent] 로 흘려보낸다. */
 @Composable
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 기록 작성 후 복귀 등 화면 재진입 시 캘린더/피드 재조회.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onIntent(FeedIntent.ScreenResumed)
+    }
     FeedContent(state = state, onIntent = viewModel::onIntent)
 }
 
@@ -71,7 +80,12 @@ private fun FeedContent(
             .fillMaxSize()
             .background(ModyTheme.colors.white),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // 상태바 바로 아래 붙지 않게 온보딩/그룹 스캐폴드와 동일하게 여유 확보.
+                .padding(top = 12.dp),
+        ) {
             FeedTopBar(
                 onAlarmClick = { onIntent(FeedIntent.AlarmClicked) },
             )
@@ -107,14 +121,6 @@ private fun FeedContent(
                 )
             }
         }
-
-        FeedWriteFab(
-            expanded = state.isFabExpanded,
-            onFabClick = { onIntent(FeedIntent.FabClicked) },
-            onDismiss = { onIntent(FeedIntent.FabDismissed) },
-            onWriteExercise = { onIntent(FeedIntent.WriteExerciseClicked) },
-            onWriteMeal = { onIntent(FeedIntent.WriteMealClicked) },
-        )
     }
 
     if (state.isGroupSheetVisible) {
@@ -123,6 +129,75 @@ private fun FeedContent(
             onSelect = { id -> onIntent(FeedIntent.GroupSelected(id)) },
             onAddGroup = { onIntent(FeedIntent.AddGroupClicked) },
             onDismiss = { onIntent(FeedIntent.GroupSheetDismissed) },
+        )
+    }
+
+    if (state.isAddGroupDialogVisible) {
+        GroupAddDialog(
+            onJoin = { onIntent(FeedIntent.JoinGroupClicked) },
+            onCreate = { onIntent(FeedIntent.CreateGroupClicked) },
+            onDismiss = { onIntent(FeedIntent.AddGroupDialogDismissed) },
+        )
+    }
+}
+
+/** 그룹 추가 방식 선택 다이얼로그: 참여하기 / 생성하기 (다크 버튼 2개). */
+@Composable
+private fun GroupAddDialog(
+    onJoin: () -> Unit,
+    onCreate: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(ModyTheme.colors.white)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            GroupAddOption(
+                icon = ModyIcons.User,
+                text = "그룹 참여하기",
+                onClick = onJoin,
+            )
+            GroupAddOption(
+                icon = ModyIcons.Plus,
+                text = "그룹 생성하기",
+                onClick = onCreate,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupAddOption(
+    @androidx.annotation.DrawableRes icon: Int,
+    text: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(ModyTheme.colors.gray10)
+            .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = ModyTheme.colors.white,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = ModyTheme.typography.b6,
+            color = ModyTheme.colors.white,
         )
     }
 }
@@ -261,20 +336,35 @@ private fun GroupSelectSheet(
             groups.forEach { group ->
                 GroupSelectRow(group = group, onClick = { onSelect(group.id) })
             }
+            // 그룹 MAX 4개 — 꽉 차면 비활성(gray02), 여유 있으면 활성(primary0).
+            val canAddGroup = groups.size < MAX_GROUP_COUNT
+            val addBg = if (canAddGroup) ModyTheme.colors.primary0 else ModyTheme.colors.gray02
+            val addFg = if (canAddGroup) ModyTheme.colors.gray10 else ModyTheme.colors.gray06
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(ModyTheme.colors.gray01)
-                    .clickable(onClick = onAddGroup),
+                    .background(addBg)
+                    .clickable(enabled = canAddGroup, onClick = onAddGroup),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "그룹 추가하기 +",
-                    style = ModyTheme.typography.b5,
-                    color = ModyTheme.colors.gray06,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "그룹 추가하기",
+                        style = ModyTheme.typography.b5,
+                        color = addFg,
+                    )
+                    Icon(
+                        painter = painterResource(ModyIcons.Plus),
+                        contentDescription = null,
+                        tint = addFg,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }
@@ -302,21 +392,24 @@ private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     text = group.name,
                     style = ModyTheme.typography.b3,
                     color = ModyTheme.colors.gray10,
                 )
                 Text(
-                    text = " 그룹",
-                    style = ModyTheme.typography.b6,
+                    text = "그룹",
+                    style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray06,
                 )
             }
             Text(
                 text = "그룹코드 ${group.code}",
-                style = ModyTheme.typography.b7,
+                style = ModyTheme.typography.c2,
                 color = ModyTheme.colors.gray06,
             )
         }
@@ -329,7 +422,7 @@ private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
             ) {
                 Text(
                     text = "현재 보는 중",
-                    style = ModyTheme.typography.b7,
+                    style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray10,
                 )
             }
@@ -396,6 +489,7 @@ private fun previewWeekDays(selected: LocalDate): List<WeekDayUi> {
             weekdayLabel = labels[i],
             isSelected = date == selected,
             hasFeed = i % 2 == 1, // 격일로 점 표시
+            isFuture = date.isAfter(LocalDate.of(2026, 7, 15)),
         )
     }
 }
@@ -455,18 +549,6 @@ private fun FeedContentEmptyPreview() {
     ModyTheme {
         FeedContent(
             state = PREVIEW_BASE_STATE.copy(feeds = emptyList()),
-            onIntent = {},
-        )
-    }
-}
-
-/** FAB 확장 상태. */
-@Preview(name = "Feed - FAB 확장", showBackground = true, widthDp = 402, heightDp = 874)
-@Composable
-private fun FeedContentFabExpandedPreview() {
-    ModyTheme {
-        FeedContent(
-            state = PREVIEW_BASE_STATE.copy(feeds = PREVIEW_FEEDS, isFabExpanded = true),
             onIntent = {},
         )
     }

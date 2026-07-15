@@ -9,6 +9,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.feature.group.GroupViewModel
@@ -17,9 +18,13 @@ import com.makeus.mody.feature.group.entry.GroupEntryScreen
 import com.makeus.mody.feature.group.share.GroupShareScreen
 
 fun NavGraphBuilder.groupNavGraph(navController: NavHostController) {
-    navigation<GroupGraphBaseRoute>(startDestination = GroupGraph.GroupEntryRoute) {
+    navigation<GroupGraphBaseRoute>(startDestination = GroupGraph.GroupEntryRoute()) {
         composable<GroupGraph.GroupEntryRoute> { entry ->
-            GroupEntryScreen(entry.sharedViewModel(navController))
+            val route = entry.toRoute<GroupGraph.GroupEntryRoute>()
+            GroupEntryScreen(
+                viewModel = entry.sharedViewModel(navController),
+                source = route.source,
+            )
         }
         composable<GroupGraph.CreateGroupRoute> { entry ->
             CreateGroupScreen(entry.sharedViewModel(navController))

@@ -28,6 +28,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
+import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.group.GroupViewModel
 import com.makeus.mody.feature.group.component.GroupScaffold
@@ -36,15 +37,42 @@ import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
 
 @Composable
-fun GroupEntryScreen(viewModel: GroupViewModel) {
+fun GroupEntryScreen(
+    viewModel: GroupViewModel,
+    // 진입 출처. 소스별로 title/subtitle/뒤로가기 노출 분기.
+    source: GroupEntrySource = GroupEntrySource.Onboarding,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    GroupScaffold(
-        title = "회원가입 완료!",
-        subtitle = buildAnnotatedString {
+    val title = when (source) {
+        GroupEntrySource.Onboarding -> "회원가입 완료!"
+        GroupEntrySource.Feed -> "그룹 참여하기"
+    }
+    val subtitle = when (source) {
+        GroupEntrySource.Onboarding -> buildAnnotatedString {
             append("이제 친구들과 함께, ")
             withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) { append("모디") }
             append("에서\n건강한 다이어트 습관을 길러보세요!")
+        }
+        GroupEntrySource.Feed -> buildAnnotatedString {
+            append("친구들과 함께, ")
+            withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) { append("모디") }
+            append("에서\n건강한 다이어트 습관을 길러보세요!")
+        }
+    }
+    // 온보딩=플로우 시작점(뒤로가기 없음). 피드=복귀용 뒤로가기.
+    val showBack = when (source) {
+        GroupEntrySource.Onboarding -> false
+        GroupEntrySource.Feed -> true
+    }
+
+    GroupScaffold(
+        title = title,
+        subtitle = subtitle,
+        onBackClick = if (showBack) {
+            { viewModel.onIntent(GroupIntent.BackClicked) }
+        } else {
+            null
         },
     ) {
         JoinCodeField(

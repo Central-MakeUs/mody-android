@@ -24,6 +24,8 @@ data class WeekDayUi(
     val weekdayLabel: String, // "일" ~ "토"
     val isSelected: Boolean,
     val hasFeed: Boolean,
+    // 오늘 이후 미래 날짜 — 선택 불가(불러올 기록 없음), 흐리게 표시.
+    val isFuture: Boolean = false,
 )
 
 /** 그룹 선택 시트 한 줄. */
@@ -51,6 +53,8 @@ data class FeedState(
     // 그룹 선택 시트
     val groups: List<GroupUi> = emptyList(),
     val isGroupSheetVisible: Boolean = false,
+    // 그룹 추가 방식(참여/생성) 선택 다이얼로그
+    val isAddGroupDialogVisible: Boolean = false,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

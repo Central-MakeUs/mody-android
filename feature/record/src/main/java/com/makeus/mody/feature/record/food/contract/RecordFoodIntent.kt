@@ -9,9 +9,11 @@ sealed class RecordFoodIntent : UiIntent {
     data object PhotoSheetDismissed : RecordFoodIntent()
     data object TakePhotoClicked : RecordFoodIntent()
     data object PickFromGalleryClicked : RecordFoodIntent()
+    data class PhotoSelected(val uri: String) : RecordFoodIntent()
 
     data class MenuChanged(val value: String) : RecordFoodIntent()
     data class TimeChanged(val hour24: Int, val minute: Int) : RecordFoodIntent()
 
     data object SubmitClicked : RecordFoodIntent()
+    data object SubmitErrorShown : RecordFoodIntent()
 }

@@ -1,5 +1,11 @@
 package com.makeus.mody.feature.record.food
 
+import android.content.Context
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,8 +28,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +42,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -48,10 +60,39 @@ import com.makeus.mody.feature.record.component.RecordTopBar
 import com.makeus.mody.feature.record.component.SectionHeader
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
+import java.io.File
 
 @Composable
 fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // 촬영 결과가 저장될 URI. 촬영 중 프로세스 재생성돼도 결과를 받을 수 있게 saveable로 유지.
+    var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val uri = pendingCameraUri
+        if (success && uri != null) {
+            viewModel.onIntent(RecordFoodIntent.PhotoSelected(uri))
+        }
+        pendingCameraUri = null
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        uri?.let { viewModel.onIntent(RecordFoodIntent.PhotoSelected(it.toString())) }
+    }
+
+    // 작성 실패 → 토스트 1회 후 소비
+    LaunchedEffect(state.submitError) {
+        state.submitError?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.onIntent(RecordFoodIntent.SubmitErrorShown)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -117,11 +158,32 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
 
     if (state.isPhotoSheetVisible) {
         PhotoSourceSheet(
-            onTakePhoto = { viewModel.onIntent(RecordFoodIntent.TakePhotoClicked) },
-            onPickFromGallery = { viewModel.onIntent(RecordFoodIntent.PickFromGalleryClicked) },
+            onTakePhoto = {
+                viewModel.onIntent(RecordFoodIntent.TakePhotoClicked)
+                val uri = createCameraImageUri(context)
+                pendingCameraUri = uri.toString()
+                cameraLauncher.launch(uri)
+            },
+            onPickFromGallery = {
+                viewModel.onIntent(RecordFoodIntent.PickFromGalleryClicked)
+                galleryLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
             onDismiss = { viewModel.onIntent(RecordFoodIntent.PhotoSheetDismissed) },
         )
     }
+}
+
+/** 촬영 이미지를 받을 캐시 파일 URI. record_file_paths.xml의 cache-path(record/camera)와 일치해야 한다. */
+private fun createCameraImageUri(context: Context): Uri {
+    val dir = File(context.cacheDir, "record/camera").apply { mkdirs() }
+    val file = File(dir, "meal_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.record.fileprovider",
+        file,
+    )
 }
 
 /** 사진 영역. 미선택: 점선 업로드 박스 / 선택: 사진 채움. 탭 시 사진 소스 시트. */

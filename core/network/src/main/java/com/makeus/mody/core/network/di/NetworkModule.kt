@@ -6,6 +6,7 @@ import com.makeus.mody.core.network.api.AuthApi
 import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
 import com.makeus.mody.core.network.api.OnboardingApi
+import com.makeus.mody.core.network.api.RecordApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
 import com.makeus.mody.core.network.interceptor.AuthInterceptor
 import com.makeus.mody.core.network.interceptor.TokenAuthenticator
@@ -88,4 +89,9 @@ object NetworkModule {
     @Singleton
     fun provideGroupApi(retrofit: Retrofit): GroupApi =
         retrofit.create(GroupApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideRecordApi(retrofit: Retrofit): RecordApi =
+        retrofit.create(RecordApi::class.java)
 }

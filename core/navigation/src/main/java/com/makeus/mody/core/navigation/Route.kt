@@ -48,4 +48,17 @@ sealed interface GroupGraph : Route {
 }
 
 @Serializable
+data object RecordGraphBaseRoute : Route
+
+sealed interface RecordGraph : Route {
+    /** 식사 기록 (record/food) */
+    @Serializable
+    data object FoodRoute : RecordGraph
+
+    /** 운동 기록 (record/health) */
+    @Serializable
+    data object HealthRoute : RecordGraph
+}
+
+@Serializable
 data object MainRoute : Route

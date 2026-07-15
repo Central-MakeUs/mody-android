@@ -2,6 +2,7 @@ package com.makeus.mody.core.designsystem.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,8 @@ fun ModyTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     // 입력 정제(이모지/특수문자 차단 등). null이면 필터 없음. 예: ModyInputFilter::hangulAlphaNumeric
     inputFilter: ((String) -> String)? = null,
+    // 외부에서 포커스 상태를 관찰할 때 주입 (예: 포커스 시 보더 색 변경)
+    interactionSource: MutableInteractionSource? = null,
 ) {
     BasicTextField(
         value = value,
@@ -65,6 +68,7 @@ fun ModyTextField(
         cursorBrush = cursorBrush,
         enabled = enabled,
         keyboardOptions = keyboardOptions,
+        interactionSource = interactionSource,
         modifier = modifier.fillMaxWidth(),
         decorationBox = { innerTextField ->
             Row(

@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
-import com.makeus.mody.feature.onboarding.component.WheelPicker
+import com.makeus.mody.core.designsystem.component.WheelPicker
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import kotlin.math.abs
 

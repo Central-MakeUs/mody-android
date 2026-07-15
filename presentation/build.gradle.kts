@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:group"))
     implementation(project(":feature:feed"))
+    implementation(project(":feature:record"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

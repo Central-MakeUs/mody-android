@@ -10,6 +10,7 @@ import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.navigation.authNavGraph
 import com.makeus.mody.feature.group.navigation.groupNavGraph
 import com.makeus.mody.feature.onboarding.navigation.onboardingNavGraph
+import com.makeus.mody.feature.record.navigation.recordNavGraph
 import com.makeus.mody.presentation.main.MainScreen
 
 @Composable
@@ -26,6 +27,7 @@ fun AppNavHost(
         authNavGraph()
         onboardingNavGraph(navController)
         groupNavGraph(navController)
+        recordNavGraph()
         composable<MainRoute> { MainScreen() }
     }
 }

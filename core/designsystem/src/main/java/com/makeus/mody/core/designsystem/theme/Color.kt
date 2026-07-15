@@ -4,6 +4,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Primary
+// Figma "Main0" — Main(primary100)보다 진한 강조 옐로 (예: 사진 업로드 문구)
+val Primary0 = Color(0xFFFBD406)
 val Primary100 = Color(0xFFFFE24A)
 val Primary200 = Color(0xFFFFEE92)
 val Primary300 = Color(0xFFFFF6C9)
@@ -36,6 +38,7 @@ val White = Color(0xFFFFFFFF)
 val KakaoYellow = Color(0xFFFEE500)
 
 data class ModyColors(
+    val primary0: Color = Primary0,
     val primary100: Color = Primary100,
     val primary200: Color = Primary200,
     val primary300: Color = Primary300,

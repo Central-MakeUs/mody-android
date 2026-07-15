@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -244,8 +245,10 @@ private fun GroupSelectSheet(
     onAddGroup: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // 그룹 최대 4개 — 스크롤 불필요. 부분 확장 없이 콘텐츠 높이만큼 꽉 올려 "그룹 추가하기"까지 항상 노출.
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = ModyTheme.colors.white,
     ) {
         Column(

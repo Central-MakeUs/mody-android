@@ -34,19 +34,25 @@ import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 // TODO(designsystem): 불꽃 주황 토큰 확정 시 교체
 private val FireOrange = Color(0xFFFF5C00)
 
-/** 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안). */
+/**
+ * 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안).
+ * showHeader=false 면 헤더(아바타·이름·N일차) 생략 — 상세 화면처럼 탑바가 이미 작성자 정보를 보일 때.
+ */
 @Composable
 fun FeedCard(
     card: FeedCardUi,
     onClick: () -> Unit,
+    showHeader: Boolean = true,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        FeedCardHeader(
-            authorName = card.authorName,
-            avatarUrl = card.avatarUrl,
-            dayCount = card.dayCount,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+        if (showHeader) {
+            FeedCardHeader(
+                authorName = card.authorName,
+                avatarUrl = card.avatarUrl,
+                dayCount = card.dayCount,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         FeedCardImage(card = card, onClick = onClick)
     }
 }

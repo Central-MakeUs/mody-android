@@ -4,8 +4,20 @@ import com.makeus.mody.core.commonui.base.UiIntent
 import java.time.LocalDate
 
 sealed class FeedIntent : UiIntent {
-    /** 그룹명 셀렉터 탭 → 그룹 선택 시트 */
+    /** 그룹명 셀렉터 탭 → 그룹 선택 시트 열기 */
     data object GroupSelectorClicked : FeedIntent()
+
+    /** 그룹 선택 시트에서 그룹 선택 */
+    data class GroupSelected(val groupId: Long) : FeedIntent()
+
+    /** 그룹 선택 시트 닫기 */
+    data object GroupSheetDismissed : FeedIntent()
+
+    /** 그룹 선택 시트 "그룹 추가하기" */
+    data object AddGroupClicked : FeedIntent()
+
+    /** 피드 목록 끝 도달 → 다음 페이지 로드 */
+    data object LoadMoreFeeds : FeedIntent()
 
     /** 알림 아이콘 탭 */
     data object AlarmClicked : FeedIntent()

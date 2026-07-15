@@ -193,6 +193,19 @@ abstract class DataModule {
 buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 ```
 
+## 브랜치 / 병렬 개발 규칙
+
+- **기능별 브랜치에서 개발**: `main`에 직접 커밋 금지. 새 작업은 항상 기능 브랜치를 파서 진행하고 PR로 머지한다. 브랜치명은 `feat/xxx`, `fix/xxx` 형태(작업 성격 + 짧은 요약).
+- **스택 PR**: 연쇄 의존 작업은 이전 브랜치를 base로 쌓고(P1→P2→…), 낮은 번호부터 순서대로 머지한다. 하나 머지되면 GitHub이 다음 PR base를 `main`으로 자동 재타겟한다.
+- **여러 인스턴스 동시 개발 = git worktree 필수**: 같은 작업 트리(폴더)에서 Claude Code/에디터를 2개 이상 띄워 서로 다른 브랜치를 만지면 index·`HEAD`·파일이 공유돼 충돌·덮어쓰기가 난다. 브랜치마다 별도 폴더로 분리한다.
+  ```bash
+  git worktree add ../mody-feed  feat/feed      # 폴더 A: 피드 작업
+  git worktree add ../mody-record feat/record   # 폴더 B: 기록 작업
+  # 작업 끝나면
+  git worktree remove ../mody-feed
+  ```
+  각 worktree는 독립 작업 트리, `.git` 만 공유(디스크 효율). 인스턴스마다 다른 worktree 폴더를 열면 서로 안 건드린다.
+
 ## PR / 커밋 규칙
 
 - **PR 본문**: `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채워서 올린다 (작업 내용 / 변경 이유 / 주요 변경사항 / 스크린샷 / 리뷰 포인트 / 체크리스트 / 관련 이슈). base 브랜치는 `main`.

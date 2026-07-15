@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.feed.component
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,6 +43,11 @@ fun FeedWriteFab(
     modifier: Modifier = Modifier,
     fabBottomPadding: Dp = 12.dp,
 ) {
+    // 확장 상태에서 시스템 뒤로가기 → 화면 이탈 대신 메뉴만 닫기.
+    if (expanded) {
+        BackHandler(onBack = onDismiss)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         if (expanded) {
             Box(

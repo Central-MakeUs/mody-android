@@ -23,6 +23,12 @@ import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /**
+ * [MainBottomBar] 콘텐츠 높이 (상단 보더 1dp + 탭 48dp). 시스템 내비게이션 인셋은 별도.
+ * 피드 FAB 등 바 위에 떠야 하는 요소가 겹치지 않게 띄울 때 사용.
+ */
+val MainBottomBarContentHeight = 49.dp
+
+/**
  * 메인 하단 네비게이션 바 (시안: Bottom navigation).
  * 상단 1dp 보더(gray02) + 48dp 바 + 시스템 내비게이션 인셋.
  * 선택 탭: fill 아이콘 + c2/gray10, 미선택: outline 아이콘 + c3/gray05.

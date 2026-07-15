@@ -6,6 +6,7 @@ import com.makeus.mody.core.network.api.AuthApi
 import com.makeus.mody.core.network.model.auth.TokenReissueRequest
 import dagger.Lazy
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
@@ -56,6 +57,7 @@ class TokenAuthenticator @Inject constructor(
 
             // 1) 최신 refresh 로 재발급(락 안에서 한 번만).
             val latestRefresh = runBlocking { tokenManager.getRefreshToken() }
+            if (latestRefresh.isBlank()) return null // 다른 스레드가 이미 세션을 정리함
             val reissueResult = runBlocking {
                 runCatching { authApi.get().reissue(TokenReissueRequest(latestRefresh)) }
             }
@@ -79,7 +81,10 @@ class TokenAuthenticator @Inject constructor(
 
             // 2) 소셜 SDK 세션으로 무음 재로그인. 성공 시 새 JWT 가 저장돼 있다.
             val relogged = runBlocking {
-                runCatching { sessionReauthenticator.get().reauthenticate() }.getOrDefault(false)
+                withTimeoutOrNull(SILENT_REAUTH_TIMEOUT_MS) {
+                    runCatching { sessionReauthenticator.get().reauthenticate() }
+                        .getOrDefault(false)
+                } ?: false
             }
             if (relogged) {
                 val newAccess = runBlocking { tokenManager.getAccessToken() }
@@ -108,5 +113,6 @@ class TokenAuthenticator @Inject constructor(
 
     private companion object {
         const val REISSUE_PATH = "/api/v1/auth/reissue"
+        const val SILENT_REAUTH_TIMEOUT_MS = 5_000L
     }
 }

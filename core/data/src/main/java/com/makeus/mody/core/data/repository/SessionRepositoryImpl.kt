@@ -10,6 +10,7 @@ import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -34,6 +35,10 @@ class SessionRepositoryImpl @Inject constructor(
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
     }
 
+    private val safePreferences: Flow<Preferences>
+        get() = dataStore.data
+            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+
     override suspend fun isLoggedIn(): Boolean =
         tokenManager.getAccessToken().isNotBlank()
 
@@ -53,9 +58,7 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getStatus(): AuthStatus =
-        dataStore.data
-            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
-            .map {
+        safePreferences.map {
             AuthStatus(
                 personalInfoCompleted = it[Keys.PERSONAL_INFO_COMPLETED] ?: false,
                 groupOnboardingCompleted = it[Keys.GROUP_ONBOARDING_COMPLETED] ?: false,
@@ -68,11 +71,9 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLastLoginType(): SocialLoginType? =
-        dataStore.data
-            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
-            .map { prefs ->
-                SocialLoginType.entries.firstOrNull { it.value == prefs[Keys.LAST_LOGIN_TYPE] }
-            }.first()
+        safePreferences.map { prefs ->
+            SocialLoginType.entries.firstOrNull { it.value == prefs[Keys.LAST_LOGIN_TYPE] }
+        }.first()
 
     override suspend fun clear() {
         tokenManager.clear()

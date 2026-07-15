@@ -49,6 +49,7 @@ fun <T> WheelPicker(
     modifier: Modifier = Modifier,
     visibleCount: Int = 5,
     itemHeight: Dp = 44.dp,
+    itemSpacing: Dp = 2.dp,
     unit: String? = null,
     // false면 개별 선택박스 안 그림 (여러 휠이 하나의 공용 바를 공유할 때)
     showSelectionBox: Boolean = true,
@@ -78,6 +79,7 @@ fun <T> WheelPicker(
 
     // 콜백/파생 계산이 항상 최신 prop 을 보도록 (stale capture 방지)
     val currentSelectedIndex by rememberUpdatedState(selectedIndex)
+    val currentOnSelectedChange by rememberUpdatedState(onSelectedChange)
 
     // 뷰포트 중앙에 가장 가까운 항목의 가상 index
     val centerVirtual by remember {
@@ -104,7 +106,7 @@ fun <T> WheelPicker(
 
     LaunchedEffect(state) {
         snapshotFlow { actualOf(centerVirtual) }.collect { actual ->
-            if (actual != currentSelectedIndex) onSelectedChange(actual)
+            if (actual != currentSelectedIndex) currentOnSelectedChange(actual)
         }
     }
 
@@ -133,7 +135,7 @@ fun <T> WheelPicker(
             state = state,
             flingBehavior = fling,
             contentPadding = PaddingValues(vertical = sidePadding),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
         ) {
             items(count = virtualCount) { index ->
                 val item = items[actualOf(index)]

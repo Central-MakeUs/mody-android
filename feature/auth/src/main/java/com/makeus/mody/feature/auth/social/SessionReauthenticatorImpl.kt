@@ -4,6 +4,7 @@ import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.SessionReauthenticator
 import com.makeus.mody.core.domain.repository.SessionRepository
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +18,7 @@ class SessionReauthenticatorImpl @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val authRepository: AuthRepository,
     private val kakaoLoginProvider: KakaoLoginProvider,
+    private val googleLoginProvider: GoogleLoginProvider,
 ) : SessionReauthenticator {
 
     override suspend fun reauthenticate(): Boolean {
@@ -24,10 +26,17 @@ class SessionReauthenticatorImpl @Inject constructor(
         return when (type) {
             SocialLoginType.KAKAO -> {
                 val socialToken = kakaoLoginProvider.getAccessTokenSilently() ?: return false
-                runCatching { authRepository.loginWithSocial(type, socialToken) }.isSuccess
+                loginWithSocial(type, socialToken)
             }
-            // TODO(auth): 구글 무음 재로그인(Credential Manager). 지금은 로그인 화면으로 유도.
-            SocialLoginType.GOOGLE -> false
+            SocialLoginType.GOOGLE -> {
+                val socialToken = googleLoginProvider.getAccessTokenSilently() ?: return false
+                loginWithSocial(type, socialToken)
+            }
         }
     }
+
+    private suspend fun loginWithSocial(type: SocialLoginType, socialToken: String): Boolean =
+        runCatching { authRepository.loginWithSocial(type, socialToken) }
+            .onFailure { if (it is CancellationException) throw it }
+            .isSuccess
 }

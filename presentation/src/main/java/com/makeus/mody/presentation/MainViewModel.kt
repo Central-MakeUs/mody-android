@@ -1,5 +1,6 @@
 package com.makeus.mody.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.domain.model.StartDestination
@@ -33,6 +34,10 @@ class MainViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
 ) : ViewModel() {
 
+    private companion object {
+        const val TAG = "MainViewModel"
+    }
+
     private val _startRoute = MutableStateFlow<Route?>(null)
     val startRoute = _startRoute.asStateFlow()
 
@@ -51,9 +56,12 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             sessionExpiredNotifier.events.collect {
                 runCatching { sessionRepository.clear() }
-                navigationHelper.navigate(
+                val sent = navigationHelper.navigate(
                     NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true),
                 )
+                if (!sent) {
+                    Log.w(TAG, "Dropped session-expired navigation event")
+                }
             }
         }
     }

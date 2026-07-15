@@ -38,9 +38,7 @@ class GoogleLoginProvider @Inject constructor(
             }
 
         val authorizationClient = Identity.getAuthorizationClient(activity)
-        val request = AuthorizationRequest.builder()
-            .setRequestedScopes(listOf(Scope(Scopes.EMAIL), Scope(Scopes.PROFILE)))
-            .build()
+        val request = createAuthorizationRequest()
 
         authorizationClient.authorize(request)
             .addOnSuccessListener { result ->
@@ -52,6 +50,40 @@ class GoogleLoginProvider @Inject constructor(
             }
             .addOnFailureListener { continuation.resumeWithException(it) }
     }
+
+    /**
+     * UI 없이 Google access token 획득. 무음 재로그인용.
+     *
+     * 이미 승인된 계정이면 [AuthorizationClient.authorize] 가 resolution 없이 access token 을 준다.
+     * 추가 동의/계정 선택 UI가 필요하면 null 을 반환한다(무음 재로그인 실패 → 로그인 화면 유도).
+     */
+    suspend fun getAccessTokenSilently(): String? = suspendCancellableCoroutine { continuation ->
+        val activity = activityHolder.current as? ComponentActivity
+            ?: run {
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
+
+        Identity.getAuthorizationClient(activity)
+            .authorize(createAuthorizationRequest())
+            .addOnSuccessListener { result ->
+                if (!continuation.isActive) return@addOnSuccessListener
+                val token = result.accessToken
+                if (!result.hasResolution() && token != null) {
+                    continuation.resume(token)
+                } else {
+                    continuation.resume(null)
+                }
+            }
+            .addOnFailureListener {
+                if (continuation.isActive) continuation.resume(null)
+            }
+    }
+
+    private fun createAuthorizationRequest(): AuthorizationRequest =
+        AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(Scope(Scopes.EMAIL), Scope(Scopes.PROFILE)))
+            .build()
 
     /** 첫 로그인/미인가 → 동의 화면 실행 후 결과에서 access token 추출. */
     private fun launchConsent(

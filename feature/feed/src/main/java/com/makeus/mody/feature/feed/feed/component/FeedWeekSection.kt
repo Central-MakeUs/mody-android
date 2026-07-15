@@ -115,6 +115,7 @@ private fun WeekDayCell(
         modifier = modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
+            enabled = !day.isFuture, // 미래 날짜는 선택 불가 (불러올 기록 없음)
             onClick = onClick,
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -135,15 +136,20 @@ private fun WeekDayCell(
             Text(
                 text = "${day.date.dayOfMonth}",
                 style = ModyTheme.typography.b7,
-                color = ModyTheme.colors.gray10,
+                color = if (day.isFuture) ModyTheme.colors.gray03 else ModyTheme.colors.gray10,
             )
         }
+        // 미래 날짜는 점 표시 없음. 그 외엔 기록 유무에 따라 색.
         Box(
             modifier = Modifier
                 .size(8.dp)
                 .clip(CircleShape)
                 .background(
-                    if (day.hasFeed) ModyTheme.colors.secondary100 else ModyTheme.colors.gray02,
+                    when {
+                        day.isFuture -> Color.Transparent
+                        day.hasFeed -> ModyTheme.colors.secondary100
+                        else -> ModyTheme.colors.gray02
+                    },
                 ),
         )
     }

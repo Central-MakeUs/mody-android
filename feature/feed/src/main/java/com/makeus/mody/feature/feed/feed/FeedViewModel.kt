@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.FeedGraph
+import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -20,6 +21,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -47,6 +50,9 @@ class FeedViewModel @Inject constructor(
     /** 현재 날짜 피드의 다음 커서 (무한 스크롤). null 이면 더 없음. */
     private var feedsCursor: Long? = null
 
+    /** 날짜 연속 선택(주간 스와이프 등) 시 API 난사 방지용 디바운스 job. */
+    private var selectDayJob: Job? = null
+
     init {
         setState {
             copy(
@@ -59,6 +65,7 @@ class FeedViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: FeedIntent) {
         when (intent) {
+            is FeedIntent.ScreenResumed -> refresh()
             is FeedIntent.PrevWeekClicked -> moveWeek(-1)
             is FeedIntent.NextWeekClicked -> moveWeek(1)
             is FeedIntent.DaySelected -> selectDay(intent.date)
@@ -69,10 +76,19 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.GroupSelectorClicked -> setState { copy(isGroupSheetVisible = true) }
             is FeedIntent.GroupSelected -> selectGroup(intent.groupId)
             is FeedIntent.GroupSheetDismissed -> setState { copy(isGroupSheetVisible = false) }
-            is FeedIntent.AddGroupClicked -> {
-                setState { copy(isGroupSheetVisible = false) }
-                navigationHelper.navigate(NavigationEvent.To(GroupGraph.GroupEntryRoute))
+            is FeedIntent.AddGroupClicked ->
+                setState { copy(isGroupSheetVisible = false, isAddGroupDialogVisible = true) }
+            is FeedIntent.JoinGroupClicked -> {
+                setState { copy(isAddGroupDialogVisible = false) }
+                navigationHelper.navigate(
+                    NavigationEvent.To(GroupGraph.GroupEntryRoute(source = GroupEntrySource.Feed)),
+                )
             }
+            is FeedIntent.CreateGroupClicked -> {
+                setState { copy(isAddGroupDialogVisible = false) }
+                navigationHelper.navigate(NavigationEvent.To(GroupGraph.CreateGroupRoute))
+            }
+            is FeedIntent.AddGroupDialogDismissed -> setState { copy(isAddGroupDialogVisible = false) }
             is FeedIntent.LoadMoreFeeds -> loadMoreFeeds()
 
             is FeedIntent.AlarmClicked ->
@@ -108,6 +124,17 @@ class FeedViewModel @Inject constructor(
                 loadFeeds(selectedDate)
             }
         // 실패 시 그룹명/기록 점 미표시. TODO(feed): 에러 노출 정책 정해지면 처리.
+    }
+
+    /**
+     * 화면 복귀 시 재조회. 기록 작성 후 돌아오면 새 기록/점이 반영되도록
+     * 현재 그룹의 캘린더 + 선택 날짜 피드를 다시 불러온다.
+     * 첫 진입(그룹 미로딩)에는 init 의 loadMyGroup 이 처리하므로 skip.
+     */
+    private fun refresh() {
+        if (currentGroupId == null) return
+        loadCalendar()
+        loadFeeds(selectedDate)
     }
 
     /** 그룹 선택 시트에서 다른 그룹 선택 → 현재 그룹 교체 후 재조회. */
@@ -160,15 +187,24 @@ class FeedViewModel @Inject constructor(
         loadCalendar()
     }
 
+    /** 날짜 탭 연속 변경(주간 스와이프 등) 시 매 탭마다 조회하지 않도록 300ms 디바운스. */
     private fun selectDay(date: LocalDate) {
         selectedDate = date
         setState { copy(weekDays = buildWeekDays()) }
-        loadFeeds(date)
+        selectDayJob?.cancel()
+        selectDayJob = viewModelScope.launch {
+            delay(300)
+            loadFeedsSuspend(date)
+        }
     }
 
-    /** 선택 날짜의 그룹 기록 목록 첫 페이지 조회. */
+    /** 선택 날짜의 그룹 기록 목록 첫 페이지 조회 (즉시 호출용, 디바운스 없음). */
     private fun loadFeeds(date: LocalDate) = viewModelScope.launch {
-        val groupId = currentGroupId ?: return@launch
+        loadFeedsSuspend(date)
+    }
+
+    private suspend fun loadFeedsSuspend(date: LocalDate) {
+        val groupId = currentGroupId ?: return
         feedsCursor = null
         setState { copy(isLoading = true) }
         runCatching { feedRepository.getRecords(groupId, date) }
@@ -210,16 +246,19 @@ class FeedViewModel @Inject constructor(
             }
     }
 
-    private fun buildWeekDays(): List<WeekDayUi> =
-        (0L..6L).map { offset ->
+    private fun buildWeekDays(): List<WeekDayUi> {
+        val today = LocalDate.now()
+        return (0L..6L).map { offset ->
             val date = weekStart.plusDays(offset)
             WeekDayUi(
                 date = date,
                 weekdayLabel = WEEKDAY_LABELS[offset.toInt()],
                 isSelected = date == selectedDate,
                 hasFeed = recordDates[date] ?: false,
+                isFuture = date.isAfter(today),
             )
         }
+    }
 
     /** 해당 날짜가 속한 주(일요일 시작)의 일요일. */
     private fun sundayOf(date: LocalDate): LocalDate =

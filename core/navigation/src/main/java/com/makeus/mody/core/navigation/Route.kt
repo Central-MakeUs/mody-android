@@ -61,4 +61,13 @@ sealed interface RecordGraph : Route {
 }
 
 @Serializable
+data object NotificationGraphBaseRoute : Route
+
+sealed interface NotificationGraph : Route {
+    /** 알림 목록 */
+    @Serializable
+    data object NotificationRoute : NotificationGraph
+}
+
+@Serializable
 data object MainRoute : Route

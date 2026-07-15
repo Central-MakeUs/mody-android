@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.feed.feed.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
@@ -38,7 +41,11 @@ fun FeedCard(
     onClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        FeedCardHeader(authorName = card.authorName, dayCount = card.dayCount)
+        FeedCardHeader(
+            authorName = card.authorName,
+            avatarUrl = card.avatarUrl,
+            dayCount = card.dayCount,
+        )
         Spacer(modifier = Modifier.height(12.dp))
         FeedCardImage(card = card, onClick = onClick)
     }
@@ -47,14 +54,18 @@ fun FeedCard(
 @Composable
 private fun FeedCardHeader(
     authorName: String,
+    avatarUrl: String?,
     dayCount: Int,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // TODO(feed): 프로필 이미지 로딩(coil) 연동 전 플레이스홀더
-        Box(
+        // 프로필 이미지. url null/로딩 실패 시 gray03 배경만 보임(플레이스홀더).
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = "프로필",
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
@@ -76,6 +87,11 @@ private fun DayCountChip(dayCount: Int) {
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
             .background(ModyTheme.colors.gray01)
+            .border(
+                width = 0.4.dp,
+                color = ModyTheme.colors.gray03,
+                shape = RoundedCornerShape(100.dp),
+            )
             .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -104,9 +120,16 @@ private fun FeedCardImage(
             .fillMaxWidth()
             .height(200.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(ModyTheme.colors.gray04) // TODO(feed): 기록 사진 로딩(coil) 연동
+            .background(ModyTheme.colors.gray04) // 로딩 전/실패 시 플레이스홀더
             .clickable(onClick = onClick),
     ) {
+        // 기록 사진. url null/로딩 실패 시 gray04 배경만 보임.
+        AsyncImage(
+            model = card.imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         // 하단 그라데이션 (텍스트 가독성)
         Box(
             modifier = Modifier

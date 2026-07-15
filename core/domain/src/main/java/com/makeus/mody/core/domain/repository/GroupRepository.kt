@@ -12,4 +12,7 @@ interface GroupRepository {
 
     /** 초대 코드로 그룹 참여. */
     suspend fun joinGroup(code: String): Group
+
+    /** 내가 속한 그룹 목록. */
+    suspend fun getMyGroups(): List<Group>
 }

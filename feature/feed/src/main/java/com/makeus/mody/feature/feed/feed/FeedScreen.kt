@@ -27,22 +27,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
-import com.makeus.mody.feature.feed.feed.component.FeedCalendarSheet
 import com.makeus.mody.feature.feed.feed.component.FeedCard
+import com.makeus.mody.feature.feed.feed.component.FeedWeekSection
 import com.makeus.mody.feature.feed.feed.component.FeedWriteFab
+import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
+import com.makeus.mody.feature.feed.feed.contract.WeekDayUi
+import java.time.LocalDate
 
+/** 실제 진입점: ViewModel 상태를 stateless [FeedContent] 로 흘려보낸다. */
 @Composable
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    FeedContent(state = state, onIntent = viewModel::onIntent)
+}
 
+/** 상태를 받아 렌더만 하는 stateless 화면. 프리뷰/테스트는 여기에 직접 상태를 넣는다. */
+@Composable
+private fun FeedContent(
+    state: FeedState,
+    onIntent: (FeedIntent) -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -50,13 +63,18 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FeedTopBar(
-                onMembersClick = { viewModel.onIntent(FeedIntent.MembersClicked) },
-                onAlarmClick = { viewModel.onIntent(FeedIntent.AlarmClicked) },
+                onAlarmClick = { onIntent(FeedIntent.AlarmClicked) },
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            DateSelector(
-                label = state.dateLabel,
-                onClick = { viewModel.onIntent(FeedIntent.DateClicked) },
+            GroupSelector(
+                groupName = state.groupName,
+                onClick = { onIntent(FeedIntent.GroupSelectorClicked) },
+            )
+            FeedWeekSection(
+                weekLabel = state.weekLabel,
+                weekDays = state.weekDays,
+                onPrevWeek = { onIntent(FeedIntent.PrevWeekClicked) },
+                onNextWeek = { onIntent(FeedIntent.NextWeekClicked) },
+                onDaySelected = { date -> onIntent(FeedIntent.DaySelected(date)) },
             )
 
             if (state.isEmpty) {
@@ -67,13 +85,13 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                     contentAlignment = Alignment.Center,
                 ) {
                     FeedEmptyContent(
-                        onPokeClick = { viewModel.onIntent(FeedIntent.PokeClicked) },
+                        onPokeClick = { onIntent(FeedIntent.PokeClicked) },
                     )
                 }
             } else {
                 FeedList(
                     state = state,
-                    onCardClick = { id -> viewModel.onIntent(FeedIntent.FeedCardClicked(id)) },
+                    onCardClick = { id -> onIntent(FeedIntent.FeedCardClicked(id)) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -81,27 +99,15 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
 
         FeedWriteFab(
             expanded = state.isFabExpanded,
-            onFabClick = { viewModel.onIntent(FeedIntent.FabClicked) },
-            onDismiss = { viewModel.onIntent(FeedIntent.FabDismissed) },
-            onWriteExercise = { viewModel.onIntent(FeedIntent.WriteExerciseClicked) },
-            onWriteMeal = { viewModel.onIntent(FeedIntent.WriteMealClicked) },
-        )
-    }
-
-    if (state.isCalendarVisible) {
-        FeedCalendarSheet(
-            title = state.calendarTitle,
-            days = state.calendarDays,
-            onPrevMonth = { viewModel.onIntent(FeedIntent.CalendarPrevMonth) },
-            onNextMonth = { viewModel.onIntent(FeedIntent.CalendarNextMonth) },
-            onDaySelected = { day -> viewModel.onIntent(FeedIntent.CalendarDaySelected(day)) },
-            onConfirm = { viewModel.onIntent(FeedIntent.CalendarConfirmClicked) },
-            onDismiss = { viewModel.onIntent(FeedIntent.CalendarDismissed) },
+            onFabClick = { onIntent(FeedIntent.FabClicked) },
+            onDismiss = { onIntent(FeedIntent.FabDismissed) },
+            onWriteExercise = { onIntent(FeedIntent.WriteExerciseClicked) },
+            onWriteMeal = { onIntent(FeedIntent.WriteMealClicked) },
         )
     }
 }
 
-/** 피드 카드 목록 (Feed2 시안). */
+/** 피드 카드 목록 (Feed_기본 시안). */
 @Composable
 private fun FeedList(
     state: FeedState,
@@ -122,10 +128,9 @@ private fun FeedList(
     }
 }
 
-/** 상단 바: MODY 로고 + 그룹 멤버/알림 아이콘. */
+/** 상단 바: MODY 로고 + 알림 아이콘. */
 @Composable
 private fun FeedTopBar(
-    onMembersClick: () -> Unit,
     onAlarmClick: () -> Unit,
 ) {
     Row(
@@ -140,56 +145,48 @@ private fun FeedTopBar(
             painter = painterResource(ModyIcons.LogoWordmark),
             contentDescription = "MODY",
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onMembersClick, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    painter = painterResource(ModyIcons.User),
-                    contentDescription = "그룹 멤버",
-                    tint = ModyTheme.colors.gray10,
-                )
-            }
-            IconButton(onClick = onAlarmClick, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    painter = painterResource(ModyIcons.Alarm),
-                    contentDescription = "알림",
-                    tint = ModyTheme.colors.gray10,
-                )
-            }
+        IconButton(onClick = onAlarmClick, modifier = Modifier.size(24.dp)) {
+            Icon(
+                painter = painterResource(ModyIcons.Alarm),
+                contentDescription = "알림",
+                tint = ModyTheme.colors.gray10,
+            )
         }
     }
 }
 
-/** 날짜 셀렉터: "7월 18일" + 아래 화살표. 탭 → 캘린더(Feed3). */
+/** 그룹명 셀렉터: "아자아자" + 화살표. 탭 → 그룹 선택 시트. */
 @Composable
-private fun DateSelector(
-    label: String,
+private fun GroupSelector(
+    groupName: String,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
-            .padding(horizontal = 24.dp)
-            .clickable(onClick = onClick),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
     ) {
-        Text(
-            text = label,
-            style = ModyTheme.typography.b3,
-            color = ModyTheme.colors.gray10,
-        )
-        Icon(
-            painter = painterResource(ModyIcons.Down),
-            contentDescription = "날짜 선택",
-            tint = ModyTheme.colors.gray10,
-            modifier = Modifier.size(24.dp),
-        )
+        Row(
+            modifier = Modifier.clickable(onClick = onClick),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = groupName,
+                style = ModyTheme.typography.b2,
+                color = ModyTheme.colors.gray10,
+            )
+            Icon(
+                painter = painterResource(ModyIcons.Up),
+                contentDescription = "그룹 선택",
+                tint = ModyTheme.colors.gray10,
+                modifier = Modifier.size(24.dp),
+            )
+        }
     }
 }
 
-/** 오늘 올라온 피드가 없을 때 (Feed1 시안). */
+/** 선택한 날짜에 올라온 피드가 없을 때 (Feed_존재 안 함 시안). */
 @Composable
 private fun FeedEmptyContent(
     onPokeClick: () -> Unit,
@@ -230,5 +227,96 @@ private fun FeedEmptyContent(
                 color = ModyTheme.colors.gray10,
             )
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 프리뷰: 더미 상태는 여기에만 존재 → 앱 런타임 경로에는 더미 없음.
+// Android Studio Split/Design 탭에서 확인. 기기 실행 불필요.
+// ---------------------------------------------------------------------------
+
+private fun previewWeekDays(selected: LocalDate): List<WeekDayUi> {
+    val sunday = LocalDate.of(2026, 7, 12)
+    val labels = listOf("일", "월", "화", "수", "목", "금", "토")
+    return (0..6).map { i ->
+        val date = sunday.plusDays(i.toLong())
+        WeekDayUi(
+            date = date,
+            weekdayLabel = labels[i],
+            isSelected = date == selected,
+            hasFeed = i % 2 == 1, // 격일로 점 표시
+        )
+    }
+}
+
+private val PREVIEW_FEEDS = listOf(
+    FeedCardUi(
+        id = 1,
+        authorName = "난화영이다",
+        dayCount = 2,
+        primaryLabel = "식사 시간",
+        primaryValue = "13:00",
+        secondaryLabel = "메뉴",
+        secondaryValue = "계란 3알, 사과 2조각",
+    ),
+    FeedCardUi(
+        id = 2,
+        authorName = "모나",
+        dayCount = 5,
+        primaryLabel = "운동 시간",
+        primaryValue = "45분",
+        secondaryLabel = "운동종류",
+        secondaryValue = "런닝",
+    ),
+    FeedCardUi(
+        id = 3,
+        authorName = "난화영이다",
+        dayCount = 2,
+        primaryLabel = "운동 시간",
+        primaryValue = "68분",
+        secondaryLabel = "운동종류",
+        secondaryValue = "필라테스",
+    ),
+)
+
+private val PREVIEW_BASE_STATE = FeedState(
+    groupName = "아자아자",
+    weekLabel = "7월 2주차",
+    weekDays = previewWeekDays(LocalDate.of(2026, 7, 16)),
+)
+
+/** 피드 목록 있는 상태. */
+@Preview(name = "Feed - 목록", showBackground = true, widthDp = 402, heightDp = 874)
+@Composable
+private fun FeedContentListPreview() {
+    ModyTheme {
+        FeedContent(
+            state = PREVIEW_BASE_STATE.copy(feeds = PREVIEW_FEEDS),
+            onIntent = {},
+        )
+    }
+}
+
+/** 빈 상태. */
+@Preview(name = "Feed - 빈 상태", showBackground = true, widthDp = 402, heightDp = 874)
+@Composable
+private fun FeedContentEmptyPreview() {
+    ModyTheme {
+        FeedContent(
+            state = PREVIEW_BASE_STATE.copy(feeds = emptyList()),
+            onIntent = {},
+        )
+    }
+}
+
+/** FAB 확장 상태. */
+@Preview(name = "Feed - FAB 확장", showBackground = true, widthDp = 402, heightDp = 874)
+@Composable
+private fun FeedContentFabExpandedPreview() {
+    ModyTheme {
+        FeedContent(
+            state = PREVIEW_BASE_STATE.copy(feeds = PREVIEW_FEEDS, isFabExpanded = true),
+            onIntent = {},
+        )
     }
 }

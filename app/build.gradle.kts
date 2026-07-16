@@ -76,9 +76,16 @@ dependencies {
     // DI 조립: Repository/DataSource 구현 바인딩(:core:data)을 Hilt 그래프에 포함
     implementation(project(":core:data"))
     implementation(project(":core:common-ui")) // CurrentActivityHolder 등록용
+    implementation(project(":core:domain")) // PushTokenRepository, NotificationDeepLinkHolder
+    implementation(project(":core:navigation")) // 알림 탭 딥링크 → NavigationHelper
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.kakao.user) // KakaoSdk.init
+    implementation(libs.androidx.core.ktx) // NotificationCompat, getSystemService
+    implementation(libs.kotlinx.coroutines.android) // FCM 토큰 등록 백그라운드 스코프
+    // FCM 수신(푸시). messaging 만 있으면 됨(BOM 이 버전 정렬).
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
 
     testImplementation(libs.junit)

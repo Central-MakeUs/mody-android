@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.feed.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,11 +34,16 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -144,23 +150,49 @@ private fun DetailBody(
     LaunchedEffect(state.records.size) {
         if (state.records.isNotEmpty()) pagerState.scrollToPage(state.currentIndex)
     }
-    // 페이지 정착 시 해당 기록 댓글 로드.
+    // 페이지 정착 시 currentIndex 갱신 (탑바 작성자/페이지 점). 댓글은 통일이라 재조회 안 함.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }
             .collect { onIntent(RecordDetailIntent.PageChanged(it)) }
     }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        item {
+    // 피드 헤더 높이(px). 댓글 목록을 이 높이만큼 밀어, 스크롤 시 댓글이 헤더 뒤로 숨게 함.
+    var headerHeightPx by remember { mutableIntStateOf(0) }
+    val headerHeightDp = with(LocalDensity.current) { headerHeightPx.toDp() }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        // 댓글: 헤더 뒤로 스크롤되어 숨음. 헤더 높이만큼 top content padding.
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = headerHeightDp, bottom = 12.dp),
+        ) {
+            if (state.comments.isEmpty() && !state.isCommentsLoading) {
+                item { EmptyComments() }
+            } else {
+                items(state.comments, key = { it.id }) { comment ->
+                    CommentBubble(comment)
+                }
+            }
+        }
+
+        // 피드 헤더: 상단 고정 + 불투명 흰 배경 → 댓글이 이 뒤로 숨는다.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(ModyTheme.colors.white)
+                .onGloballyPositioned { headerHeightPx = it.size.height },
+        ) {
             HorizontalPager(
                 state = pagerState,
                 pageSpacing = 12.dp,
-                contentPadding = PaddingValues(horizontal = 20.dp),
+                // contentPadding 0 → 이웃 카드 미리보기(peek) 제거. 좌우 여백은 페이지 내부에서.
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
             ) { page ->
-                FeedCard(card = state.records[page], onClick = {})
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                    FeedCard(card = state.records[page], onClick = {}, showHeader = false)
+                }
             }
             if (state.records.size > 1) {
                 PageDots(
@@ -168,25 +200,16 @@ private fun DetailBody(
                     total = state.records.size,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp),
                 )
             } else {
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
-
-        if (state.comments.isEmpty() && !state.isCommentsLoading) {
-            item { EmptyComments() }
-        } else {
-            items(state.comments, key = { it.id }) { comment ->
-                CommentBubble(comment)
-            }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
-        }
     }
 }
 
-/** 페이지 점 인디케이터. 현재 = secondary100 알약, 나머지 = gray02 점. */
+/** 페이지 점 인디케이터. 현재 = primary100 알약, 나머지 = gray02 점. */
 @Composable
 private fun PageDots(current: Int, total: Int, modifier: Modifier = Modifier) {
     Row(
@@ -201,7 +224,7 @@ private fun PageDots(current: Int, total: Int, modifier: Modifier = Modifier) {
                     .height(8.dp)
                     .width(if (active) 16.dp else 8.dp)
                     .clip(CircleShape)
-                    .background(if (active) ModyTheme.colors.secondary100 else ModyTheme.colors.gray02),
+                    .background(if (active) ModyTheme.colors.primary100 else ModyTheme.colors.gray02),
             )
         }
     }
@@ -237,7 +260,7 @@ private fun EmptyComments() {
     }
 }
 
-/** 응원 댓글 버블. 내 댓글 = 우측 노랑, 남의 댓글 = 좌측 회색. */
+/** 응원 댓글 버블. 내 댓글 = 우측 primary300, 남의 댓글 = 좌측 gray01. */
 @Composable
 private fun CommentBubble(comment: CommentUi) {
     val bubbleShape = RoundedCornerShape(16.dp)
@@ -262,11 +285,11 @@ private fun CommentBubble(comment: CommentUi) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = comment.content,
-                style = ModyTheme.typography.b5,
+                style = ModyTheme.typography.b7,
                 color = ModyTheme.colors.gray10,
                 modifier = Modifier
                     .clip(bubbleShape)
-                    .background(ModyTheme.colors.secondary100)
+                    .background(ModyTheme.colors.primary300)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             )
         }
@@ -287,11 +310,11 @@ private fun CommentBubble(comment: CommentUi) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = comment.content,
-                    style = ModyTheme.typography.b5,
+                    style = ModyTheme.typography.b7,
                     color = ModyTheme.colors.gray10,
                     modifier = Modifier
                         .clip(bubbleShape)
-                        .background(ModyTheme.colors.gray02)
+                        .background(ModyTheme.colors.gray01)
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                 )
             }
@@ -320,12 +343,13 @@ private fun CommentInputBar(
             onValueChange = onChange,
             modifier = Modifier
                 .weight(1f)
-                .clip(CircleShape),
+                .clip(CircleShape)
+                .border(1.dp, ModyTheme.colors.gray02, CircleShape),
             placeholder = {
                 Text(
                     text = "버디에게 응원 한마디를 남겨보세요!",
-                    style = ModyTheme.typography.b5,
-                    color = ModyTheme.colors.gray05,
+                    style = ModyTheme.typography.b7,
+                    color = ModyTheme.colors.gray04,
                 )
             },
             textStyle = ModyTheme.typography.b5,
@@ -342,9 +366,9 @@ private fun CommentInputBar(
         if (canSend) {
             IconButton(onClick = onSend) {
                 Icon(
-                    painter = painterResource(ModyIcons.Right),
+                    painter = painterResource(ModyIcons.SendFilled),
                     contentDescription = "전송",
-                    tint = ModyTheme.colors.secondary100,
+                    tint = Color.Unspecified,
                 )
             }
         }

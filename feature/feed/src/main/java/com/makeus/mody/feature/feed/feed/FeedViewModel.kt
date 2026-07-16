@@ -98,7 +98,9 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.FeedCardClicked -> {
                 val groupId = currentGroupId ?: return
                 navigationHelper.navigate(
-                    NavigationEvent.To(FeedGraph.RecordDetailRoute(groupId, intent.id)),
+                    NavigationEvent.To(
+                        FeedGraph.RecordDetailRoute(groupId, intent.id, selectedDate.toString()),
+                    ),
                 )
             }
             is FeedIntent.WriteExerciseClicked -> {

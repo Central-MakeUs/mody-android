@@ -54,6 +54,37 @@ class RecordRepositoryImpl @Inject constructor(
         ).unwrapResult().recordId
     }
 
+    override suspend fun createExerciseRecord(
+        imageUri: String,
+        exerciseName: String,
+        durationHours: Int,
+        durationMinutes: Int,
+    ): Long {
+        val uri = Uri.parse(imageUri)
+        val contentType = context.contentResolver.getType(uri) ?: DEFAULT_MIME
+        val bytes = readBytes(uri)
+
+        // 1) presigned URL 발급
+        val presigned = recordApi.createPresignedUrl(
+            domain = UPLOAD_DOMAIN,
+            fileName = "exercise.${contentType.toExtension()}",
+        ).unwrapResult()
+
+        // 2) S3 직접 업로드
+        presignedUploader.upload(presigned.presignedUrl, bytes, contentType)
+
+        // 3) 기록 생성
+        return recordApi.createRecord(
+            RecordCreateRequest(
+                recordType = "EXERCISE",
+                imageKey = presigned.imageKey,
+                exerciseName = exerciseName,
+                exerciseDurationHours = durationHours,
+                exerciseDurationMinutes = durationMinutes,
+            ),
+        ).unwrapResult().recordId
+    }
+
     private suspend fun readBytes(uri: Uri): ByteArray = withContext(Dispatchers.IO) {
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw HttpResponseException(

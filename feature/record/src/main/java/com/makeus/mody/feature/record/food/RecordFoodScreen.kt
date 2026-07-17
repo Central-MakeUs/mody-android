@@ -52,11 +52,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.feature.record.component.RecordTopBar
 import com.makeus.mody.feature.record.component.SectionHeader
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
@@ -102,7 +102,7 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
             .navigationBarsPadding()
             .imePadding(),
     ) {
-        RecordTopBar(
+        ModyBackTopBar(
             title = "식사 기록",
             onBackClick = { viewModel.onIntent(RecordFoodIntent.BackClicked) },
         )

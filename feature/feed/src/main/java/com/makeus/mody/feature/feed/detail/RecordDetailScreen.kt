@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
-import com.makeus.mody.core.designsystem.component.ModyBackButton
+import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -79,10 +79,11 @@ private fun RecordDetailContent(
             .background(ModyTheme.colors.white)
             .statusBarsPadding(),
     ) {
-        DetailTopBar(
-            authorName = author?.authorName.orEmpty(),
-            authorAvatarUrl = author?.avatarUrl,
-            onBack = { onIntent(RecordDetailIntent.BackClicked) },
+        ModyBackTopBar(
+            title = author?.authorName.orEmpty(),
+            onBackClick = { onIntent(RecordDetailIntent.BackClicked) },
+            showAvatar = true,
+            avatarUrl = author?.avatarUrl,
         )
 
         when {
@@ -100,33 +101,6 @@ private fun RecordDetailContent(
             canSend = state.canSend,
             onChange = { onIntent(RecordDetailIntent.CommentInputChanged(it)) },
             onSend = { onIntent(RecordDetailIntent.SendCommentClicked) },
-        )
-    }
-}
-
-@Composable
-private fun DetailTopBar(
-    authorName: String,
-    authorAvatarUrl: String?,
-    onBack: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(start = 8.dp, end = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ModyBackButton(onClick = onBack)
-        ModyAvatar(
-            imageUrl = authorAvatarUrl,
-            size = 32.dp,
-        )
-        Text(
-            text = authorName,
-            style = ModyTheme.typography.b6,
-            color = ModyTheme.colors.gray10,
         )
     }
 }

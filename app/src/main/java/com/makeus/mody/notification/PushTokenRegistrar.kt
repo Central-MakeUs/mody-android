@@ -46,7 +46,8 @@ class PushTokenRegistrar @Inject constructor(
     private suspend fun currentToken(): String? =
         suspendCancellableCoroutine { cont ->
             FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                cont.resume(task.result?.takeIf { task.isSuccessful })
+                // 실패 task 에 result 접근하면 RuntimeExecutionException → 먼저 성공 여부 확인.
+                cont.resume(if (task.isSuccessful) task.result else null)
             }
         }
 }

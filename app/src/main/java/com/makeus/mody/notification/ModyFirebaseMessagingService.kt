@@ -56,9 +56,12 @@ class ModyFirebaseMessagingService : FirebaseMessagingService() {
                 putExtra(NotificationDeepLink.KEY_TARGET_ID, it)
             }
         }
+        // 알림마다 고유 id → PendingIntent request code + notify 에 동일 사용.
+        // 고정 code + FLAG_UPDATE_CURRENT 면 새 알림이 기존 알림 extra(딥링크)를 덮어씀.
+        val notificationId = System.currentTimeMillis().toInt()
         val pendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE,
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -76,12 +79,11 @@ class ModyFirebaseMessagingService : FirebaseMessagingService() {
         val manager = NotificationManagerCompat.from(this)
         // 13+ POST_NOTIFICATIONS 미허용이면 notify 가 무시됨(크래시 아님). 표시 안 될 뿐.
         if (manager.areNotificationsEnabled()) {
-            manager.notify(System.currentTimeMillis().toInt(), notification)
+            manager.notify(notificationId, notification)
         }
     }
 
     private companion object {
         const val DEFAULT_TITLE = "모디"
-        const val REQUEST_CODE = 0
     }
 }

@@ -10,6 +10,7 @@ import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
@@ -40,18 +41,26 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout() {
         // 토큰 유효할 때(clear 전에) 이 기기 푸시 토큰 비활성 → 로그아웃 후 푸시 안 감.
-        runCatching { pushTokenRepository.unregister() }
+        runCatchingIgnoringCancellation { pushTokenRepository.unregister() }
         val refreshToken = sessionRepository.getRefreshToken()
         if (refreshToken.isNotBlank()) {
-            runCatching { authApi.logout(TokenLogoutRequest(refreshToken)) }
+            runCatchingIgnoringCancellation { authApi.logout(TokenLogoutRequest(refreshToken)) }
         }
         sessionRepository.clear()
     }
 
     override suspend fun withdraw() {
-        runCatching { pushTokenRepository.unregister() }
+        runCatchingIgnoringCancellation { pushTokenRepository.unregister() }
         // 서버 계정 삭제 성공 후에만 로컬 세션 초기화(실패 시 예외 전파 → 화면에서 처리).
         authApi.withdraw().unwrapResult()
         sessionRepository.clear()
+    }
+
+    /**
+     * 실패를 무음 무시하되 [CancellationException] 은 재던짐.
+     * runCatching 이 취소까지 삼키면 구조적 동시성이 깨져 상위 취소가 전파 안 됨.
+     */
+    private inline fun runCatchingIgnoringCancellation(block: () -> Unit) {
+        runCatching(block).onFailure { if (it is CancellationException) throw it }
     }
 }

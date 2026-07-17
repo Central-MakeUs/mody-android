@@ -52,6 +52,7 @@ object ModyIcons {
     @DrawableRes val Record = R.drawable.ic_record
     @DrawableRes val Right = R.drawable.ic_right
     @DrawableRes val Send = R.drawable.ic_send
+    @DrawableRes val SendFilled = R.drawable.ic_send_filled
     @DrawableRes val Star = R.drawable.ic_star
     @DrawableRes val Up = R.drawable.ic_up
     @DrawableRes val User = R.drawable.ic_user

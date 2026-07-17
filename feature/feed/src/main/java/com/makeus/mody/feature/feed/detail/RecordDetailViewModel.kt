@@ -12,8 +12,10 @@ import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
+import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.toFeedCardUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -26,6 +28,7 @@ class RecordDetailViewModel @Inject constructor(
 
     private val route = savedStateHandle.toRoute<FeedGraph.RecordDetailRoute>()
     private val groupId = route.groupId
+    private val date = LocalDate.parse(route.date)
 
     init {
         loadDetail()
@@ -41,16 +44,20 @@ class RecordDetailViewModel @Inject constructor(
         }
     }
 
-    /** 상세 슬라이드 로드 → 진입 위치(currentIndex)의 기록 댓글 로드. */
+    /**
+     * 상세 슬라이드 로드.
+     * 서버의 records/{recordId} 상세는 "탭한 기록 + 그보다 최신"만 주므로(오래된 쪽 누락),
+     * 그날 그룹 전체 기록(getRecords)을 모아 슬라이드를 구성하고 탭한 기록 위치를 currentIndex 로.
+     */
     private fun loadDetail() = viewModelScope.launch {
         setState { copy(isLoading = true) }
-        runCatching { feedRepository.getRecordDetail(groupId, route.recordId) }
-            .onSuccess { detail ->
-                val index = detail.currentIndex.coerceIn(0, (detail.records.size - 1).coerceAtLeast(0))
+        runCatching { loadAllRecords() }
+            .onSuccess { all ->
+                val index = all.indexOfFirst { it.id == route.recordId }.coerceAtLeast(0)
                 setState {
                     copy(
                         isLoading = false,
-                        records = detail.records.map { it.toFeedCardUi() },
+                        records = all,
                         currentIndex = index,
                     )
                 }
@@ -62,10 +69,26 @@ class RecordDetailViewModel @Inject constructor(
             }
     }
 
+    /** 그날 그룹 전체 기록을 커서 끝까지 모아 슬라이드용 리스트로 변환. */
+    private suspend fun loadAllRecords(): List<FeedCardUi> {
+        val result = mutableListOf<FeedCardUi>()
+        var cursor: Long? = null
+        var hasNext = true
+        var guard = 0
+        while (hasNext && guard < MAX_DETAIL_PAGES) {
+            guard++
+            val page = feedRepository.getRecords(groupId, date, cursor = cursor)
+            result += page.records.map { it.toFeedCardUi() }
+            cursor = page.nextCursor
+            hasNext = page.hasNext && cursor != null
+        }
+        return result.distinctBy { it.id }
+    }
+
+    /** 페이지 스와이프 = 같은 게시물의 다른 사진. 댓글은 게시물 단위로 통일이라 재조회하지 않고 index 만 갱신. */
     private fun onPageChanged(index: Int) {
         if (index == currentState.currentIndex) return
-        setState { copy(currentIndex = index, comments = emptyList()) }
-        recordIdAt(index)?.let(::loadComments)
+        setState { copy(currentIndex = index) }
     }
 
     private fun loadComments(recordId: Long) = viewModelScope.launch {
@@ -104,4 +127,9 @@ class RecordDetailViewModel @Inject constructor(
         content = content,
         isMine = isMine,
     )
+
+    private companion object {
+        /** 상세 슬라이드 이어붙이기 안전 상한(무한 루프 방지). */
+        const val MAX_DETAIL_PAGES = 20
+    }
 }

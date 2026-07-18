@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Mody" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Mody" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 다크모드 미고려: 시스템 force-dark 비활성화(라이트 고정). -->
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
 </resources>

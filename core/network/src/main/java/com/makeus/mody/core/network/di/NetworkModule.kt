@@ -6,6 +6,7 @@ import com.makeus.mody.core.network.api.AuthApi
 import com.makeus.mody.core.network.api.FeedApi
 import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
+import com.makeus.mody.core.network.api.NotificationApi
 import com.makeus.mody.core.network.api.OnboardingApi
 import com.makeus.mody.core.network.api.RecordApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
@@ -100,4 +101,9 @@ object NetworkModule {
     @Singleton
     fun provideFeedApi(retrofit: Retrofit): FeedApi =
         retrofit.create(FeedApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
+        retrofit.create(NotificationApi::class.java)
 }

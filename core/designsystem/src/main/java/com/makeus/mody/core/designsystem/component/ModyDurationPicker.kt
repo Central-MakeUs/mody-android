@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
-private val HOURS = (0..23).toList()
+private val HOURS = (0..6).toList()
 private val MINUTES = (0..59).toList()
 
 /**

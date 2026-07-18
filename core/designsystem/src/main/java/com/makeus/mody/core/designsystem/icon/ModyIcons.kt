@@ -53,6 +53,8 @@ object ModyIcons {
     @DrawableRes val Right = R.drawable.ic_right
     @DrawableRes val Send = R.drawable.ic_send
     @DrawableRes val SendFilled = R.drawable.ic_send_filled
+    /** 촬영(셔터) 버튼 아이콘. 카메라 아이콘([Camera])과 다름. */
+    @DrawableRes val Shutter = R.drawable.ic_shutter
     @DrawableRes val Star = R.drawable.ic_star
     @DrawableRes val Up = R.drawable.ic_up
     @DrawableRes val User = R.drawable.ic_user

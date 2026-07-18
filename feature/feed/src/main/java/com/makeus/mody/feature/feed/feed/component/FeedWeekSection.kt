@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -36,6 +37,7 @@ import java.time.LocalDate
 fun FeedWeekSection(
     weekLabel: String,
     weekDays: List<WeekDayUi>,
+    canGoNextWeek: Boolean,
     onPrevWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onDaySelected: (LocalDate) -> Unit,
@@ -43,6 +45,7 @@ fun FeedWeekSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         WeekHeader(
             label = weekLabel,
+            canGoNextWeek = canGoNextWeek,
             onPrevWeek = onPrevWeek,
             onNextWeek = onNextWeek,
         )
@@ -71,6 +74,7 @@ fun FeedWeekSection(
 @Composable
 private fun WeekHeader(
     label: String,
+    canGoNextWeek: Boolean,
     onPrevWeek: () -> Unit,
     onNextWeek: () -> Unit,
 ) {
@@ -91,14 +95,21 @@ private fun WeekHeader(
                 Icon(
                     painter = painterResource(ModyIcons.Left),
                     contentDescription = "이전 주",
-                    tint = ModyTheme.colors.gray04,
+                    tint = ModyTheme.colors.gray06,
                 )
             }
-            IconButton(onClick = onNextWeek, modifier = Modifier.size(24.dp)) {
+            IconButton(
+                onClick = onNextWeek,
+                enabled = canGoNextWeek,
+                modifier = Modifier.size(24.dp),
+            ) {
                 Icon(
-                    painter = painterResource(ModyIcons.Right),
+                    // 좌우 대칭이 정확하도록 이전(<) 아이콘을 미러링해 다음(>)으로 사용.
+                    painter = painterResource(ModyIcons.Left),
                     contentDescription = "다음 주",
-                    tint = ModyTheme.colors.gray04,
+                    // 이번 주(미래 이동 불가)면 비활성 색.
+                    tint = if (canGoNextWeek) ModyTheme.colors.gray06 else ModyTheme.colors.gray03,
+                    modifier = Modifier.graphicsLayer { scaleX = -1f },
                 )
             }
         }

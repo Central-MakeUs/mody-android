@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.Mody" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Mody" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 다크모드 미고려: 시스템 force-dark 비활성화(라이트 고정).
+             forceDarkAllowed는 API 29+ 전용이나, force-dark 자체가 29부터라 하위에선 무시됨. -->
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+    </style>
 </resources>

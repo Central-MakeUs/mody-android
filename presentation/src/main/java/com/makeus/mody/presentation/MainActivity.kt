@@ -1,8 +1,10 @@
 package com.makeus.mody.presentation
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -45,6 +47,16 @@ class MainActivity : ComponentActivity() {
 
     // 확정된 시작 목적지. 알림 딥링크는 메인(로그인 완료) 상태에서만 소비한다.
     private var resolvedStartRoute: Route? = null
+
+    // 앱은 다크모드를 고려하지 않음 → 기기 설정과 무관하게 항상 라이트로 강제.
+    // (상태바 아이콘·force-dark 가 다크 따라가 흰 배경에서 깨지는 것 방지)
+    override fun attachBaseContext(newBase: Context) {
+        val config = Configuration(newBase.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                Configuration.UI_MODE_NIGHT_NO
+        }
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

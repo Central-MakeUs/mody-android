@@ -96,6 +96,7 @@ private fun FeedContent(
             FeedWeekSection(
                 weekLabel = state.weekLabel,
                 weekDays = state.weekDays,
+                canGoNextWeek = state.canGoNextWeek,
                 onPrevWeek = { onIntent(FeedIntent.PrevWeekClicked) },
                 onNextWeek = { onIntent(FeedIntent.NextWeekClicked) },
                 onDaySelected = { date -> onIntent(FeedIntent.DaySelected(date)) },

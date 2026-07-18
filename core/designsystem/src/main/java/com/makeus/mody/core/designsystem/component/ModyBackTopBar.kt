@@ -36,7 +36,7 @@ fun ModyBackTopBar(
             .height(56.dp)
             .padding(start = 8.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ModyBackButton(onClick = onBackClick)
         if (showAvatar) {

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 커스텀 촬영 화면(CameraX) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
     <application>
         <!-- 카메라 촬영 결과를 받을 임시 파일(cacheDir/record/camera) 공유용 -->
         <provider

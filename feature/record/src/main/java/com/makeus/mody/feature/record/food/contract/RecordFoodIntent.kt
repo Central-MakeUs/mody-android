@@ -7,7 +7,10 @@ sealed class RecordFoodIntent : UiIntent {
 
     data object PhotoBoxClicked : RecordFoodIntent()
     data object PhotoSheetDismissed : RecordFoodIntent()
+
+    /** 촬영하기 → 커스텀 카메라 오버레이 오픈. */
     data object TakePhotoClicked : RecordFoodIntent()
+    data object CameraDismissed : RecordFoodIntent()
     data object PickFromGalleryClicked : RecordFoodIntent()
     data class PhotoSelected(val uri: String) : RecordFoodIntent()
 

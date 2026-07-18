@@ -74,7 +74,7 @@ private fun PhotoSourceItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -83,7 +83,7 @@ private fun PhotoSourceItem(
             tint = ModyTheme.colors.gray10,
             modifier = Modifier.size(24.dp),
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = label,
             style = ModyTheme.typography.b4,

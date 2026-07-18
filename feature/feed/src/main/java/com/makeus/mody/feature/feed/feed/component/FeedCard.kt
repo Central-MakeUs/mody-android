@@ -37,12 +37,14 @@ private val FireOrange = Color(0xFFFF5C00)
 /**
  * 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안).
  * showHeader=false 면 헤더(아바타·이름·N일차) 생략 — 상세 화면처럼 탑바가 이미 작성자 정보를 보일 때.
+ * showArrow=false 면 우상단 화살표(→상세 이동) 생략 — 상세 화면처럼 더 들어갈 곳이 없을 때.
  */
 @Composable
 fun FeedCard(
     card: FeedCardUi,
     onClick: () -> Unit,
     showHeader: Boolean = true,
+    showArrow: Boolean = true,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (showHeader) {
@@ -53,7 +55,7 @@ fun FeedCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
-        FeedCardImage(card = card, onClick = onClick)
+        FeedCardImage(card = card, onClick = onClick, showArrow = showArrow)
     }
 }
 
@@ -115,6 +117,7 @@ private fun DayCountChip(dayCount: Int) {
 private fun FeedCardImage(
     card: FeedCardUi,
     onClick: () -> Unit,
+    showArrow: Boolean = true,
 ) {
     Box(
         modifier = Modifier
@@ -173,14 +176,16 @@ private fun FeedCardImage(
                 )
             }
         }
-        Icon(
-            painter = painterResource(ModyIcons.Right),
-            contentDescription = "댓글 보기",
-            tint = ModyTheme.colors.white,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp, end = 12.dp)
-                .size(24.dp),
-        )
+        if (showArrow) {
+            Icon(
+                painter = painterResource(ModyIcons.Right),
+                contentDescription = "댓글 보기",
+                tint = ModyTheme.colors.white,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp)
+                    .size(24.dp),
+            )
+        }
     }
 }

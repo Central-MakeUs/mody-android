@@ -58,6 +58,7 @@ class FeedViewModel @Inject constructor(
             copy(
                 weekLabel = formatWeekLabel(weekStart),
                 weekDays = buildWeekDays(),
+                canGoNextWeek = canGoNextWeek(),
             )
         }
         loadMyGroup()
@@ -179,15 +180,21 @@ class FeedViewModel @Inject constructor(
     }
 
     private fun moveWeek(deltaWeeks: Long) {
+        // 다음 주(미래)로는 이동 불가 — 이번 주가 상한.
+        if (deltaWeeks > 0 && !canGoNextWeek()) return
         weekStart = weekStart.plusWeeks(deltaWeeks)
         setState {
             copy(
                 weekLabel = formatWeekLabel(weekStart),
                 weekDays = buildWeekDays(),
+                canGoNextWeek = canGoNextWeek(),
             )
         }
         loadCalendar()
     }
+
+    /** 이번 주 시작(일요일)보다 이전 주만 다음 주 이동 허용. */
+    private fun canGoNextWeek(): Boolean = weekStart.isBefore(sundayOf(LocalDate.now()))
 
     /** 날짜 탭 연속 변경(주간 스와이프 등) 시 매 탭마다 조회하지 않도록 300ms 디바운스. */
     private fun selectDay(date: LocalDate) {

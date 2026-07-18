@@ -43,6 +43,8 @@ data class FeedState(
     val weekLabel: String = "",
     // 일요일 시작 7일
     val weekDays: List<WeekDayUi> = emptyList(),
+    // 다음 주 이동 가능 여부(이번 주면 미래라 false → 다음 주 버튼 비활성)
+    val canGoNextWeek: Boolean = false,
     val feeds: List<FeedCardUi> = emptyList(),
     val isLoading: Boolean = false,
     // 커서 페이지네이션(무한 스크롤)

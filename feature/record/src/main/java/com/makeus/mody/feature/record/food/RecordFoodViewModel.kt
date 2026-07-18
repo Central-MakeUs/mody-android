@@ -33,10 +33,13 @@ class RecordFoodViewModel @Inject constructor(
             is RecordFoodIntent.PhotoBoxClicked -> setState { copy(isPhotoSheetVisible = true) }
             is RecordFoodIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
 
-            // 실제 카메라/갤러리 실행은 Screen의 ActivityResult 런처가 담당, 결과는 PhotoSelected로 들어온다
-            is RecordFoodIntent.TakePhotoClicked -> setState { copy(isPhotoSheetVisible = false) }
+            // 촬영하기 → 커스텀 카메라 오버레이. 갤러리 실행은 Screen 런처, 결과는 PhotoSelected로.
+            is RecordFoodIntent.TakePhotoClicked ->
+                setState { copy(isPhotoSheetVisible = false, isCameraVisible = true) }
+            is RecordFoodIntent.CameraDismissed -> setState { copy(isCameraVisible = false) }
             is RecordFoodIntent.PickFromGalleryClicked -> setState { copy(isPhotoSheetVisible = false) }
-            is RecordFoodIntent.PhotoSelected -> setState { copy(photoUri = intent.uri) }
+            is RecordFoodIntent.PhotoSelected ->
+                setState { copy(photoUri = intent.uri, isCameraVisible = false) }
 
             is RecordFoodIntent.MenuChanged -> setState { copy(menu = intent.value) }
             is RecordFoodIntent.TimeChanged ->

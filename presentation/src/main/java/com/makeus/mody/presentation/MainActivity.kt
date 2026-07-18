@@ -23,6 +23,7 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
 import com.makeus.mody.core.domain.notification.NotificationDeepLinkHolder
+import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
     // 13+ 알림 권한 요청. 거부해도 앱은 그대로 진행(알림만 안 뜸).
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    // 확정된 시작 목적지. 알림 딥링크는 메인(로그인 완료) 상태에서만 소비한다.
+    private var resolvedStartRoute: Route? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +86,7 @@ class MainActivity : ComponentActivity() {
                 val route = startRoute
                 // NavHost 준비(시작 목적지 확정) 후 알림 딥링크 1회 소비 → 라우팅.
                 LaunchedEffect(route) {
+                    resolvedStartRoute = route
                     if (route != null) consumeNotificationDeepLink()
                 }
                 if (route == null) {
@@ -110,10 +115,20 @@ class MainActivity : ComponentActivity() {
         val type = intent?.getStringExtra(NotificationDeepLink.KEY_TYPE) ?: return
         val targetId = intent.getStringExtra(NotificationDeepLink.KEY_TARGET_ID)?.toLongOrNull()
         notificationDeepLinkHolder.set(NotificationDeepLink(type = type, targetId = targetId))
+        // 소비 후 extra 제거 → 화면 회전 등 Activity 재생성 시 재파싱·재이동(엉뚱한 화면으로 튐) 방지.
+        intent.removeExtra(NotificationDeepLink.KEY_TYPE)
+        intent.removeExtra(NotificationDeepLink.KEY_TARGET_ID)
     }
 
-    /** 보관된 알림 딥링크가 있으면 해당 화면으로 이동. */
+    /**
+     * 보관된 알림 딥링크가 있으면 해당 화면으로 이동.
+     * 단 메인(로그인 완료) 진입 상태에서만 — 로그인/온보딩/그룹 단계면 스택 오염 막으려 폐기만 한다.
+     */
     private fun consumeNotificationDeepLink() {
+        if (resolvedStartRoute != MainRoute) {
+            notificationDeepLinkHolder.consume()
+            return
+        }
         val deepLink = notificationDeepLinkHolder.consume() ?: return
         navigationHelper.navigate(NavigationEvent.To(deepLink.toRoute()))
     }

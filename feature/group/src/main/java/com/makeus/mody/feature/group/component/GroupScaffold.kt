@@ -68,14 +68,15 @@ fun GroupScaffold(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(TitleTopOffset),
-            contentAlignment = Alignment.CenterStart,
+            contentAlignment = Alignment.TopStart,
         ) {
             if (onBackClick != null) {
-                // IconButton 48dp 터치타깃 안에서 10dp 아이콘이 가운데 정렬 → 좌측 19dp 여백.
-                // 그만큼 왼쪽으로 당겨 chevron 왼쪽을 타이틀(좌측 24dp)과 정렬.
+                // ModyBackTopBar(기록/알림/상세)와 백키 위치 통일 → 화면 전환 시 안 튐.
+                // 그쪽 기준: 버튼 left 8dp · top 16dp. 여기는 Column 좌우 24dp 안이라
+                // x=-16(24-16=8), y=16 으로 동일 지점에 맞춘다.
                 ModyBackButton(
                     onClick = onBackClick,
-                    modifier = Modifier.offset(x = (-19).dp),
+                    modifier = Modifier.offset(x = (-16).dp, y = 16.dp),
                 )
             }
         }

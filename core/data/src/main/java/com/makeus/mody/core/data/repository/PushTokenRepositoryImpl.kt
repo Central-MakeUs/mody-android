@@ -18,9 +18,10 @@ class PushTokenRepositoryImpl @Inject constructor(
 ) : PushTokenRepository {
 
     // 기기+앱서명당 안정적인 식별자. 퍼미션 불필요. 서버가 기기 단위 토큰 관리에 사용.
-    private val deviceId: String
-        get() = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-            .orEmpty()
+    // 프로세스 수명 동안 불변 → lazy 캐시(매 호출 ContentResolver 재조회 방지).
+    private val deviceId: String by lazy {
+        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+    }
 
     override suspend fun register(fcmToken: String) {
         notificationApi.registerPushToken(

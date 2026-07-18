@@ -8,18 +8,14 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.makeus.mody.R
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
-import com.makeus.mody.core.domain.repository.PushTokenRepository
+import com.makeus.mody.core.domain.notification.PushTokenSynchronizer
 import com.makeus.mody.presentation.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * FCM 수신 진입점.
- *  - onNewToken: 토큰 생성/갱신 → 서버 등록.
+ *  - onNewToken: 토큰 생성/갱신 → 서버 재동기화(로그인 상태에서만).
  *  - onMessageReceived: 앱이 포그라운드거나 data-only 메시지일 때 호출 → 시스템 알림 표시.
  *    (notification 페이로드는 백그라운드에선 시스템이 자동 표시하나, 딥링크 extra 를 싣기 위해
  *     여기서 직접 만든다.)
@@ -27,22 +23,22 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ModyFirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject lateinit var pushTokenRepository: PushTokenRepository
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Inject lateinit var pushTokenSynchronizer: PushTokenSynchronizer
 
     override fun onNewToken(token: String) {
-        // 로그인 안 됐으면 등록 API 가 401 → runCatching 으로 무음 무시.
-        // (로그인 후 앱 시작 시 PushTokenRegistrar.sync 가 다시 등록)
-        scope.launch { runCatching { pushTokenRepository.register(token) } }
+        // 토큰 갱신 → 현재 토큰 재동기화. sync 가 로그인 여부 판정 + 자체 스코프로 fire-and-forget.
+        // (서비스에 별도 스코프를 두면 서비스 파괴 시 미취소 코루틴이 남아 sync 로 위임한다.)
+        pushTokenSynchronizer.sync()
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
         val data = message.data
-        val title = message.notification?.title ?: data["title"] ?: DEFAULT_TITLE
-        val body = message.notification?.body ?: data["body"].orEmpty()
+        val title = message.notification?.title ?: data["title"]
+        val body = message.notification?.body ?: data["body"]
 
-        showNotification(title, body, data)
+        // 표시할 제목/본문이 전혀 없으면 무음(data-only) 메시지 → 스퓨리어스 빈 알림 방지.
+        if (title == null && body == null) return
+        showNotification(title ?: DEFAULT_TITLE, body.orEmpty(), data)
     }
 
     private fun showNotification(title: String, body: String, data: Map<String, String>) {

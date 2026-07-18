@@ -26,10 +26,13 @@ class RecordHealthViewModel @Inject constructor(
 
             is RecordHealthIntent.PhotoBoxClicked -> setState { copy(isPhotoSheetVisible = true) }
             is RecordHealthIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
-            // 실제 카메라/갤러리 실행은 Screen 의 ActivityResult 런처가 담당, 결과는 PhotoSelected 로.
-            is RecordHealthIntent.TakePhotoClicked -> setState { copy(isPhotoSheetVisible = false) }
+            // 촬영하기 → 커스텀 카메라 오버레이. 갤러리 실행은 Screen 의 런처가 담당, 결과는 PhotoSelected 로.
+            is RecordHealthIntent.TakePhotoClicked ->
+                setState { copy(isPhotoSheetVisible = false, isCameraVisible = true) }
+            is RecordHealthIntent.CameraDismissed -> setState { copy(isCameraVisible = false) }
             is RecordHealthIntent.PickFromGalleryClicked -> setState { copy(isPhotoSheetVisible = false) }
-            is RecordHealthIntent.PhotoSelected -> setState { copy(photoUri = intent.uri) }
+            is RecordHealthIntent.PhotoSelected ->
+                setState { copy(photoUri = intent.uri, isCameraVisible = false) }
 
             is RecordHealthIntent.TypeDropdownToggled ->
                 setState { copy(isTypeDropdownExpanded = !isTypeDropdownExpanded) }

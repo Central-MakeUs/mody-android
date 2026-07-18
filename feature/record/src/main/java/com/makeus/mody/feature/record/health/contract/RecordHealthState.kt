@@ -15,6 +15,8 @@ data class RecordHealthState(
     val durationHours: Int = 0,
     val durationMinutes: Int = 0,
     val isPhotoSheetVisible: Boolean = false,
+    /** 커스텀 촬영 오버레이 표시 여부. */
+    val isCameraVisible: Boolean = false,
     val isSubmitting: Boolean = false,
     /** 작성 완료 실패 메시지 (토스트 1회 표시 후 소비). */
     val submitError: String? = null,

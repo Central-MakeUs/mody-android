@@ -1,7 +1,5 @@
 package com.makeus.mody.feature.record.health
 
-import android.content.Context
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -31,10 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +37,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
@@ -52,30 +46,17 @@ import com.makeus.mody.core.designsystem.component.ModyDurationPicker
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.record.camera.RecordCameraOverlay
 import com.makeus.mody.feature.record.component.RecordPhotoBox
 import com.makeus.mody.feature.record.component.SectionHeader
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.health.contract.ExerciseType
 import com.makeus.mody.feature.record.health.contract.RecordHealthIntent
-import java.io.File
 
 @Composable
 fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
-    // 촬영 결과가 저장될 URI. 촬영 중 프로세스 재생성돼도 결과를 받게 saveable 로 유지.
-    var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-    ) { success ->
-        val uri = pendingCameraUri
-        if (success && uri != null) {
-            viewModel.onIntent(RecordHealthIntent.PhotoSelected(uri))
-        }
-        pendingCameraUri = null
-    }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -160,12 +141,7 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
 
     if (state.isPhotoSheetVisible) {
         PhotoSourceSheet(
-            onTakePhoto = {
-                viewModel.onIntent(RecordHealthIntent.TakePhotoClicked)
-                val uri = createCameraImageUri(context)
-                pendingCameraUri = uri.toString()
-                cameraLauncher.launch(uri)
-            },
+            onTakePhoto = { viewModel.onIntent(RecordHealthIntent.TakePhotoClicked) },
             onPickFromGallery = {
                 viewModel.onIntent(RecordHealthIntent.PickFromGalleryClicked)
                 galleryLauncher.launch(
@@ -175,17 +151,18 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
             onDismiss = { viewModel.onIntent(RecordHealthIntent.PhotoSheetDismissed) },
         )
     }
-}
 
-/** 촬영 이미지를 받을 캐시 파일 URI. record_file_paths.xml 의 cache-path(record/camera)와 일치해야 한다. */
-private fun createCameraImageUri(context: Context): Uri {
-    val dir = File(context.cacheDir, "record/camera").apply { mkdirs() }
-    val file = File(dir, "exercise_${System.currentTimeMillis()}.jpg")
-    return FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.record.fileprovider",
-        file,
-    )
+    if (state.isCameraVisible) {
+        RecordCameraOverlay(
+            onConfirm = { uri -> viewModel.onIntent(RecordHealthIntent.PhotoSelected(uri)) },
+            onPickGallery = {
+                galleryLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
+            onDismiss = { viewModel.onIntent(RecordHealthIntent.CameraDismissed) },
+        )
+    }
 }
 
 /**

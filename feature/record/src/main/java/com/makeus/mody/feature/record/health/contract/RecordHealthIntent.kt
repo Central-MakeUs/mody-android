@@ -7,7 +7,10 @@ sealed class RecordHealthIntent : UiIntent {
 
     data object PhotoBoxClicked : RecordHealthIntent()
     data object PhotoSheetDismissed : RecordHealthIntent()
+
+    /** 촬영하기 → 커스텀 카메라 오버레이 오픈. */
     data object TakePhotoClicked : RecordHealthIntent()
+    data object CameraDismissed : RecordHealthIntent()
     data object PickFromGalleryClicked : RecordHealthIntent()
     data class PhotoSelected(val uri: String) : RecordHealthIntent()
 

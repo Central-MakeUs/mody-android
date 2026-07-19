@@ -35,6 +35,7 @@ val MainBottomBarContentHeight = 49.dp
  */
 @Composable
 fun MainBottomBar(
+    tabs: List<MainTab>,
     selected: MainTab,
     onSelect: (MainTab) -> Unit,
     modifier: Modifier = Modifier,
@@ -52,7 +53,7 @@ fun MainBottomBar(
                 .background(ModyTheme.colors.gray02),
         )
         Row(modifier = Modifier.fillMaxWidth()) {
-            MainTab.entries.forEach { tab ->
+            tabs.forEach { tab ->
                 TabItem(
                     tab = tab,
                     isSelected = tab == selected,

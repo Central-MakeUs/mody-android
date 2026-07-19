@@ -18,3 +18,26 @@ data class PushTokenRegisterRequest(
 data class PushTokenDisableRequest(
     val deviceId: String,
 )
+
+/** GET /api/v1/notifications 응답. 커서 페이지네이션(인박스 알림 목록). */
+@Serializable
+data class NotificationListResponse(
+    val notifications: List<NotificationResponse> = emptyList(),
+    val nextCursor: Long? = null,
+    val hasNext: Boolean = false,
+)
+
+/**
+ * 인박스 알림 한 건.
+ * @param type 서버 enum(GROUP_JOINED, COMMENT_CREATED 등). 화면 아이콘/이동 매핑 키.
+ * @param createdAt ISO date-time 문자열(예: "2026-07-19T10:00:00").
+ */
+@Serializable
+data class NotificationResponse(
+    val notificationId: Long = 0,
+    val type: String = "",
+    val title: String = "",
+    val description: String = "",
+    val createdAt: String = "",
+    val read: Boolean = false,
+)

@@ -102,6 +102,7 @@ object NetworkModule {
     fun provideFeedApi(retrofit: Retrofit): FeedApi =
         retrofit.create(FeedApi::class.java)
 
+
     @Provides
     @Singleton
     fun provideNotificationApi(retrofit: Retrofit): NotificationApi =

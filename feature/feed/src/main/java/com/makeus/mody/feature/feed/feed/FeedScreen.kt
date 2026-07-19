@@ -81,11 +81,10 @@ private fun FeedContent(
             .background(ModyTheme.colors.white),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // 상태바 바로 아래 붙지 않게 온보딩/그룹 스캐폴드와 동일하게 여유 확보.
-                .padding(top = 12.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
+            // 상단 여백(시스템바 아래 12dp)은 FeedTopBar(height 48 센터정렬)가 내장 → 별도 top 패딩 불필요.
+            // 백키 탑바(ModyBackTopBar)와 동일 기준.
             FeedTopBar(
                 onAlarmClick = { onIntent(FeedIntent.AlarmClicked) },
             )

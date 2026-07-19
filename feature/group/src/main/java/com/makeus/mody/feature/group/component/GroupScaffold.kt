@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -72,11 +73,13 @@ fun GroupScaffold(
         ) {
             if (onBackClick != null) {
                 // ModyBackTopBar(기록/알림/상세)와 백키 위치 통일 → 화면 전환 시 안 튐.
-                // 그쪽 기준: 버튼 left 8dp · top 16dp. 여기는 Column 좌우 24dp 안이라
-                // x=-16(24-16=8), y=16 으로 동일 지점에 맞춘다.
+                // 그쪽 기준: 아이콘 24dp 가 left 24dp · top 12dp(height 48 센터). 여기는
+                // Column 좌우 24dp 안이라 x 오프셋 없이 y=12 만 맞추면 동일 지점.
                 ModyBackButton(
                     onClick = onBackClick,
-                    modifier = Modifier.offset(x = (-16).dp, y = 16.dp),
+                    modifier = Modifier
+                        .offset(y = 12.dp)
+                        .size(24.dp),
                 )
             }
         }

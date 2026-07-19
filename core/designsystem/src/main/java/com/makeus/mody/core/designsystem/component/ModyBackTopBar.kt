@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,7 +15,8 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /**
  * 공용 뒤로가기 탑바: 뒤로가기 "<" + (선택)아바타 + 타이틀.
- * 상태바 바로 아래 붙지 않게 상단 12dp 여백 내장 → 부모는 statusBarsPadding 만 적용.
+ * Figma 상단바는 로고형/백키형이 같은 컴포넌트 → [ModyLogoTopBar] 와 동일하게
+ * height 48 · 좌우 24dp · 아이콘 24dp. 상태바 여백은 부모가 statusBarsPadding 으로 처리.
  * 백키가 있는 화면(기록/알림/상세 등)에서 재사용해 위치·간격 통일.
  *
  * @param avatarUrl null 이 아니면(또는 [showAvatar]) 뒤로가기와 타이틀 사이 32dp 아바타 노출.
@@ -32,13 +34,12 @@ fun ModyBackTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
-            .height(56.dp)
-            .padding(start = 8.dp, end = 16.dp),
+            .height(48.dp)
+            .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        ModyBackButton(onClick = onBackClick)
+        ModyBackButton(onClick = onBackClick, modifier = Modifier.size(24.dp))
         if (showAvatar) {
             ModyAvatar(imageUrl = avatarUrl, size = 32.dp)
         }

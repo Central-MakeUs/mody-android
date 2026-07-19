@@ -194,18 +194,18 @@ private fun WeightColumn(label: String, kg: Double?, modifier: Modifier = Modifi
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = label, style = ModyTheme.typography.c1, color = ModyTheme.colors.gray06)
+        Text(text = label, style = ModyTheme.typography.c2, color = ModyTheme.colors.gray05)
         Spacer(modifier = Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = kg?.let { formatKg(it) } ?: "-",
-                style = ModyTheme.typography.b1,
+                style = ModyTheme.typography.h2,
                 color = ModyTheme.colors.gray10,
             )
             Text(
                 text = " kg",
-                style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.gray06,
+                style = ModyTheme.typography.b7,
+                color = ModyTheme.colors.gray08,
             )
         }
     }

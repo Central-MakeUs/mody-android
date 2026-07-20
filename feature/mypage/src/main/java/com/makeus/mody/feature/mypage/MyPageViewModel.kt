@@ -3,6 +3,7 @@ package com.makeus.mody.feature.mypage
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
@@ -30,8 +31,10 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
 
+            is MyPageIntent.ProfileSettingClicked ->
+                navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
+
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
-            is MyPageIntent.ProfileSettingClicked -> Unit
             is MyPageIntent.WeightRecordClicked -> Unit
             is MyPageIntent.NotificationSettingClicked -> Unit
             is MyPageIntent.GroupSettingClicked -> Unit

@@ -1,7 +1,6 @@
 package com.makeus.mody.feature.group.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,19 +12,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.makeus.mody.core.designsystem.component.ModyTopBarIcon
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
@@ -75,19 +72,13 @@ fun GroupScaffold(
         ) {
             if (onBackClick != null) {
                 // ModyBackTopBar(기록/알림/상세)와 백키 위치 통일: chevron 좌 24dp(=Column padding), 상 12dp.
-                Box(
-                    modifier = Modifier
-                        .padding(top = 12.dp)
-                        .size(24.dp)
-                        .clickable(onClick = onBackClick),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Icon(
-                        painter = painterResource(ModyIcons.ChevronLeft),
-                        contentDescription = "뒤로가기",
-                        tint = ModyTheme.colors.gray10,
-                    )
-                }
+                // 공용 ModyTopBarIcon 재사용(탑바 아이콘 동작 일관).
+                ModyTopBarIcon(
+                    icon = ModyIcons.ChevronLeft,
+                    contentDescription = "뒤로가기",
+                    onClick = onBackClick,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
             }
         }
 

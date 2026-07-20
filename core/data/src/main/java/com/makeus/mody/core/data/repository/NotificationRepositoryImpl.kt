@@ -11,7 +11,7 @@ import com.makeus.mody.core.network.model.unwrapResult
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -50,9 +50,10 @@ private fun NotificationResponse.toNotification(): Notification =
 private fun String.toNotificationType(): NotificationType =
     runCatching { NotificationType.valueOf(this) }.getOrDefault(NotificationType.UNKNOWN)
 
-// 서버 date-time. 오프셋 있으면(OffsetDateTime) 그대로, 없으면 로컬로 간주. 파싱 실패 시 EPOCH.
+// 서버 date-time. 오프셋 있으면(OffsetDateTime) 그대로, 없으면 UTC 로 간주(기기 시간대 shift 방지).
+// 파싱 실패 시 EPOCH.
 private fun String.parseServerInstant(): Instant = runCatching {
     OffsetDateTime.parse(this).toInstant()
 }.recoverCatching {
-    LocalDateTime.parse(this).atZone(ZoneId.systemDefault()).toInstant()
+    LocalDateTime.parse(this).atZone(ZoneOffset.UTC).toInstant()
 }.getOrDefault(Instant.EPOCH)

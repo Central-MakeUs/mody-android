@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -33,7 +32,8 @@ fun ModyLogoTopBar(
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
-            .padding(horizontal = 24.dp),
+            // 알림 IconButton(48dp 터치타깃)이 내부 12dp 여백을 가지므로 end=12 로 아이콘 시각 위치를 24dp 유지.
+            .padding(start = 24.dp, end = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -41,7 +41,7 @@ fun ModyLogoTopBar(
             painter = painterResource(ModyIcons.LogoWordmark),
             contentDescription = "MODY",
         )
-        IconButton(onClick = onAlarmClick, modifier = Modifier.size(24.dp)) {
+        IconButton(onClick = onAlarmClick) {
             Icon(
                 painter = painterResource(ModyIcons.Alarm),
                 contentDescription = "알림",

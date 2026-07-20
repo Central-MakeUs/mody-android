@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,8 @@ import com.makeus.mody.feature.mypage.contract.MyPageState
 @Composable
 fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 탭 진입 시 최신화(다른 화면에서 프로필/체중 변경 반영). VM은 탭 전환에도 유지되므로 재조회 필요.
+    LaunchedEffect(Unit) { viewModel.onIntent(MyPageIntent.Refresh) }
     MyPageContent(state = state, onIntent = viewModel::onIntent)
 }
 

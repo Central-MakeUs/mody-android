@@ -3,17 +3,23 @@ package com.makeus.mody.core.data.di
 import com.makeus.mody.core.data.repository.AuthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
+import com.makeus.mody.core.data.repository.MyPageRepositoryImpl
+import com.makeus.mody.core.data.repository.NotificationRepositoryImpl
 import com.makeus.mody.core.data.repository.OnboardingRepositoryImpl
 import com.makeus.mody.core.data.repository.PushTokenRepositoryImpl
 import com.makeus.mody.core.data.repository.RecordRepositoryImpl
+import com.makeus.mody.core.data.repository.RemoteConfigRepositoryImpl
 import com.makeus.mody.core.data.repository.SessionRepositoryImpl
 import com.makeus.mody.core.data.repository.TokenManagerImpl
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.domain.repository.NotificationRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository
 import com.makeus.mody.core.domain.repository.RecordRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
 import dagger.Binds
@@ -60,5 +66,17 @@ abstract class DataModule {
 
     @Binds
     @Singleton
+    abstract fun bindRemoteConfigRepository(impl: RemoteConfigRepositoryImpl): RemoteConfigRepository
+
+    @Binds
+    @Singleton
     abstract fun bindPushTokenRepository(impl: PushTokenRepositoryImpl): PushTokenRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMyPageRepository(impl: MyPageRepositoryImpl): MyPageRepository
 }

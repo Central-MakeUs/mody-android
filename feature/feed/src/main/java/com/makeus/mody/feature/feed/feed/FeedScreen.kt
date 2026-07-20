@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -43,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -81,12 +81,10 @@ private fun FeedContent(
             .background(ModyTheme.colors.white),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // 상태바 바로 아래 붙지 않게 온보딩/그룹 스캐폴드와 동일하게 여유 확보.
-                .padding(top = 12.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            FeedTopBar(
+            // 상단 여백(시스템바 아래 12dp)은 ModyLogoTopBar(height 48 센터정렬)가 내장.
+            ModyLogoTopBar(
                 onAlarmClick = { onIntent(FeedIntent.AlarmClicked) },
             )
             GroupSelector(
@@ -250,33 +248,6 @@ private fun FeedList(
                     )
                 }
             }
-        }
-    }
-}
-
-/** 상단 바: MODY 로고 + 알림 아이콘. */
-@Composable
-private fun FeedTopBar(
-    onAlarmClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Image(
-            painter = painterResource(ModyIcons.LogoWordmark),
-            contentDescription = "MODY",
-        )
-        IconButton(onClick = onAlarmClick, modifier = Modifier.size(24.dp)) {
-            Icon(
-                painter = painterResource(ModyIcons.Alarm),
-                contentDescription = "알림",
-                tint = ModyTheme.colors.gray10,
-            )
         }
     }
 }

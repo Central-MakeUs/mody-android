@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.makeus.mody.feature.notification"
+    namespace = "com.makeus.mody.feature.mypage"
     compileSdk = 36
     defaultConfig { minSdk = 26 }
     compileOptions {
@@ -31,7 +31,6 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.ui.tooling.preview)
-    debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.coil.compose)
 }

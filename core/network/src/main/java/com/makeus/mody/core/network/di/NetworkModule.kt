@@ -8,6 +8,7 @@ import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
 import com.makeus.mody.core.network.api.NotificationApi
 import com.makeus.mody.core.network.api.OnboardingApi
+import com.makeus.mody.core.network.api.MyPageApi
 import com.makeus.mody.core.network.api.RecordApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
 import com.makeus.mody.core.network.interceptor.AuthInterceptor
@@ -106,4 +107,9 @@ object NetworkModule {
     @Singleton
     fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
         retrofit.create(NotificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMyPageApi(retrofit: Retrofit): MyPageApi =
+        retrofit.create(MyPageApi::class.java)
 }

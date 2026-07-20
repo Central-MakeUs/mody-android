@@ -27,6 +27,7 @@ import com.makeus.mody.feature.mypage.MyPageScreen
 @Composable
 fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
     val selectedTab by viewModel.selectedTab.collectAsState()
+    val visibleTabs by viewModel.visibleTabs.collectAsState()
     val feedViewModel: FeedViewModel = hiltViewModel()
     val feedState by feedViewModel.state.collectAsStateWithLifecycle()
 
@@ -45,6 +46,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                 }
             }
             MainBottomBar(
+                tabs = visibleTabs,
                 selected = selectedTab,
                 onSelect = viewModel::selectTab,
             )

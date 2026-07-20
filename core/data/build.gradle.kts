@@ -23,4 +23,8 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.datastore.preferences)
+
+    // Firebase Remote Config (기능 플래그: 챌린지 탭 노출 제어)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.config)
 }

@@ -96,6 +96,36 @@ fun ModyDialog(
     }
 }
 
+/**
+ * 공용 에러 다이얼로그. [message] 가 null 이 아닐 때만 [ModyDialog](확인 버튼 하나)로 표시.
+ *
+ * MVI 에러 상태(`errorMessage: String?`)를 그대로 넘기면 되고, [onDismiss] 에서 상태를
+ * 소비(null 로 리셋)하면 된다. 화면마다 이 한 줄로 통일:
+ *
+ *     ModyErrorDialog(
+ *         message = state.errorMessage,
+ *         onDismiss = { viewModel.onIntent(XxxIntent.ErrorShown) },
+ *     )
+ */
+// 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
+@Suppress("unused")
+@Composable
+fun ModyErrorDialog(
+    message: String?,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    confirmText: String = "확인",
+) {
+    if (message == null) return
+    ModyDialog(
+        title = message,
+        confirmText = confirmText,
+        onConfirm = onDismiss,
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+    )
+}
+
 @Composable
 private fun DialogButton(
     text: String,

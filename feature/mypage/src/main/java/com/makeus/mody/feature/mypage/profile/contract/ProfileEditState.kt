@@ -12,11 +12,13 @@ data class ProfileEditState(
     /** 생년월일(서버 원본, 예: 2002-08-11). 읽기 전용. */
     val birthDate: String? = null,
     val loginType: LoginType = LoginType.UNKNOWN,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     /** 로그아웃/탈퇴 처리 중. */
     val isProcessing: Boolean = false,
     val showWithdrawDialog: Boolean = false,
+    /** 저장 안 된 변경이 있는 채로 나가려 할 때 확인 다이얼로그. */
+    val showLeaveDialog: Boolean = false,
     val error: String? = null,
 ) : UiState {
     /** 최대 글자수 초과(한 글자 더 입력되면 경고). */

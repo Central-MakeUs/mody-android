@@ -1,7 +1,6 @@
 package com.makeus.mody.feature.onboarding.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -22,12 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /**
@@ -48,15 +46,12 @@ fun OnboardingScaffold(
     titleContentSpacing: Dp? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(ModyTheme.colors.white)
             // 입력 필드 바깥 탭 시 포커스 해제(키보드 내림)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
+            .clearFocusOnTap()
             .statusBarsPadding()
             // 키보드가 뜨면 하단 버튼이 그 위로 올라오게(ime), 안 뜨면 내비게이션바 위에
             .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))

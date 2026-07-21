@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.mypage.profile
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -40,8 +43,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyButton
+import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
+import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyTextField
+import com.makeus.mody.core.designsystem.icon.ModyIcons
+import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.LoginType
 import com.makeus.mody.feature.mypage.profile.contract.ProfileEditIntent
@@ -70,10 +78,16 @@ private fun ProfileEditContent(
     state: ProfileEditState,
     onIntent: (ProfileEditIntent) -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+
+    // 시스템 back도 가로채 변경사항 확인. (변경 없으면 비활성 → 기본 pop)
+    BackHandler(enabled = state.isDirty) { onIntent(ProfileEditIntent.BackClicked) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(ModyTheme.colors.white)
+            .clearFocusOnTap()
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding(),
@@ -81,8 +95,18 @@ private fun ProfileEditContent(
         TopBar(
             showSave = state.isDirty && !state.isSaving,
             onBack = { onIntent(ProfileEditIntent.BackClicked) },
-            onSave = { onIntent(ProfileEditIntent.SaveClicked) },
+            onSave = {
+                // 저장 시 포커스 해제 → 키보드 내림 + X/글자수 숨김.
+                focusManager.clearFocus()
+                onIntent(ProfileEditIntent.SaveClicked)
+            },
         )
+
+        // 최초 로드 전에는 값(loginType 등)이 UNKNOWN이라 배지/필드가 깜빡임 → 준비될 때까지 인디케이터.
+        if (state.isLoading) {
+            ModyLoadingScreen()
+            return@Column
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
         ModyAvatar(
@@ -125,6 +149,10 @@ private fun ProfileEditContent(
             onDismiss = { onIntent(ProfileEditIntent.WithdrawDismissed) },
         )
     }
+
+    // TODO(dialog): 공통 다이얼로그 컴포넌트 나오면 연결.
+    //  showLeaveDialog=true 시 "변경사항이 있습니다 / 저장하지 않고 나가시겠어요?"
+    //  저장 → LeaveSaveClicked, 저장 안 함 → LeaveDiscardClicked, 취소 → LeaveDismissed.
 }
 
 @Composable
@@ -193,49 +221,59 @@ private fun EditableNameField(
         focused -> ModyTheme.colors.primary100
         else -> ModyTheme.colors.gray02
     }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        ModyTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = "이름을 입력해주세요",
-            interactionSource = interactionSource,
-            alertIcon = if (isOverLimit) R.drawable.ic_alert_filled else null,
-            trailingIcon = if (value.isNotEmpty()) R.drawable.ic_clear else null,
-            onTrailingIconClick = { onValueChange("") },
-            trailingIconContentDescription = "입력 지우기",
-            // 한 글자 더(초과) 입력돼야 경고가 뜨도록 최대 길이는 NAME_MAX + 1.
-            maxLength = ProfileEditState.NAME_MAX + 1,
-            inputFilter = ModyInputFilter::hangulAlphaNumeric,
-        )
-    }
+    // 필드 높이(52)만 레이아웃에 반영. 경고/카운트 Row는 offset으로 아래에 겹쳐 그려
+    // 나타나도 아래 콘텐츠(생년월일 등)를 밀지 않음(추가 패딩 없음).
+    Box(modifier = Modifier.fillMaxWidth().height(52.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            ModyTextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = "이름을 입력해주세요",
+                interactionSource = interactionSource,
+                alertIcon = if (focused && isOverLimit) R.drawable.ic_alert_filled else null,
+                // X(지우기)는 포커스 상태에서만 노출.
+                trailingIcon = if (focused && value.isNotEmpty()) R.drawable.ic_clear else null,
+                onTrailingIconClick = { onValueChange("") },
+                trailingIconContentDescription = "입력 지우기",
+                // 한 글자 더(초과) 입력돼야 경고가 뜨도록 최대 길이는 NAME_MAX + 1.
+                maxLength = ProfileEditState.NAME_MAX + 1,
+                inputFilter = ModyInputFilter::hangulAlphaNumeric,
+            )
+        }
 
-    Spacer(modifier = Modifier.height(6.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = if (isOverLimit) "${ProfileEditState.NAME_MAX}자 이내로 입력해주세요" else "",
-            style = ModyTheme.typography.c1,
-            color = ModyTheme.colors.error,
-        )
-        Text(
-            text = buildAnnotatedString {
-                val count = value.length.toString()
-                append(count)
-                append("/${ProfileEditState.NAME_MAX}")
-                if (isOverLimit) addStyle(SpanStyle(color = ModyTheme.colors.error), 0, count.length)
-            },
-            style = ModyTheme.typography.c1,
-            color = ModyTheme.colors.gray07,
-        )
+        // 경고 문구 + 글자수 카운트는 포커스 상태에서만 표시. 필드 아래 6dp 지점에 오버레이.
+        if (focused) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // 필드(높이 52) 바로 아래 6dp 지점. 오버레이라 아래 콘텐츠엔 영향 없음.
+                    .offset(y = 58.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = if (isOverLimit) "${ProfileEditState.NAME_MAX}자 이내로 입력해주세요" else "",
+                    style = ModyTheme.typography.c1,
+                    color = ModyTheme.colors.error,
+                )
+                Text(
+                    text = buildAnnotatedString {
+                        val count = value.length.toString()
+                        append(count)
+                        append("/${ProfileEditState.NAME_MAX}")
+                        if (isOverLimit) addStyle(SpanStyle(color = ModyTheme.colors.error), 0, count.length)
+                    },
+                    style = ModyTheme.typography.c1,
+                    color = ModyTheme.colors.gray07,
+                )
+            }
+        }
     }
 }
 
@@ -258,24 +296,26 @@ private fun ReadOnlyField(text: String) {
     }
 }
 
-/** 로그인 수단 배지(읽기 전용). 카카오=옐로, 그 외=회색. */
+/**
+ * 로그인 수단 배지(읽기 전용). 로그인 페이지 버튼(ModyButton)을 그대로 재사용 —
+ * 아이콘/색상 동일, 문구만 "…계정으로 로그인 중". UNKNOWN이면 미표시.
+ * onClick은 no-op(읽기 전용).
+ */
 @Composable
 private fun LoginBadge(loginType: LoginType) {
-    val (bg, label, textColor) = when (loginType) {
-        LoginType.KAKAO -> Triple(Color(0xFFFEE500), "카카오 계정으로 로그인 중", ModyTheme.colors.gray10)
-        LoginType.GOOGLE -> Triple(ModyTheme.colors.gray01, "구글 계정으로 로그인 중", ModyTheme.colors.gray10)
-        LoginType.UNKNOWN -> Triple(ModyTheme.colors.gray01, "로그인 중", ModyTheme.colors.gray10)
+    val (variant, icon, label) = when (loginType) {
+        LoginType.KAKAO ->
+            Triple(ModyButtonVariant.Kakao, ModyIcons.Kakao, "카카오 계정으로 로그인 중")
+        LoginType.GOOGLE ->
+            Triple(ModyButtonVariant.Google, ModyIcons.Google, "Google 계정으로 로그인 중")
+        LoginType.UNKNOWN -> return
     }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(bg),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = label, style = ModyTheme.typography.b6, color = textColor)
-    }
+    ModyButton(
+        text = label,
+        onClick = {},
+        variant = variant,
+        leadingIcon = icon,
+    )
 }
 
 @Composable

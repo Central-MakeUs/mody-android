@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +26,7 @@ import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -91,7 +91,7 @@ fun GroupEntryScreen(
                     .height(48.dp), // ModyButton 높이와 동일 → 로딩/idle 전환 시 점프 없음
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = ModyTheme.colors.primary100)
+                ModyLoadingIndicator()
             }
         } else {
             ModyButton(

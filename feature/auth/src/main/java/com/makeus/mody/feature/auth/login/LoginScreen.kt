@@ -115,14 +115,14 @@ private fun LoginContent(
                 onClick = onKakaoLoginClick,
                 enabled = !isLoading,
                 variant = ModyButtonVariant.Kakao,
-                leadingIcon = R.drawable.ic_kakao,
+                leadingIcon = ModyIcons.Kakao,
             )
             ModyButton(
                 text = stringResource(R.string.login_google),
                 onClick = onGoogleLoginClick,
                 enabled = !isLoading,
                 variant = ModyButtonVariant.Google,
-                leadingIcon = R.drawable.ic_google,
+                leadingIcon = ModyIcons.Google,
             )
         }
     }

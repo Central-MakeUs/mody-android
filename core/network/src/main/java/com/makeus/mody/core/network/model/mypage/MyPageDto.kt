@@ -21,3 +21,18 @@ data class MyPageWeightsResponse(
     val currentWeightKg: Double? = null,
     val targetWeightKg: Double? = null,
 )
+
+/** GET /api/v1/mypage/profile — 프로필 상세(로그인 수단·이름·생년월일). */
+@Serializable
+data class MyPageProfileResponse(
+    val loginType: String = "",
+    val name: String = "",
+    val birthDate: String? = null,
+)
+
+/** PATCH /api/v1/mypage/profile — 이름/생년월일 수정. */
+@Serializable
+data class MyPageProfileUpdateRequest(
+    val nickname: String,
+    val birthDate: String?,
+)

@@ -103,4 +103,13 @@ sealed interface NotificationGraph : Route {
 }
 
 @Serializable
+data object MyPageGraphBaseRoute : Route
+
+sealed interface MyPageGraph : Route {
+    /** 프로필 설정(이름/생년월일/로그아웃/탈퇴) */
+    @Serializable
+    data object ProfileEditRoute : MyPageGraph
+}
+
+@Serializable
 data object MainRoute : Route

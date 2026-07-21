@@ -8,6 +8,29 @@ data class MyProfile(
     val daysTogether: Int,
 )
 
+/** 프로필 설정 상세. */
+data class ProfileDetail(
+    val name: String,
+    val birthDate: String?,
+    val loginType: LoginType,
+)
+
+/** 소셜 로그인 수단. */
+enum class LoginType {
+    KAKAO,
+    GOOGLE,
+    UNKNOWN,
+    ;
+
+    companion object {
+        fun from(raw: String): LoginType = when (raw.uppercase()) {
+            "KAKAO" -> KAKAO
+            "GOOGLE" -> GOOGLE
+            else -> UNKNOWN
+        }
+    }
+}
+
 /** 체중 요약(이전·현재·목표). 각 값은 미기록 시 null. */
 data class WeightSummary(
     val startKg: Double?,

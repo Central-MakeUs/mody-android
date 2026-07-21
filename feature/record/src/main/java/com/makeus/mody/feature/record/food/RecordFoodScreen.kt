@@ -47,6 +47,7 @@ import coil.compose.AsyncImage
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -79,6 +80,7 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .background(ModyTheme.colors.white)
+            .clearFocusOnTap()
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding(),

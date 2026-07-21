@@ -39,6 +39,8 @@ object ModyIcons {
     @DrawableRes val Icon = R.drawable.ic_icon
     @DrawableRes val Image = R.drawable.ic_image
     @DrawableRes val ImageFill = R.drawable.ic_image_fill
+    @DrawableRes val Google = R.drawable.ic_google
+    @DrawableRes val Kakao = R.drawable.ic_kakao
     @DrawableRes val Left = R.drawable.ic_left
     @DrawableRes val Logo = R.drawable.ic_logo
     @DrawableRes val LogoWordmark = R.drawable.ic_logo_wordmark

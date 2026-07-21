@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -107,9 +107,7 @@ private fun RecordDetailContent(
 
 @Composable
 private fun LoadingBox() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = ModyTheme.colors.primary100)
-    }
+    ModyLoadingScreen()
 }
 
 @Composable

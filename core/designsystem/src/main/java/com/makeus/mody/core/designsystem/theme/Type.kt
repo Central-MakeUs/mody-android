@@ -57,9 +57,10 @@ data class ModyTypography(
     val b5: TextStyle = modyTextStyle(FontWeight.Bold, 16.sp, 22.4.sp),
     val b6: TextStyle = modyTextStyle(FontWeight.SemiBold, 16.sp, 22.4.sp),
     val b7: TextStyle = modyTextStyle(FontWeight.Medium, 16.sp, 22.4.sp),
-    val c1: TextStyle = modyTextStyle(FontWeight.Medium, 14.sp, 19.6.sp),
-    val c2: TextStyle = modyTextStyle(FontWeight.SemiBold, 12.sp, 16.8.sp),
-    val c3: TextStyle = modyTextStyle(FontWeight.Medium, 12.sp, 16.8.sp),
+    val c1: TextStyle = modyTextStyle(FontWeight.SemiBold, 14.sp, 19.6.sp),
+    val c2: TextStyle = modyTextStyle(FontWeight.Medium, 14.sp, 16.8.sp),
+    val c3: TextStyle = modyTextStyle(FontWeight.SemiBold, 12.sp, 16.8.sp),
+    val c4: TextStyle = modyTextStyle(FontWeight.Medium, 12.sp, 16.8.sp)
 )
 
 val LocalModyTypography = staticCompositionLocalOf { ModyTypography() }

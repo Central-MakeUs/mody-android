@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -42,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -242,10 +242,7 @@ private fun FeedList(
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(
-                        color = ModyTheme.colors.primary100,
-                        modifier = Modifier.size(24.dp),
-                    )
+                    ModyLoadingIndicator(modifier = Modifier.size(24.dp))
                 }
             }
         }

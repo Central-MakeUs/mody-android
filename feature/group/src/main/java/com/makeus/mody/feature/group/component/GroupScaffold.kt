@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.ModyTopBarIcon
 import com.makeus.mody.core.designsystem.icon.ModyIcons
+import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 // 상태바 아래 타이틀 시작 지점(온보딩 진행바+간격과 동일). 상단 영역 고정 높이.
@@ -57,6 +58,8 @@ fun GroupScaffold(
         modifier = modifier
             .fillMaxSize()
             .background(ModyTheme.colors.white)
+            // 입력 필드 바깥 탭 시 포커스 해제(키보드 내림)
+            .clearFocusOnTap()
             .statusBarsPadding()
             .windowInsetsPadding(insets)
             // 좌우 24 (Figma). 위아래(타이틀/서브 위치)는 온보딩과 동일.

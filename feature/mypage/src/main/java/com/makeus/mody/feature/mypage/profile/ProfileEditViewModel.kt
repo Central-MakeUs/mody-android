@@ -30,10 +30,20 @@ class ProfileEditViewModel @Inject constructor(
     override suspend fun processIntent(intent: ProfileEditIntent) {
         when (intent) {
             is ProfileEditIntent.Load -> load()
-            is ProfileEditIntent.BackClicked -> navigationHelper.navigate(NavigationEvent.Up)
+            // 저장 안 된 변경이 있으면 확인 다이얼로그, 없으면 바로 나감.
+            is ProfileEditIntent.BackClicked ->
+                if (currentState.isDirty) setState { copy(showLeaveDialog = true) }
+                else navigationHelper.navigate(NavigationEvent.Up)
 
             is ProfileEditIntent.NameChanged -> setState { copy(name = intent.value) }
             is ProfileEditIntent.SaveClicked -> save()
+
+            is ProfileEditIntent.LeaveSaveClicked -> saveAndLeave()
+            is ProfileEditIntent.LeaveDiscardClicked -> {
+                setState { copy(showLeaveDialog = false) }
+                navigationHelper.navigate(NavigationEvent.Up)
+            }
+            is ProfileEditIntent.LeaveDismissed -> setState { copy(showLeaveDialog = false) }
 
             is ProfileEditIntent.LogoutClicked -> logout()
             is ProfileEditIntent.WithdrawClicked -> setState { copy(showWithdrawDialog = true) }
@@ -71,10 +81,32 @@ class ProfileEditViewModel @Inject constructor(
     private fun save() = viewModelScope.launch {
         val state = currentState
         if (!state.isDirty || state.isSaving) return@launch
+        val trimmed = state.name.trim()
         setState { copy(isSaving = true, error = null) }
         try {
-            val updated = myPageRepository.updateProfile(state.name.trim(), state.birthDate)
-            setState { copy(name = updated.name, originalName = updated.name, isSaving = false) }
+            myPageRepository.updateProfile(trimmed, state.birthDate)
+            // 서버 응답 name이 비어 와도 입력값 유지(필드가 비지 않도록).
+            setState { copy(name = trimmed, originalName = trimmed, isSaving = false) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            setState { copy(isSaving = false, error = e.message()) }
+        }
+    }
+
+    /** 다이얼로그에서 "저장 후 나가기". 저장 성공 시 이전 화면으로, 실패 시 머무르며 에러. */
+    private fun saveAndLeave() = viewModelScope.launch {
+        val state = currentState
+        val trimmed = state.name.trim()
+        if (!state.isDirty) {
+            setState { copy(showLeaveDialog = false) }
+            navigationHelper.navigate(NavigationEvent.Up)
+            return@launch
+        }
+        setState { copy(showLeaveDialog = false, isSaving = true, error = null) }
+        try {
+            myPageRepository.updateProfile(trimmed, state.birthDate)
+            navigationHelper.navigate(NavigationEvent.Up)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

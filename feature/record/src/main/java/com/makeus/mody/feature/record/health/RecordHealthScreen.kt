@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyButton
+import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDurationPicker
 import com.makeus.mody.core.designsystem.component.ModyTextField
@@ -76,6 +77,7 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .background(ModyTheme.colors.white)
+            .clearFocusOnTap()
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding(),

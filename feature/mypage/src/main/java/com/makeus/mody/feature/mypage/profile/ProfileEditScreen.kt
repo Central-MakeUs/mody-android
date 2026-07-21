@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,6 +44,7 @@ import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyTextField
@@ -144,15 +144,28 @@ private fun ProfileEditContent(
     }
 
     if (state.showWithdrawDialog) {
-        WithdrawDialog(
+        ModyDialog(
+            title = "정말 모디를 떠나실건가요?",
+            message = "탈퇴하면 계정 내 모든 정보가 사라져요.",
+            confirmText = "계정 삭제",
             onConfirm = { onIntent(ProfileEditIntent.WithdrawConfirmed) },
-            onDismiss = { onIntent(ProfileEditIntent.WithdrawDismissed) },
+            dismissText = "취소",
+            onDismissRequest = { onIntent(ProfileEditIntent.WithdrawDismissed) },
         )
     }
 
-    // TODO(dialog): 공통 다이얼로그 컴포넌트 나오면 연결.
-    //  showLeaveDialog=true 시 "변경사항이 있습니다 / 저장하지 않고 나가시겠어요?"
-    //  저장 → LeaveSaveClicked, 저장 안 함 → LeaveDiscardClicked, 취소 → LeaveDismissed.
+    if (state.showLeaveDialog) {
+        ModyDialog(
+            title = "변경사항이 있습니다",
+            message = "저장하지 않고 나가시겠어요?",
+            confirmText = "저장",
+            onConfirm = { onIntent(ProfileEditIntent.LeaveSaveClicked) },
+            // 왼쪽 버튼(저장 안 함) = 그냥 나가기, 스크림/백키 = 취소(머무름).
+            dismissText = "저장 안 함",
+            onDismiss = { onIntent(ProfileEditIntent.LeaveDiscardClicked) },
+            onDismissRequest = { onIntent(ProfileEditIntent.LeaveDismissed) },
+        )
+    }
 }
 
 @Composable
@@ -349,68 +362,3 @@ private fun SettingRow(text: String, color: Color, onClick: () -> Unit) {
     }
 }
 
-/** 탈퇴 확인 다이얼로그: 취소 / 계정 삭제. */
-@Composable
-private fun WithdrawDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(ModyTheme.colors.white)
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "정말 모디를 떠나실건가요?",
-                style = ModyTheme.typography.b3,
-                color = ModyTheme.colors.gray10,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "탈퇴하면 계정 내 모든 정보가 사라져요.",
-                style = ModyTheme.typography.b7,
-                color = ModyTheme.colors.gray06,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DialogButton(
-                    text = "취소",
-                    bg = ModyTheme.colors.gray01,
-                    textColor = ModyTheme.colors.gray05,
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                )
-                DialogButton(
-                    text = "계정 삭제",
-                    bg = ModyTheme.colors.primary100,
-                    textColor = ModyTheme.colors.gray10,
-                    onClick = onConfirm,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DialogButton(
-    text: String,
-    bg: Color,
-    textColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(bg)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = text, style = ModyTheme.typography.b5, color = textColor)
-    }
-}

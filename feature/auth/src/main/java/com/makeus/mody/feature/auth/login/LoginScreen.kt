@@ -13,14 +13,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import android.widget.Toast
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.auth.R
@@ -38,20 +36,17 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    // 로그인 실패 → 토스트 1회 표시 후 상태 소비
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.onIntent(LoginIntent.ErrorShown)
-        }
-    }
 
     LoginContent(
         isLoading = state.isLoading,
         onKakaoLoginClick = { viewModel.onIntent(LoginIntent.KakaoLoginClicked) },
         onGoogleLoginClick = { viewModel.onIntent(LoginIntent.GoogleLoginClicked) },
+    )
+
+    // 로그인 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
+    ModyErrorDialog(
+        message = state.errorMessage,
+        onDismiss = { viewModel.onIntent(LoginIntent.ErrorShown) },
     )
 }
 

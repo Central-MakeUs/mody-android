@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -55,7 +56,7 @@ fun ModyBackTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TopBarIcon(
+            ModyTopBarIcon(
                 icon = R.drawable.ic_chevron_left,
                 contentDescription = "뒤로가기",
                 onClick = onBackClick,
@@ -68,12 +69,15 @@ fun ModyBackTopBar(
                     text = title,
                     style = ModyTheme.typography.b6,
                     color = ModyTheme.colors.gray10,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
             }
         }
 
         if (onCloseClick != null) {
-            TopBarIcon(
+            ModyTopBarIcon(
                 icon = ModyIcons.Plus1,
                 contentDescription = "닫기",
                 onClick = onCloseClick,
@@ -82,15 +86,21 @@ fun ModyBackTopBar(
     }
 }
 
-/** 탑바 좌/우 아이콘 버튼. 24dp 영역, 글리프는 좌측 정렬(chevron 이 padding 24 지점에 오도록). */
+/**
+ * 탑바 좌/우 아이콘 버튼. 24dp 영역, 글리프는 좌측 정렬(chevron 이 padding 24 지점에 오도록).
+ * ModyBackTopBar 및 GroupScaffold 등 로고형/뒤로가기형 탑바에서 재사용.
+ */
+// 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
+@Suppress("unused")
 @Composable
-private fun TopBarIcon(
+fun ModyTopBarIcon(
     icon: Int,
     contentDescription: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(24.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.CenterStart,

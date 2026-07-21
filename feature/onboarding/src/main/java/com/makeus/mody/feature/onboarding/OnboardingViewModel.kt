@@ -6,7 +6,6 @@ import com.makeus.mody.core.domain.model.MealSchedule
 import com.makeus.mody.core.domain.model.MealType
 import com.makeus.mody.core.domain.model.OnboardingProfile
 import com.makeus.mody.core.domain.repository.OnboardingRepository
-import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraph
@@ -79,8 +78,9 @@ class OnboardingViewModel @Inject constructor(
         setState { copy(isLoading = true, errorMessage = null) }
         try {
             onboardingRepository.submitProfile(currentState.toProfile())
-            // 그룹 그래프로 핸드오프. 온보딩/로그인 백스택 제거(뒤로가기로 복귀 방지).
-            navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute, popUpTo = true))
+            // 권한 요청 화면으로. 온보딩/로그인 백스택 제거(뒤로가기로 복귀 방지).
+            // 권한 화면 "확인" 후 그룹 그래프로 핸드오프한다.
+            navigationHelper.navigate(NavigationEvent.To(OnboardingGraph.PermissionRoute, popUpTo = true))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

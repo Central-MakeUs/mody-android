@@ -6,6 +6,16 @@
     <!-- Android 13+ 푸시 알림 표시 권한(런타임 요청 필요) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- 온보딩 권한 요청 화면에서 일괄 요청(전부 선택). 카메라는 record 모듈에도 선언됨(병합). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 사진: Android 13+ 미디어 이미지, 그 이하 외부저장소 읽기 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- 건강 정보: 걸음 수 챌린지 -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
     <!-- Android 11+ 패키지 가시성: 카카오톡 설치 여부 확인(isKakaoTalkSharingAvailable) -->
     <queries>
         <package android:name="com.kakao.talk" />

@@ -19,6 +19,8 @@ data class ProfileEditState(
     val showWithdrawDialog: Boolean = false,
     /** 저장 안 된 변경이 있는 채로 나가려 할 때 확인 다이얼로그. */
     val showLeaveDialog: Boolean = false,
+    /** 탈퇴 API 성공 → 완료 안내. 확인 시 로그인으로 이동. */
+    val showWithdrawCompleteDialog: Boolean = false,
     val error: String? = null,
 ) : UiState {
     /** 최대 글자수 초과(한 글자 더 입력되면 경고). */

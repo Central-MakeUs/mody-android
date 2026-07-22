@@ -98,6 +98,7 @@ fun ModyDialog(
 
 /**
  * 공용 에러 다이얼로그. [message] 가 null 이 아닐 때만 [ModyDialog](확인 버튼 하나)로 표시.
+ * 시안의 제목(볼드)/본문(회색) 구조에 맞춰 에러 문구는 **본문**으로, 제목은 고정 문구로 표시.
  *
  * MVI 에러 상태(`errorMessage: String?`)를 그대로 넘기면 되고, [onDismiss] 에서 상태를
  * 소비(null 로 리셋)하면 된다. 화면마다 이 한 줄로 통일:
@@ -106,6 +107,8 @@ fun ModyDialog(
  *         message = state.errorMessage,
  *         onDismiss = { viewModel.onIntent(XxxIntent.ErrorShown) },
  *     )
+ *
+ * [title] 은 에러 종류별 분기(서버/네트워크 등)가 생기면 호출 측에서 덮어쓴다.
  */
 // 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
 @Suppress("unused")
@@ -114,11 +117,13 @@ fun ModyErrorDialog(
     message: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String = "요청에 실패했어요",
     confirmText: String = "확인",
 ) {
     if (message == null) return
     ModyDialog(
-        title = message,
+        title = title,
+        message = message,
         confirmText = confirmText,
         onConfirm = onDismiss,
         onDismissRequest = onDismiss,

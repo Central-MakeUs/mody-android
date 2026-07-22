@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.mypage.profile
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,14 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -40,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyDialog
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -53,16 +51,14 @@ private val SaveBlue = Color(0xFF6E7CFF)
 @Composable
 fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    LaunchedEffect(state.error) {
-        state.error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.onIntent(ProfileEditIntent.ErrorShown)
-        }
-    }
 
     ProfileEditContent(state = state, onIntent = viewModel::onIntent)
+
+    // 실패(조회/저장/탈퇴) → 공용 에러 다이얼로그. 확인 시 상태 소비.
+    ModyErrorDialog(
+        message = state.error,
+        onDismiss = { viewModel.onIntent(ProfileEditIntent.ErrorShown) },
+    )
 }
 
 @Composable
@@ -127,6 +123,17 @@ private fun ProfileEditContent(
             onConfirm = { onIntent(ProfileEditIntent.WithdrawConfirmed) },
             dismissText = "취소",
             onDismissRequest = { onIntent(ProfileEditIntent.WithdrawDismissed) },
+        )
+    }
+
+    if (state.showWithdrawCompleteDialog) {
+        // 계정은 이미 삭제된 상태 → 스크림/백키로 닫아도 동일하게 로그인으로 이동.
+        ModyDialog(
+            title = "탈퇴 처리가 완료되었어요.",
+            message = "마음이 바뀐다면 꼭 다시 찾아와주세요!",
+            confirmText = "확인",
+            onConfirm = { onIntent(ProfileEditIntent.WithdrawCompleteConfirmed) },
+            onDismissRequest = { onIntent(ProfileEditIntent.WithdrawCompleteConfirmed) },
         )
     }
 }

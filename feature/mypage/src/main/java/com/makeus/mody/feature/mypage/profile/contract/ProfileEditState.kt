@@ -17,6 +17,8 @@ data class ProfileEditState(
     /** 로그아웃/탈퇴 처리 중. */
     val isProcessing: Boolean = false,
     val showWithdrawDialog: Boolean = false,
+    /** 탈퇴 API 성공 → 완료 안내. 확인 시 로그인으로 이동. */
+    val showWithdrawCompleteDialog: Boolean = false,
     val error: String? = null,
 ) : UiState {
     /** 최대 글자수 초과(한 글자 더 입력되면 경고). */

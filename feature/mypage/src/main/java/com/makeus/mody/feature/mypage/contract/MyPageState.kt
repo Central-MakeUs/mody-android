@@ -9,4 +9,8 @@ data class MyPageState(
     val daysTogether: Int = 0,
     val weight: WeightSummary? = null,
     val isLoading: Boolean = false,
+    /** 체중 기록 바텀시트 표시 여부. */
+    val showWeightSheet: Boolean = false,
+    /** 체중 기록 저장 중. */
+    val isRecordingWeight: Boolean = false,
 ) : UiState

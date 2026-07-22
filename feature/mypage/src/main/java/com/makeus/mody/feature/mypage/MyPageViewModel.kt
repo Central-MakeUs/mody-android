@@ -34,11 +34,30 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.ProfileSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
 
+            is MyPageIntent.WeightRecordClicked -> setState { copy(showWeightSheet = true) }
+            is MyPageIntent.WeightRecordDismissed -> setState { copy(showWeightSheet = false) }
+            is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)
+
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
-            is MyPageIntent.WeightRecordClicked -> Unit
             is MyPageIntent.NotificationSettingClicked -> Unit
             is MyPageIntent.GroupSettingClicked -> Unit
             is MyPageIntent.HealthDataSettingClicked -> Unit
+        }
+    }
+
+    private fun recordWeight(recordedOn: String, weightKg: Double) = viewModelScope.launch {
+        if (currentState.isRecordingWeight) return@launch
+        setState { copy(isRecordingWeight = true) }
+        try {
+            myPageRepository.recordWeight(recordedOn, weightKg)
+            // 저장 후 요약 갱신(현재/이전 반영). 시트 닫기.
+            val w = runCatching { myPageRepository.getWeightSummary() }.getOrNull()
+            setState { copy(weight = w ?: weight, isRecordingWeight = false, showWeightSheet = false) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 실패해도 시트는 닫고(중복 저장 방지) 로딩만 해제. 카드 값은 유지.
+            setState { copy(isRecordingWeight = false, showWeightSheet = false) }
         }
     }
 

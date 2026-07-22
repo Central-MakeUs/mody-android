@@ -39,6 +39,8 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.WeightSummary
 import com.makeus.mody.feature.mypage.contract.MyPageIntent
 import com.makeus.mody.feature.mypage.contract.MyPageState
+import com.makeus.mody.feature.mypage.weight.WeightRecordSheet
+import kotlin.math.roundToInt
 
 @Composable
 fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
@@ -81,6 +83,18 @@ private fun MyPageContent(
         SettingsRow("알림 설정") { onIntent(MyPageIntent.NotificationSettingClicked) }
         SettingsRow("그룹 설정") { onIntent(MyPageIntent.GroupSettingClicked) }
         SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
+    }
+
+    if (state.showWeightSheet) {
+        WeightRecordSheet(
+            // 휠 기본값 = 현재 체중(없으면 60kg).
+            initialWeightKg = state.weight?.currentKg?.roundToInt() ?: 60,
+            isSaving = state.isRecordingWeight,
+            onConfirm = { recordedOn, weightKg ->
+                onIntent(MyPageIntent.WeightRecordSubmitted(recordedOn, weightKg))
+            },
+            onDismiss = { onIntent(MyPageIntent.WeightRecordDismissed) },
+        )
     }
 }
 

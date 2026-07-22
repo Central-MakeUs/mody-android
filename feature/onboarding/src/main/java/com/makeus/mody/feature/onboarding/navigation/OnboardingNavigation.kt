@@ -14,6 +14,7 @@ import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.alarm.AlarmScreen
 import com.makeus.mody.feature.onboarding.birth.BirthScreen
 import com.makeus.mody.feature.onboarding.nickname.NicknameScreen
+import com.makeus.mody.feature.onboarding.permission.PermissionScreen
 import com.makeus.mody.feature.onboarding.weight.WeightScreen
 
 fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
@@ -29,6 +30,10 @@ fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
         }
         composable<OnboardingGraph.AlarmRoute> { entry ->
             AlarmScreen(entry.sharedViewModel(navController))
+        }
+        // 권한 요청 화면은 온보딩 입력값과 무관 → 공유 VM 대신 자체 hiltViewModel.
+        composable<OnboardingGraph.PermissionRoute> {
+            PermissionScreen()
         }
     }
 }

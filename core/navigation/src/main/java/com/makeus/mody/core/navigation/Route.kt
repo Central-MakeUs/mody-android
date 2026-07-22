@@ -16,7 +16,7 @@ sealed interface AuthGraph : Route {
 data object OnboardingGraphBaseRoute : Route
 
 sealed interface OnboardingGraph : Route {
-    // 입력 스텝 순서: 닉네임 → 생년월일 → 체중 → 알림 → 완료
+    // 입력 스텝 순서: 닉네임 → 생년월일 → 체중 → 알림 → 권한 요청 → (그룹)
     @Serializable
     data object NicknameRoute : OnboardingGraph
 
@@ -28,6 +28,10 @@ sealed interface OnboardingGraph : Route {
 
     @Serializable
     data object AlarmRoute : OnboardingGraph
+
+    /** 접근 권한 요청(알림/카메라/사진/건강) 안내 + 요청. 프로필 저장 후 그룹 진입 직전. */
+    @Serializable
+    data object PermissionRoute : OnboardingGraph
 }
 
 @Serializable

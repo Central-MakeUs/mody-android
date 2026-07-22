@@ -21,5 +21,8 @@ sealed class ProfileEditIntent : UiIntent {
     data object WithdrawConfirmed : ProfileEditIntent()
     data object WithdrawDismissed : ProfileEditIntent()
 
+    /** 탈퇴 완료 다이얼로그 확인(스크림/백키 포함) → 로그인으로 이동. */
+    data object WithdrawCompleteConfirmed : ProfileEditIntent()
+
     data object ErrorShown : ProfileEditIntent()
 }

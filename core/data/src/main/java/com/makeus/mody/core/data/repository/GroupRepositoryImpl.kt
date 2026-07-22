@@ -29,6 +29,10 @@ class GroupRepositoryImpl @Inject constructor(
         return response.toGroup()
     }
 
+    override suspend fun leaveGroup(groupId: Long) {
+        groupApi.leaveGroup(groupId).unwrapResult()
+    }
+
     override suspend fun getMyGroups(): List<Group> =
         groupApi.getMyGroups().unwrapResult().groups.map { summary ->
             Group(

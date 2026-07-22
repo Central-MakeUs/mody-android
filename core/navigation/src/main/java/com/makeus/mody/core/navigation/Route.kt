@@ -113,6 +113,10 @@ sealed interface MyPageGraph : Route {
     /** 프로필 설정(이름/생년월일/로그아웃/탈퇴) */
     @Serializable
     data object ProfileEditRoute : MyPageGraph
+
+    /** 그룹 설정(내 그룹 목록/그룹 나가기) */
+    @Serializable
+    data object GroupSettingRoute : MyPageGraph
 }
 
 @Serializable

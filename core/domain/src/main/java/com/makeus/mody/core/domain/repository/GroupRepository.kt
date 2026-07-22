@@ -15,4 +15,7 @@ interface GroupRepository {
 
     /** 내가 속한 그룹 목록. */
     suspend fun getMyGroups(): List<Group>
+
+    /** 그룹 나가기. */
+    suspend fun leaveGroup(groupId: Long)
 }

@@ -34,10 +34,12 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.ProfileSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
 
+            is MyPageIntent.GroupSettingClicked ->
+                navigationHelper.navigate(NavigationEvent.To(MyPageGraph.GroupSettingRoute))
+
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
             is MyPageIntent.WeightRecordClicked -> Unit
             is MyPageIntent.NotificationSettingClicked -> Unit
-            is MyPageIntent.GroupSettingClicked -> Unit
             is MyPageIntent.HealthDataSettingClicked -> Unit
         }
     }

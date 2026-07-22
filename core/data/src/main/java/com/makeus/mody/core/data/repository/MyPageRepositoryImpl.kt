@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.network.api.MyPageApi
 import com.makeus.mody.core.network.model.mypage.MyPageProfileResponse
 import com.makeus.mody.core.network.model.mypage.MyPageProfileUpdateRequest
+import com.makeus.mody.core.network.model.mypage.MyPageWeightCreateRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +34,12 @@ class MyPageRepositoryImpl @Inject constructor(
             currentKg = w.currentWeightKg,
             targetKg = w.targetWeightKg,
         )
+    }
+
+    override suspend fun recordWeight(recordedOn: String, weightKg: Double) {
+        myPageApi.createWeight(
+            MyPageWeightCreateRequest(recordedOn = recordedOn, weightKg = weightKg),
+        ).unwrapResult()
     }
 
     override suspend fun getProfileDetail(): ProfileDetail =

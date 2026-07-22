@@ -34,19 +34,48 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.ProfileSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
 
+            is MyPageIntent.WeightRecordClicked -> setState { copy(showWeightSheet = true) }
+            is MyPageIntent.WeightRecordDismissed -> setState { copy(showWeightSheet = false) }
+            is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)
+            is MyPageIntent.WeightErrorShown -> setState { copy(weightError = null) }
+
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
-            is MyPageIntent.WeightRecordClicked -> Unit
             is MyPageIntent.NotificationSettingClicked -> Unit
             is MyPageIntent.GroupSettingClicked -> Unit
             is MyPageIntent.HealthDataSettingClicked -> Unit
         }
     }
 
+    private fun recordWeight(recordedOn: String, weightKg: Double) = viewModelScope.launch {
+        if (currentState.isRecordingWeight) return@launch
+        setState { copy(isRecordingWeight = true, weightError = null) }
+        try {
+            myPageRepository.recordWeight(recordedOn, weightKg)
+            // 저장 성공 → 요약 갱신(실패해도 기존 값 유지). 시트 닫기.
+            val w = weightSummaryOrNull()
+            setState { copy(weight = w ?: weight, isRecordingWeight = false, showWeightSheet = false) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 저장 실패 → 시트 유지 + 에러 노출(입력값 보존, 재시도 가능).
+            setState { copy(isRecordingWeight = false, weightError = "저장에 실패했어요. 다시 시도해주세요.") }
+        }
+    }
+
+    /** 취소는 전파, 그 외 실패만 null. (runCatching은 CancellationException까지 삼켜 사용 금지) */
+    private suspend fun weightSummaryOrNull() = try {
+        myPageRepository.getWeightSummary()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
     private fun load() = viewModelScope.launch {
         setState { copy(isLoading = true) }
         try {
             val profileDeferred = async { myPageRepository.getProfile() }
-            val weightDeferred = async { runCatching { myPageRepository.getWeightSummary() }.getOrNull() }
+            val weightDeferred = async { weightSummaryOrNull() }
             val p = profileDeferred.await()
             val w = weightDeferred.await()
             setState {

@@ -22,6 +22,24 @@ data class MyPageWeightsResponse(
     val targetWeightKg: Double? = null,
 )
 
+/** POST /api/v1/mypage/weights — 체중 기록 생성. */
+@Serializable
+data class MyPageWeightCreateRequest(
+    /** 기록 날짜(ISO, yyyy-MM-dd). */
+    val recordedOn: String,
+    /** 체중(kg). 서버 허용 20.0~300.0. */
+    val weightKg: Double,
+)
+
+/** POST /api/v1/mypage/weights 응답. */
+@Serializable
+data class MyPageWeightCreateResponse(
+    val weightRecordId: Long? = null,
+    val recordedOn: String? = null,
+    val weightKg: Double? = null,
+    val changeFromPreviousKg: Double? = null,
+)
+
 /** GET /api/v1/mypage/profile — 프로필 상세(로그인 수단·이름·생년월일). */
 @Serializable
 data class MyPageProfileResponse(

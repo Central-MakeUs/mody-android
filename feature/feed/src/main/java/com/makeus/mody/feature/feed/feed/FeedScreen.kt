@@ -20,11 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -41,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.designsystem.component.ModyBottomSheet
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -281,7 +279,6 @@ private fun GroupSelector(
 }
 
 /** 그룹 선택 바텀시트 (Feed_그룹 선택 시안). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GroupSelectSheet(
     groups: List<GroupUi>,
@@ -290,11 +287,7 @@ private fun GroupSelectSheet(
     onDismiss: () -> Unit,
 ) {
     // 그룹 최대 4개 — 스크롤 불필요. 부분 확장 없이 콘텐츠 높이만큼 꽉 올려 "그룹 추가하기"까지 항상 노출.
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = ModyTheme.colors.white,
-    ) {
+    ModyBottomSheet(onDismissRequest = onDismiss, skipPartiallyExpanded = true) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

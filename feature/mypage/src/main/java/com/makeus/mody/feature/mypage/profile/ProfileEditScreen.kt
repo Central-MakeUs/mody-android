@@ -229,7 +229,10 @@ private fun EditableNameField(
 
     Spacer(modifier = Modifier.height(6.dp))
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // 온보딩 닉네임/그룹명과 동일: 에러문구·카운트를 필드 안쪽 8dp 지점(화면 기준 32dp)에.
+            .padding(start = 8.dp, end = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(

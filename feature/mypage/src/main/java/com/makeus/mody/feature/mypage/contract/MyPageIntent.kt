@@ -17,6 +17,9 @@ sealed class MyPageIntent : UiIntent {
 
     /** "기록 완료" → 서버 저장. recordedOn: ISO(yyyy-MM-dd). */
     data class WeightRecordSubmitted(val recordedOn: String, val weightKg: Double) : MyPageIntent()
+
+    /** 체중 저장 실패 토스트 소비. */
+    data object WeightErrorShown : MyPageIntent()
     data object NotificationSettingClicked : MyPageIntent()
     data object GroupSettingClicked : MyPageIntent()
     data object HealthDataSettingClicked : MyPageIntent()

@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.mypage
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,8 +47,16 @@ import kotlin.math.roundToInt
 @Composable
 fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     // 탭 진입 시 최신화(다른 화면에서 프로필/체중 변경 반영). VM은 탭 전환에도 유지되므로 재조회 필요.
     LaunchedEffect(Unit) { viewModel.onIntent(MyPageIntent.Refresh) }
+    // 체중 저장 실패 → 토스트 1회(시트는 유지되어 재시도 가능).
+    LaunchedEffect(state.weightError) {
+        state.weightError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.onIntent(MyPageIntent.WeightErrorShown)
+        }
+    }
     MyPageContent(state = state, onIntent = viewModel::onIntent)
 }
 

@@ -13,4 +13,6 @@ data class MyPageState(
     val showWeightSheet: Boolean = false,
     /** 체중 기록 저장 중. */
     val isRecordingWeight: Boolean = false,
+    /** 체중 기록 저장 실패 메시지(토스트 후 소비). */
+    val weightError: String? = null,
 ) : UiState

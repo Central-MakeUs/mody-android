@@ -274,7 +274,9 @@ private fun EditableNameField(
                 modifier = Modifier
                     .fillMaxWidth()
                     // 필드(높이 52) 바로 아래 6dp 지점. 오버레이라 아래 콘텐츠엔 영향 없음.
-                    .offset(y = 58.dp),
+                    .offset(y = 58.dp)
+                    // 온보딩 닉네임/그룹명과 동일: 에러문구·카운트를 필드 안쪽 8dp 지점(화면 기준 32dp)에.
+                    .padding(start = 8.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(

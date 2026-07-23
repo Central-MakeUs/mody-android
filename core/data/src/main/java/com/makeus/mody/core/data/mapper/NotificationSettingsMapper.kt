@@ -20,7 +20,8 @@ private fun parseTime(time: String?): Pair<Int, Int> {
     return h to m
 }
 
-private fun formatTime(hour: Int, minute: Int): String = "%02d:%02d:00".format(hour, minute)
+// 서버 스케줄 API canonical 형식은 "HH:mm"(초 없음). "HH:mm:ss" 전송 시 MYPAGE301 로 거부됨.
+private fun formatTime(hour: Int, minute: Int): String = "%02d:%02d".format(hour, minute)
 
 /** 서버 응답 → 도메인 알림 설정. */
 fun NotificationSettingResponse.toDomain(): NotificationSettings = NotificationSettings(

@@ -1,6 +1,9 @@
 package com.makeus.mody.feature.mypage.profile
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -41,7 +45,9 @@ import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
+import com.makeus.mody.core.designsystem.component.ModyPhotoSourceSheet
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
+import com.makeus.mody.core.designsystem.component.PhotoSourceOption
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
@@ -63,6 +69,7 @@ fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     // 실패(조회/저장/탈퇴) → 공용 에러 다이얼로그. 확인 시 상태 소비.
     ModyErrorDialog(
         message = state.error,
+        title = state.errorTitle ?: "요청에 실패했어요",
         onDismiss = { viewModel.onIntent(ProfileEditIntent.ErrorShown) },
     )
 }
@@ -73,6 +80,10 @@ private fun ProfileEditContent(
     onIntent: (ProfileEditIntent) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri -> uri?.let { onIntent(ProfileEditIntent.GalleryImageSelected(it.toString())) } }
 
     // 시스템 back도 가로채 변경사항 확인. (변경 없으면 비활성 → 기본 pop)
     BackHandler(enabled = state.isDirty) { onIntent(ProfileEditIntent.BackClicked) }
@@ -100,9 +111,12 @@ private fun ProfileEditContent(
 
         Spacer(modifier = Modifier.height(24.dp))
         ModyAvatar(
-            imageUrl = state.avatarUrl,
+            imageUrl = state.displayAvatarUrl,
             size = 80.dp,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .clip(CircleShape)
+                .clickable { onIntent(ProfileEditIntent.AvatarClicked) },
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -131,6 +145,23 @@ private fun ProfileEditContent(
         SettingRow(text = "탈퇴하기", color = ModyTheme.colors.error) {
             if (!state.isProcessing) onIntent(ProfileEditIntent.WithdrawClicked)
         }
+    }
+
+    if (state.isPhotoSheetVisible) {
+        ModyPhotoSourceSheet(
+            options = listOf(
+                PhotoSourceOption(label = "갤러리에서 선택하기", icon = ModyIcons.Image) {
+                    onIntent(ProfileEditIntent.PhotoSheetDismissed)
+                    galleryLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                },
+                PhotoSourceOption(label = "기본 이미지 선택하기", icon = ModyIcons.User) {
+                    onIntent(ProfileEditIntent.UseDefaultImageClicked)
+                },
+            ),
+            onDismiss = { onIntent(ProfileEditIntent.PhotoSheetDismissed) },
+        )
     }
 
     if (state.showWithdrawDialog) {

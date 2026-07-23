@@ -54,9 +54,9 @@ class MyPageRepositoryImpl @Inject constructor(
     override suspend fun getProfileDetail(): ProfileDetail =
         myPageApi.getProfile().unwrapResult().toDomain()
 
-    override suspend fun updateProfile(name: String, birthDate: String?): ProfileDetail =
+    override suspend fun updateProfile(name: String, birthDate: String?, imageKey: String?): ProfileDetail =
         myPageApi.updateProfile(
-            MyPageProfileUpdateRequest(nickname = name, birthDate = birthDate),
+            MyPageProfileUpdateRequest(nickname = name, birthDate = birthDate, imageKey = imageKey),
         ).unwrapResult().toDomain()
 
     override suspend fun getCachedNotificationSettings(): NotificationSettings? =

@@ -1,5 +1,7 @@
 package com.makeus.mody.core.network.interceptor
 
+import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.repository.SessionReauthenticator
 import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.network.api.AuthApi
@@ -72,9 +74,13 @@ class TokenAuthenticator @Inject constructor(
 
             // 재발급 실패 분류: 401/403 또는 isSuccess=false 만 "refresh 만료"로 취급.
             // 그 외(네트워크 오류 등)는 일시 장애 → 세션 유지한 채 이번 요청만 포기.
+            // reissue 는 ModyCallAdapter 를 거쳐 도메인 HttpResponseException 으로 던져지므로
+            // retrofit HttpException 뿐 아니라 이쪽도 함께 분류해야 세션 정리가 동작한다.
             val refreshDead = when (val e = reissueResult.exceptionOrNull()) {
                 null -> true // HTTP 200 인데 isSuccess=false → 서버가 refresh 거부
                 is HttpException -> e.code() == 401 || e.code() == 403
+                is HttpResponseException ->
+                    e.status == HttpResponseStatus.Unauthorized || e.status == HttpResponseStatus.Forbidden
                 else -> false
             }
             if (!refreshDead) return null
@@ -113,6 +119,6 @@ class TokenAuthenticator @Inject constructor(
 
     private companion object {
         const val REISSUE_PATH = "/api/v1/auth/reissue"
-        const val SILENT_REAUTH_TIMEOUT_MS = 5_000L
+        const val SILENT_REAUTH_TIMEOUT_MS = 3_000L
     }
 }

@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,26 +58,36 @@ class ProfileEditViewModel @Inject constructor(
 
     private fun load() = viewModelScope.launch {
         setState { copy(isLoading = true) }
-        try {
-            val detailDeferred = async { myPageRepository.getProfileDetail() }
+        // async 를 launch 자식으로 두고 던지면 try/catch 를 우회해 부모로 전파(크래시).
+        // 각 호출을 null 로 흡수한 뒤 supervisorScope 로 병렬 실행한다.
+        val (detail, avatar) = supervisorScope {
+            val detailDeferred = async { detailOrNull() }
             val avatarDeferred = async { runCatching { myPageRepository.getProfile() }.getOrNull() }
-            val detail = detailDeferred.await()
-            val avatar = avatarDeferred.await()
-            setState {
-                copy(
-                    name = detail.name,
-                    originalName = detail.name,
-                    birthDate = detail.birthDate,
-                    loginType = detail.loginType,
-                    avatarUrl = avatar?.profileImageUrl,
-                    isLoading = false,
-                )
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            setState { copy(isLoading = false, error = e.message()) }
+            detailDeferred.await() to avatarDeferred.await()
         }
+        if (detail == null) {
+            setState { copy(isLoading = false, error = "프로필을 불러오지 못했어요.") }
+            return@launch
+        }
+        setState {
+            copy(
+                name = detail.name,
+                originalName = detail.name,
+                birthDate = detail.birthDate,
+                loginType = detail.loginType,
+                avatarUrl = avatar?.profileImageUrl,
+                isLoading = false,
+            )
+        }
+    }
+
+    /** 취소는 전파, 그 외 실패만 null. */
+    private suspend fun detailOrNull() = try {
+        myPageRepository.getProfileDetail()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private fun save() = viewModelScope.launch {

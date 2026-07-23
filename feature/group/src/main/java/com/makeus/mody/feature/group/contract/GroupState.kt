@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.group.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.error.ErrorAlert
 
 data class GroupState(
     // 코드로 그룹 참여
@@ -9,8 +10,8 @@ data class GroupState(
     val joinError: String? = null,
     // 그룹 생성 - 이름
     val groupName: String = "",
-    // 그룹 생성 실패 토스트 메시지(1회성, 표시 후 null 로 소비)
-    val createError: String? = null,
+    // 그룹 생성 실패 다이얼로그 문구(확인 시 null 로 소비)
+    val createError: ErrorAlert? = null,
     // 친구 초대 - 내 그룹 초대 코드 (null = 로딩중)
     val inviteCode: String? = null,
     val codeCopied: Boolean = false,

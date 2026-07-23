@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +35,9 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.ProfileSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
 
+            is MyPageIntent.NotificationSettingClicked ->
+                navigationHelper.navigate(NavigationEvent.To(MyPageGraph.NotificationSettingRoute))
+
             is MyPageIntent.GroupSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.GroupSettingRoute))
 
@@ -43,7 +47,6 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.WeightErrorShown -> setState { copy(weightError = null) }
 
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
-            is MyPageIntent.NotificationSettingClicked -> Unit
             is MyPageIntent.HealthDataSettingClicked -> Unit
         }
     }
@@ -73,27 +76,34 @@ class MyPageViewModel @Inject constructor(
         null
     }
 
+    /** 프로필 로드 실패도 null 로 흡수. (weightSummaryOrNull 과 동일 정책) */
+    private suspend fun profileOrNull() = try {
+        myPageRepository.getProfile()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
     private fun load() = viewModelScope.launch {
         setState { copy(isLoading = true) }
-        try {
-            val profileDeferred = async { myPageRepository.getProfile() }
+        // async 를 launch 의 직접 자식으로 두고 예외가 나면 try/catch 를 우회해
+        // 부모 Job 으로 전파되어 크래시난다(예: 토큰 만료 시 getProfile 401).
+        // 각 호출을 개별적으로 잡아 null 로 흡수한 뒤 supervisorScope 로 병렬 실행한다.
+        val (p, w) = supervisorScope {
+            val profileDeferred = async { profileOrNull() }
             val weightDeferred = async { weightSummaryOrNull() }
-            val p = profileDeferred.await()
-            val w = weightDeferred.await()
-            setState {
-                copy(
-                    nickname = p.nickname,
-                    profileImageUrl = p.profileImageUrl,
-                    daysTogether = p.daysTogether,
-                    weight = w,
-                    isLoading = false,
-                )
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // 프로필 로드 실패해도 화면은 유지(빈 값). 로딩만 해제.
-            setState { copy(isLoading = false) }
+            profileDeferred.await() to weightDeferred.await()
+        }
+        // 실패한 값은 기존 상태 유지. 로딩만 해제.
+        setState {
+            copy(
+                nickname = p?.nickname ?: nickname,
+                profileImageUrl = p?.profileImageUrl ?: profileImageUrl,
+                daysTogether = p?.daysTogether ?: daysTogether,
+                weight = w ?: weight,
+                isLoading = false,
+            )
         }
     }
 }

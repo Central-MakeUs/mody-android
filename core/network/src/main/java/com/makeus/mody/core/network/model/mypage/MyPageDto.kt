@@ -54,3 +54,52 @@ data class MyPageProfileUpdateRequest(
     val nickname: String,
     val birthDate: String?,
 )
+
+/** 식사 알림 스케줄. time: "HH:mm:ss"(LocalTime), skipped=true면 해당 끼니 알림 끔. */
+@Serializable
+data class MealScheduleItem(
+    /** BREAKFAST / LUNCH / DINNER */
+    val mealType: String,
+    val time: String? = null,
+    val skipped: Boolean = false,
+)
+
+/** 운동 알림 스케줄. dayOfWeek: MONDAY..SUNDAY, time: "HH:mm:ss". */
+@Serializable
+data class ExerciseScheduleItem(
+    val dayOfWeek: String,
+    val time: String,
+)
+
+/** GET /api/v1/mypage/notification-settings — 알림 설정(토글 3개 + 식사/운동 스케줄). */
+@Serializable
+data class NotificationSettingResponse(
+    /** 식사 및 운동 알림. */
+    val recordReminderEnabled: Boolean = false,
+    val commentNotificationEnabled: Boolean = false,
+    val challengeNotificationEnabled: Boolean = false,
+    val mealSchedules: List<MealScheduleItem> = emptyList(),
+    val exerciseSchedules: List<ExerciseScheduleItem> = emptyList(),
+)
+
+/** PATCH /api/v1/mypage/notification-settings — 토글만 수정(null이면 미변경). */
+@Serializable
+data class NotificationSettingRequest(
+    val recordReminderEnabled: Boolean? = null,
+    val commentNotificationEnabled: Boolean? = null,
+    val challengeNotificationEnabled: Boolean? = null,
+)
+
+/** PUT /api/v1/mypage/schedules — 식사(3)/운동 스케줄 갱신. */
+@Serializable
+data class ScheduleRequest(
+    val mealSchedules: List<MealScheduleItem>,
+    val exerciseSchedules: List<ExerciseScheduleItem>,
+)
+
+/** PUT /api/v1/mypage/schedules 응답(식사/운동 스케줄). */
+@Serializable
+data class ScheduleResponse(
+    val mealSchedules: List<MealScheduleItem> = emptyList(),
+    val exerciseSchedules: List<ExerciseScheduleItem> = emptyList(),
+)

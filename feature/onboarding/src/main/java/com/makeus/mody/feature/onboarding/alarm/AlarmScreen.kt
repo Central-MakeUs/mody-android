@@ -20,9 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +40,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.designsystem.component.ModyBottomSheet
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -350,7 +349,6 @@ private fun ExerciseTimeRow(
 }
 
 /** 오전/오후 · 시(1~12) · 분(0~59) 3열 휠 시트. 휠 UI는 공용 ModyTimePicker 사용. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerSheet(
     initialHour: Int, // 24h
@@ -361,10 +359,7 @@ private fun TimePickerSheet(
     var hour24 by remember { mutableStateOf(initialHour) }
     var minute by remember { mutableStateOf(initialMinute) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = ModyTheme.colors.white,
-    ) {
+    ModyBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

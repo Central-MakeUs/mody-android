@@ -11,32 +11,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.makeus.mody.core.designsystem.component.ModyBottomSheet
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /** 사진 첨부 방식 선택 바텀시트: 촬영 / 갤러리. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoSourceSheet(
     onTakePhoto: () -> Unit,
     onPickFromGallery: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = ModyTheme.colors.white,
-        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp),
-    ) {
+    ModyBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

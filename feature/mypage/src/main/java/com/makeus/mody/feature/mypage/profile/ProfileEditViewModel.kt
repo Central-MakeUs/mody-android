@@ -49,6 +49,7 @@ class ProfileEditViewModel @Inject constructor(
             is ProfileEditIntent.WithdrawClicked -> setState { copy(showWithdrawDialog = true) }
             is ProfileEditIntent.WithdrawDismissed -> setState { copy(showWithdrawDialog = false) }
             is ProfileEditIntent.WithdrawConfirmed -> withdraw()
+            is ProfileEditIntent.WithdrawCompleteConfirmed -> toAuth()
 
             is ProfileEditIntent.ErrorShown -> setState { copy(error = null) }
         }
@@ -127,7 +128,8 @@ class ProfileEditViewModel @Inject constructor(
         setState { copy(isProcessing = true, showWithdrawDialog = false) }
         try {
             authRepository.withdraw()
-            toAuth()
+            // 계정은 이미 삭제됨 → isProcessing 유지해 뒤 화면 조작 차단, 완료 안내 후 이동.
+            setState { copy(showWithdrawCompleteDialog = true) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

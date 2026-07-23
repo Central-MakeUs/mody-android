@@ -12,6 +12,9 @@ interface MyPageRepository {
     /** 체중 요약(이전·현재·목표). */
     suspend fun getWeightSummary(): WeightSummary
 
+    /** 체중 기록 생성. recordedOn: ISO(yyyy-MM-dd), weightKg: kg. */
+    suspend fun recordWeight(recordedOn: String, weightKg: Double)
+
     /** 프로필 설정 상세(이름·생년월일·로그인 수단). */
     suspend fun getProfileDetail(): ProfileDetail
 

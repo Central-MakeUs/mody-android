@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.mypage.profile
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,14 +24,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -45,6 +42,7 @@ import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDialog
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyTextField
@@ -61,16 +59,14 @@ private val SaveBlue = Color(0xFF6E7CFF)
 @Composable
 fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    LaunchedEffect(state.error) {
-        state.error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.onIntent(ProfileEditIntent.ErrorShown)
-        }
-    }
 
     ProfileEditContent(state = state, onIntent = viewModel::onIntent)
+
+    // 실패(조회/저장/탈퇴) → 공용 에러 다이얼로그. 확인 시 상태 소비.
+    ModyErrorDialog(
+        message = state.error,
+        onDismiss = { viewModel.onIntent(ProfileEditIntent.ErrorShown) },
+    )
 }
 
 @Composable
@@ -164,6 +160,17 @@ private fun ProfileEditContent(
             dismissText = "저장 안 함",
             onDismiss = { onIntent(ProfileEditIntent.LeaveDiscardClicked) },
             onDismissRequest = { onIntent(ProfileEditIntent.LeaveDismissed) },
+        )
+    }
+
+    if (state.showWithdrawCompleteDialog) {
+        // 계정은 이미 삭제된 상태 → 스크림/백키로 닫아도 동일하게 로그인으로 이동.
+        ModyDialog(
+            title = "탈퇴 처리가 완료되었어요.",
+            message = "마음이 바뀐다면 꼭 다시 찾아와주세요!",
+            confirmText = "확인",
+            onConfirm = { onIntent(ProfileEditIntent.WithdrawCompleteConfirmed) },
+            onDismissRequest = { onIntent(ProfileEditIntent.WithdrawCompleteConfirmed) },
         )
     }
 }
@@ -267,7 +274,9 @@ private fun EditableNameField(
                 modifier = Modifier
                     .fillMaxWidth()
                     // 필드(높이 52) 바로 아래 6dp 지점. 오버레이라 아래 콘텐츠엔 영향 없음.
-                    .offset(y = 58.dp),
+                    .offset(y = 58.dp)
+                    // 온보딩 닉네임/그룹명과 동일: 에러문구·카운트를 필드 안쪽 8dp 지점(화면 기준 32dp)에.
+                    .padding(start = 8.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(

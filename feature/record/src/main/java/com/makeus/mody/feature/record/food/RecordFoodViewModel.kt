@@ -2,7 +2,7 @@ package com.makeus.mody.feature.record.food
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -66,9 +66,8 @@ class RecordFoodViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // 서버 message(있으면)만 노출, 그 외 기술 예외는 폴백 문구.
-            val message = (e as? HttpResponseException)?.msg ?: "기록 작성에 실패했어요."
-            setState { copy(isSubmitting = false, submitError = message) }
+            // 서버/네트워크/기타 분기는 toErrorAlert 공통 규칙을 따른다.
+            setState { copy(isSubmitting = false, submitError = e.toErrorAlert("기록 작성에 실패했어요")) }
         }
     }
 }

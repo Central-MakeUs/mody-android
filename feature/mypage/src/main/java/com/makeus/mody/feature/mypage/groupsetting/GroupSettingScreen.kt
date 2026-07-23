@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingIntent
@@ -42,15 +43,14 @@ private fun GroupSettingContent(
     state: GroupSettingState,
     onIntent: (GroupSettingIntent) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ModyTheme.colors.white),
+    ModyScreenScaffold(
+        topBar = {
+            ModyBackTopBar(
+                title = "그룹 설정",
+                onBackClick = { onIntent(GroupSettingIntent.BackClicked) },
+            )
+        },
     ) {
-        ModyBackTopBar(
-            title = "그룹 설정",
-            onBackClick = { onIntent(GroupSettingIntent.BackClicked) },
-        )
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.groups, key = { it.groupId }) { group ->
                 GroupRow(
@@ -72,10 +72,13 @@ private fun GroupSettingContent(
         )
     }
 
-    ModyErrorDialog(
-        message = state.errorMessage,
-        onDismiss = { onIntent(GroupSettingIntent.ErrorShown) },
-    )
+    state.error?.let { error ->
+        ModyErrorDialog(
+            title = error.title,
+            message = error.message,
+            onDismiss = { onIntent(GroupSettingIntent.ErrorShown) },
+        )
+    }
 }
 
 @Composable

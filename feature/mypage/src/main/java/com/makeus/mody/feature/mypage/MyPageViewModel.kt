@@ -34,6 +34,9 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.ProfileSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.ProfileEditRoute))
 
+            is MyPageIntent.GroupSettingClicked ->
+                navigationHelper.navigate(NavigationEvent.To(MyPageGraph.GroupSettingRoute))
+
             is MyPageIntent.WeightRecordClicked -> setState { copy(showWeightSheet = true) }
             is MyPageIntent.WeightRecordDismissed -> setState { copy(showWeightSheet = false) }
             is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)
@@ -41,7 +44,6 @@ class MyPageViewModel @Inject constructor(
 
             // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
             is MyPageIntent.NotificationSettingClicked -> Unit
-            is MyPageIntent.GroupSettingClicked -> Unit
             is MyPageIntent.HealthDataSettingClicked -> Unit
         }
     }

@@ -13,16 +13,24 @@ import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingI
 import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val ERROR_MESSAGE = "잠시 후 다시 시도해주세요."
+
+/** 토글 연타를 합치는 디바운스 시간. */
+private const val TOGGLE_DEBOUNCE_MS = 400L
 
 @HiltViewModel
 class NotificationSettingViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<NotificationSettingState, NotificationSettingIntent>(NotificationSettingState()) {
+
+    // 토글 디바운스 job. 새 토글마다 리셋.
+    private var toggleSyncJob: Job? = null
 
     init {
         load()
@@ -34,27 +42,18 @@ class NotificationSettingViewModel @Inject constructor(
             is NotificationSettingIntent.BackClicked -> navigationHelper.navigate(NavigationEvent.Up)
 
             is NotificationSettingIntent.CommentToggled -> {
-                val prev = currentState.commentEnabled
                 setState { copy(commentEnabled = intent.enabled) }
-                patchToggle(revert = { setState { copy(commentEnabled = prev) } }) {
-                    myPageRepository.updateNotificationToggles(commentNotificationEnabled = intent.enabled)
-                }
+                scheduleToggleSync()
             }
 
             is NotificationSettingIntent.ChallengeToggled -> {
-                val prev = currentState.challengeEnabled
                 setState { copy(challengeEnabled = intent.enabled) }
-                patchToggle(revert = { setState { copy(challengeEnabled = prev) } }) {
-                    myPageRepository.updateNotificationToggles(challengeNotificationEnabled = intent.enabled)
-                }
+                scheduleToggleSync()
             }
 
             is NotificationSettingIntent.RecordReminderToggled -> {
-                val prev = currentState.recordReminderEnabled
                 setState { copy(recordReminderEnabled = intent.enabled) }
-                patchToggle(revert = { setState { copy(recordReminderEnabled = prev) } }) {
-                    myPageRepository.updateNotificationToggles(recordReminderEnabled = intent.enabled)
-                }
+                scheduleToggleSync()
             }
 
             is NotificationSettingIntent.MealHoursChanged -> {
@@ -119,16 +118,39 @@ class NotificationSettingViewModel @Inject constructor(
         )
     }
 
-    /** 토글 PATCH. 실패 시 revert + 에러. */
-    private fun patchToggle(revert: () -> Unit, block: suspend () -> Unit) = viewModelScope.launch {
-        try {
-            block()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            revert()
-            setState { copy(error = ERROR_MESSAGE) }
+    /**
+     * 토글 변경을 디바운스해 PATCH. 연타(예: 3개 연속 토글)를 마지막 상태 1회 전송으로 합친다.
+     * 매번 새 변경이 오면 이전 대기 job 을 취소해 타이머를 리셋한다.
+     */
+    private fun scheduleToggleSync() {
+        toggleSyncJob?.cancel()
+        toggleSyncJob = viewModelScope.launch {
+            delay(TOGGLE_DEBOUNCE_MS)
+            try {
+                pushToggles()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // 저장 실패 → 에러 노출 + 서버값으로 재동기화(낙관적 UI 정정).
+                setState { copy(error = ERROR_MESSAGE) }
+                runCatching { applySettings(myPageRepository.refreshNotificationSettings()) }
+            }
         }
+    }
+
+    /**
+     * 토글 3개 전체를 서버에 전송.
+     * 서버 PATCH 가 "보낸 필드만 적용, 나머지는 false 로 리셋"(전체 교체) 하므로,
+     * 변경된 하나만 보내면 나머지 토글이 꺼진다. 항상 현재 상태 3개를 함께 보내 보존한다.
+     * TODO(server): PATCH 가 부분 수정(안 보낸 필드 미변경)으로 고쳐지면 변경 필드만 전송하도록 원복.
+     */
+    private suspend fun pushToggles() {
+        val s = currentState
+        myPageRepository.updateNotificationToggles(
+            recordReminderEnabled = s.recordReminderEnabled,
+            commentNotificationEnabled = s.commentEnabled,
+            challengeNotificationEnabled = s.challengeEnabled,
+        )
     }
 
     /** 현재 상태의 식사/운동 스케줄 전체를 PUT. 실패 시 서버값으로 재동기화 + 에러. */

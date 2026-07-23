@@ -6,13 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -27,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.MealExerciseSchedule
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.component.ModySwitch
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingIntent
@@ -52,18 +51,14 @@ private fun NotificationSettingContent(
     state: NotificationSettingState,
     onIntent: (NotificationSettingIntent) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ModyTheme.colors.white)
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState()),
+    ModyScreenScaffold(
+        topBar = {
+            ModyBackTopBar(
+                title = "알림 설정",
+                onBackClick = { onIntent(NotificationSettingIntent.BackClicked) },
+            )
+        },
     ) {
-        ModyBackTopBar(
-            title = "알림 설정",
-            onBackClick = { onIntent(NotificationSettingIntent.BackClicked) },
-        )
-
         if (state.isLoading) {
             Box(
                 modifier = Modifier
@@ -73,51 +68,53 @@ private fun NotificationSettingContent(
             ) {
                 CircularProgressIndicator(color = ModyTheme.colors.primary100)
             }
-            return@Column
+            return@ModyScreenScaffold
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        ToggleRow(
-            title = "코멘트 알림",
-            description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
-            checked = state.commentEnabled,
-            onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
-        )
-        RowDivider()
-        ToggleRow(
-            title = "챌린지 알림",
-            description = "챌린지와 관련된 모든 알림을 받아요.",
-            checked = state.challengeEnabled,
-            onCheckedChange = { onIntent(NotificationSettingIntent.ChallengeToggled(it)) },
-        )
-        RowDivider()
-        ToggleRow(
-            title = "식사 및 운동 알림",
-            description = null,
-            checked = state.recordReminderEnabled,
-            onCheckedChange = { onIntent(NotificationSettingIntent.RecordReminderToggled(it)) },
-        )
-
-        if (state.recordReminderEnabled) {
-            MealExerciseSchedule(
-                breakfastHour = state.breakfastHour,
-                lunchHour = state.lunchHour,
-                dinnerHour = state.dinnerHour,
-                onMealHoursChange = { b, l, d ->
-                    onIntent(NotificationSettingIntent.MealHoursChanged(b, l, d))
-                },
-                exerciseTimes = state.exerciseTimes,
-                onExerciseDaySet = { day, h, m ->
-                    onIntent(NotificationSettingIntent.ExerciseDaySet(day, h, m))
-                },
-                onExerciseDayRemoved = { day ->
-                    onIntent(NotificationSettingIntent.ExerciseDayRemoved(day))
-                },
-                onExerciseAllTimesSet = { h, m ->
-                    onIntent(NotificationSettingIntent.ExerciseAllTimesSet(h, m))
-                },
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 32.dp),
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            Spacer(modifier = Modifier.height(8.dp))
+            ToggleRow(
+                title = "코멘트 알림",
+                description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
+                checked = state.commentEnabled,
+                onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
             )
+            RowDivider()
+            ToggleRow(
+                title = "챌린지 알림",
+                description = "챌린지와 관련된 모든 알림을 받아요.",
+                checked = state.challengeEnabled,
+                onCheckedChange = { onIntent(NotificationSettingIntent.ChallengeToggled(it)) },
+            )
+            RowDivider()
+            ToggleRow(
+                title = "식사 및 운동 알림",
+                description = null,
+                checked = state.recordReminderEnabled,
+                onCheckedChange = { onIntent(NotificationSettingIntent.RecordReminderToggled(it)) },
+            )
+
+            if (state.recordReminderEnabled) {
+                MealExerciseSchedule(
+                    breakfastHour = state.breakfastHour,
+                    lunchHour = state.lunchHour,
+                    dinnerHour = state.dinnerHour,
+                    onMealHoursChange = { b, l, d ->
+                        onIntent(NotificationSettingIntent.MealHoursChanged(b, l, d))
+                    },
+                    exerciseTimes = state.exerciseTimes,
+                    onExerciseDaySet = { day, h, m ->
+                        onIntent(NotificationSettingIntent.ExerciseDaySet(day, h, m))
+                    },
+                    onExerciseDayRemoved = { day ->
+                        onIntent(NotificationSettingIntent.ExerciseDayRemoved(day))
+                    },
+                    onExerciseAllTimesSet = { h, m ->
+                        onIntent(NotificationSettingIntent.ExerciseAllTimesSet(h, m))
+                    },
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 32.dp),
+                )
+            }
         }
     }
 }
@@ -139,7 +136,7 @@ private fun ToggleRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = ModyTheme.typography.b4,
+                style = ModyTheme.typography.b3,
                 color = ModyTheme.colors.gray10,
             )
             if (description != null) {

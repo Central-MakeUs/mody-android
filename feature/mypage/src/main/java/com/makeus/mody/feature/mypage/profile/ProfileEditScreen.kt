@@ -11,15 +11,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -45,9 +41,11 @@ import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
+import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
+import com.makeus.mody.core.designsystem.modifier.iconRippleClickable
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.LoginType
 import com.makeus.mody.feature.mypage.profile.contract.ProfileEditIntent
@@ -79,29 +77,25 @@ private fun ProfileEditContent(
     // 시스템 back도 가로채 변경사항 확인. (변경 없으면 비활성 → 기본 pop)
     BackHandler(enabled = state.isDirty) { onIntent(ProfileEditIntent.BackClicked) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ModyTheme.colors.white)
-            .clearFocusOnTap()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding(),
+    ModyScreenScaffold(
+        modifier = Modifier.clearFocusOnTap(),
+        applyImePadding = true,
+        topBar = {
+            TopBar(
+                showSave = state.isDirty && !state.isSaving,
+                onBack = { onIntent(ProfileEditIntent.BackClicked) },
+                onSave = {
+                    // 저장 시 포커스 해제 → 키보드 내림 + X/글자수 숨김.
+                    focusManager.clearFocus()
+                    onIntent(ProfileEditIntent.SaveClicked)
+                },
+            )
+        },
     ) {
-        TopBar(
-            showSave = state.isDirty && !state.isSaving,
-            onBack = { onIntent(ProfileEditIntent.BackClicked) },
-            onSave = {
-                // 저장 시 포커스 해제 → 키보드 내림 + X/글자수 숨김.
-                focusManager.clearFocus()
-                onIntent(ProfileEditIntent.SaveClicked)
-            },
-        )
-
         // 최초 로드 전에는 값(loginType 등)이 UNKNOWN이라 배지/필드가 깜빡임 → 준비될 때까지 인디케이터.
         if (state.isLoading) {
             ModyLoadingScreen()
-            return@Column
+            return@ModyScreenScaffold
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -187,7 +181,7 @@ private fun TopBar(showSave: Boolean, onBack: () -> Unit, onSave: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(24.dp)
-                .clickable(onClick = onBack),
+                .iconRippleClickable(onClick = onBack),
             contentAlignment = Alignment.CenterStart,
         ) {
             Icon(

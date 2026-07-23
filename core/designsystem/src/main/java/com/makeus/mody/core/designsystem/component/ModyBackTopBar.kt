@@ -1,6 +1,5 @@
 package com.makeus.mody.core.designsystem.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.icon.ModyIcons
+import com.makeus.mody.core.designsystem.modifier.iconRippleClickable
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /**
@@ -102,7 +102,7 @@ fun ModyTopBarIcon(
     Box(
         modifier = modifier
             .size(24.dp)
-            .clickable(onClick = onClick),
+            .iconRippleClickable(onClick = onClick),
         contentAlignment = Alignment.CenterStart,
     ) {
         Icon(

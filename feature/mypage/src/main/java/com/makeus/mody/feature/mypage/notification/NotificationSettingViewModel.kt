@@ -23,6 +23,9 @@ private const val ERROR_MESSAGE = "잠시 후 다시 시도해주세요."
 /** 토글 연타를 합치는 디바운스 시간. */
 private const val TOGGLE_DEBOUNCE_MS = 400L
 
+/** 스케줄(끼니·운동) 연속 편집을 합치는 디바운스 시간. 드래그를 감안해 토글보다 약간 길게. */
+private const val SCHEDULE_DEBOUNCE_MS = 500L
+
 @HiltViewModel
 class NotificationSettingViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
@@ -31,6 +34,9 @@ class NotificationSettingViewModel @Inject constructor(
 
     // 토글 디바운스 job. 새 토글마다 리셋.
     private var toggleSyncJob: Job? = null
+
+    // 스케줄 디바운스 job. 새 편집마다 리셋.
+    private var scheduleSyncJob: Job? = null
 
     init {
         load()
@@ -58,24 +64,24 @@ class NotificationSettingViewModel @Inject constructor(
 
             is NotificationSettingIntent.MealHoursChanged -> {
                 setState { copy(breakfastHour = intent.breakfast, lunchHour = intent.lunch, dinnerHour = intent.dinner) }
-                persistSchedules()
+                scheduleSync()
             }
 
             is NotificationSettingIntent.ExerciseDaySet -> {
                 setState { copy(exerciseTimes = exerciseTimes + (intent.day to (intent.hour to intent.minute))) }
-                persistSchedules()
+                scheduleSync()
             }
 
             is NotificationSettingIntent.ExerciseDayRemoved -> {
                 setState { copy(exerciseTimes = exerciseTimes - intent.day) }
-                persistSchedules()
+                scheduleSync()
             }
 
             is NotificationSettingIntent.ExerciseAllTimesSet -> {
                 setState {
                     copy(exerciseTimes = exerciseTimes.mapValues { intent.hour to intent.minute })
                 }
-                persistSchedules()
+                scheduleSync()
             }
 
             is NotificationSettingIntent.ErrorShown -> setState { copy(error = null) }
@@ -153,8 +159,29 @@ class NotificationSettingViewModel @Inject constructor(
         )
     }
 
-    /** 현재 상태의 식사/운동 스케줄 전체를 PUT. 실패 시 서버값으로 재동기화 + 에러. */
-    private fun persistSchedules() = viewModelScope.launch {
+    /**
+     * 스케줄 변경을 디바운스해 PUT. 끼니/운동을 연속으로 편집(드래그·연타)하면 매 변경마다
+     * PUT 이 쏟아지고, 화면을 벗어나면 viewModelScope 취소로 in-flight 요청이 전부 죽어
+     * 아무것도 저장되지 않는다. 마지막 상태 1회 전송으로 합쳐 요청 폭풍·취소 창을 줄인다.
+     */
+    private fun scheduleSync() {
+        scheduleSyncJob?.cancel()
+        scheduleSyncJob = viewModelScope.launch {
+            delay(SCHEDULE_DEBOUNCE_MS)
+            try {
+                pushSchedules()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // 실패 → 에러 노출 + 서버값으로 재동기화(낙관적 편집 정정).
+                setState { copy(error = ERROR_MESSAGE) }
+                runCatching { applySettings(myPageRepository.refreshNotificationSettings()) }
+            }
+        }
+    }
+
+    /** 현재 상태의 식사(3)/운동 스케줄 전체를 PUT. */
+    private suspend fun pushSchedules() {
         val s = currentState
         val meals = listOf(
             meal(MealType.BREAKFAST, s.breakfastHour),
@@ -164,14 +191,7 @@ class NotificationSettingViewModel @Inject constructor(
         val exercises = s.exerciseTimes.map { (day, t) ->
             ExerciseSchedule(dayOfWeek = day, hour = t.first, minute = t.second)
         }
-        try {
-            myPageRepository.updateSchedules(meals, exercises)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // 실패해도 로컬 편집은 유지(load()로 깜빡임/편집 소실 방지). 다음 진입 시 서버값으로 재동기화.
-            setState { copy(error = ERROR_MESSAGE) }
-        }
+        myPageRepository.updateSchedules(meals, exercises)
     }
 }
 

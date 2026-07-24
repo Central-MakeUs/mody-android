@@ -143,7 +143,7 @@ private fun ToggleRow(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
-                    style = ModyTheme.typography.c1,
+                    style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray05,
                 )
             }

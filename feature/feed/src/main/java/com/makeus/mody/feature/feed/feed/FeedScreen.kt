@@ -45,6 +45,7 @@ import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
 import com.makeus.mody.feature.feed.feed.component.FeedCard
+import com.makeus.mody.feature.feed.feed.component.FeedSkeletonList
 import com.makeus.mody.feature.feed.feed.component.FeedWeekSection
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
@@ -98,7 +99,10 @@ private fun FeedContent(
                 onDaySelected = { date -> onIntent(FeedIntent.DaySelected(date)) },
             )
 
-            if (state.isEmpty) {
+            if (state.isLoading) {
+                // 날짜 전환/첫 로드 중: 개수 모르므로 고정 스켈레톤으로 대기(체감 지연 완화).
+                FeedSkeletonList(modifier = Modifier.weight(1f))
+            } else if (state.isEmpty) {
                 Box(
                     modifier = Modifier
                         .weight(1f)

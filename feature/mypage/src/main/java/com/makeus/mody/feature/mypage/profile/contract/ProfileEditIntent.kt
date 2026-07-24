@@ -9,6 +9,14 @@ sealed class ProfileEditIntent : UiIntent {
     data class NameChanged(val value: String) : ProfileEditIntent()
     data object SaveClicked : ProfileEditIntent()
 
+    /** 아바타 탭 → 사진 소스 시트 오픈. */
+    data object AvatarClicked : ProfileEditIntent()
+    data object PhotoSheetDismissed : ProfileEditIntent()
+    /** 갤러리에서 이미지 선택 완료(로컬 Uri). */
+    data class GalleryImageSelected(val uri: String) : ProfileEditIntent()
+    /** 기본 이미지로 리셋 선택. */
+    data object UseDefaultImageClicked : ProfileEditIntent()
+
     /** 나가기 확인 다이얼로그: 저장 후 나가기 / 저장 안 하고 나가기 / 취소(머무름). */
     data object LeaveSaveClicked : ProfileEditIntent()
     data object LeaveDiscardClicked : ProfileEditIntent()

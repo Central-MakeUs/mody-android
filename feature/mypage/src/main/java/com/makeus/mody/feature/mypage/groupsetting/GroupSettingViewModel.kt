@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.groupsetting
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -29,7 +29,7 @@ class GroupSettingViewModel @Inject constructor(
             is GroupSettingIntent.LeaveClicked -> setState { copy(leaveTarget = intent.group) }
             is GroupSettingIntent.LeaveDismissed -> setState { copy(leaveTarget = null) }
             is GroupSettingIntent.LeaveConfirmed -> leaveGroup()
-            is GroupSettingIntent.ErrorShown -> setState { copy(errorMessage = null) }
+            is GroupSettingIntent.ErrorShown -> setState { copy(error = null) }
         }
     }
 
@@ -41,7 +41,7 @@ class GroupSettingViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            setState { copy(isLoading = false, errorMessage = e.toUserMessage()) }
+            setState { copy(isLoading = false, error = e.toErrorAlert("그룹 목록을 불러오지 못했어요")) }
         }
     }
 
@@ -58,11 +58,8 @@ class GroupSettingViewModel @Inject constructor(
             throw e
         } catch (e: Exception) {
             setState {
-                copy(leaveTarget = null, isProcessing = false, errorMessage = e.toUserMessage())
+                copy(leaveTarget = null, isProcessing = false, error = e.toErrorAlert("그룹 나가기에 실패했어요"))
             }
         }
     }
 }
-
-private fun Throwable.toUserMessage(): String =
-    (this as? HttpResponseException)?.msg ?: "잠시 후 다시 시도해주세요."

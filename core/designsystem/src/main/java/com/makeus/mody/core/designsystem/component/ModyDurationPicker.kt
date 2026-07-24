@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,7 +66,11 @@ fun ModyDurationPicker(
             WheelPicker(
                 items = HOURS,
                 selectedIndex = hours.coerceIn(0, HOURS.lastIndex),
-                onSelectedChange = { onChange(HOURS[it], minutes) },
+                // 최대 시(6) 선택 시 분은 00 으로 고정 → 상한 6시간 00분
+                onSelectedChange = {
+                    val h = HOURS[it]
+                    onChange(h, if (h >= HOURS.last()) 0 else minutes)
+                },
                 itemHeight = itemHeight,
                 showSelectionBox = false,
                 fillItemWidth = false,
@@ -81,16 +86,21 @@ fun ModyDurationPicker(
                 color = ModyTheme.colors.gray10,
             )
             Spacer(modifier = Modifier.width(colonToMinute))
-            WheelPicker(
-                items = MINUTES,
-                selectedIndex = minutes.coerceIn(0, MINUTES.lastIndex),
-                onSelectedChange = { onChange(hours, MINUTES[it]) },
-                itemHeight = itemHeight,
-                showSelectionBox = false,
-                fillItemWidth = false,
-                loop = true,
-                label = { "%02d".format(it) },
-            )
+            // 상한 6시간 00분: 최대 시(6)에선 분 항목을 00 하나로 제한.
+            // (스냅백 방식은 state 가 이미 0 이면 selectedIndex 변화가 없어 휠이 안 돌아옴)
+            val minuteItems = if (hours >= HOURS.last()) listOf(0) else MINUTES
+            key(minuteItems.size) {
+                WheelPicker(
+                    items = minuteItems,
+                    selectedIndex = minutes.coerceIn(0, minuteItems.lastIndex),
+                    onSelectedChange = { onChange(hours, minuteItems[it]) },
+                    itemHeight = itemHeight,
+                    showSelectionBox = false,
+                    fillItemWidth = false,
+                    loop = true,
+                    label = { "%02d".format(it) },
+                )
+            }
             Spacer(modifier = Modifier.width(minuteToMinuteLabel))
             DurationLabel("분")
         }

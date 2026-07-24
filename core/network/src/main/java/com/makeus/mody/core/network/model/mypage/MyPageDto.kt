@@ -1,5 +1,7 @@
 package com.makeus.mody.core.network.model.mypage
 
+import com.makeus.mody.core.network.model.schedule.ExerciseScheduleItem
+import com.makeus.mody.core.network.model.schedule.MealScheduleItem
 import kotlinx.serialization.Serializable
 
 /** GET /api/v1/mypage/me — 마이페이지 상단 프로필. */
@@ -53,4 +55,45 @@ data class MyPageProfileResponse(
 data class MyPageProfileUpdateRequest(
     val nickname: String,
     val birthDate: String?,
+    /**
+     * 프로필 이미지 참조 키.
+     *  - null: 이미지 변경 없음(필드 생략 → encodeDefaults=false).
+     *  - "": 기본 이미지로 리셋(서버가 빈 값을 기본 아바타로 처리).
+     *  - 그 외: 업로드한 imageKey 로 설정.
+     * TODO(server): PATCH /mypage/profile 이 imageKey(및 ""=리셋)를 받는지 백엔드 확정 필요.
+     */
+    val imageKey: String? = null,
+)
+
+/** GET /api/v1/mypage/notification-settings — 알림 설정(토글 3개 + 식사/운동 스케줄). */
+@Serializable
+data class NotificationSettingResponse(
+    /** 식사 및 운동 알림. */
+    val recordReminderEnabled: Boolean = false,
+    val commentNotificationEnabled: Boolean = false,
+    val challengeNotificationEnabled: Boolean = false,
+    val mealSchedules: List<MealScheduleItem> = emptyList(),
+    val exerciseSchedules: List<ExerciseScheduleItem> = emptyList(),
+)
+
+/** PATCH /api/v1/mypage/notification-settings — 토글만 수정(null이면 미변경). */
+@Serializable
+data class NotificationSettingRequest(
+    val recordReminderEnabled: Boolean? = null,
+    val commentNotificationEnabled: Boolean? = null,
+    val challengeNotificationEnabled: Boolean? = null,
+)
+
+/** PUT /api/v1/mypage/schedules — 식사(3)/운동 스케줄 갱신. */
+@Serializable
+data class ScheduleRequest(
+    val mealSchedules: List<MealScheduleItem>,
+    val exerciseSchedules: List<ExerciseScheduleItem>,
+)
+
+/** PUT /api/v1/mypage/schedules 응답(식사/운동 스케줄). */
+@Serializable
+data class ScheduleResponse(
+    val mealSchedules: List<MealScheduleItem> = emptyList(),
+    val exerciseSchedules: List<ExerciseScheduleItem> = emptyList(),
 )

@@ -199,11 +199,20 @@ class FeedViewModel @Inject constructor(
     /** 날짜 탭 연속 변경(주간 스와이프 등) 시 매 탭마다 조회하지 않도록 300ms 디바운스. */
     private fun selectDay(date: LocalDate) {
         selectedDate = date
-        setState { copy(weekDays = buildWeekDays()) }
+        // 캘린더상 기록 없는(불 꺼진) 날: 스켈레톤 대신 빈 화면 즉시 + 백그라운드 조용히 조회.
+        // 기록 있거나(true) 미상(null)인 날: 탭 즉시 스켈레톤(디바운스 대기 동안 이전 피드 안 남게).
+        val hasRecord = recordDates[date] != false
+        setState {
+            copy(
+                weekDays = buildWeekDays(),
+                isLoading = hasRecord,
+                feeds = if (hasRecord) feeds else emptyList(),
+            )
+        }
         selectDayJob?.cancel()
         selectDayJob = viewModelScope.launch {
             delay(300)
-            loadFeedsSuspend(date)
+            loadFeedsSuspend(date, showLoading = hasRecord)
         }
     }
 
@@ -212,10 +221,14 @@ class FeedViewModel @Inject constructor(
         loadFeedsSuspend(date)
     }
 
-    private suspend fun loadFeedsSuspend(date: LocalDate) {
+    /**
+     * @param showLoading 스켈레톤 표시 여부. 캘린더상 기록 없는(불 꺼진) 날은 빈 화면을 즉시 보여주고
+     *  백그라운드로 조용히 조회하기 위해 false.
+     */
+    private suspend fun loadFeedsSuspend(date: LocalDate, showLoading: Boolean = true) {
         val groupId = currentGroupId ?: return
         feedsCursor = null
-        setState { copy(isLoading = true) }
+        if (showLoading) setState { copy(isLoading = true) }
         runCatching { feedRepository.getRecords(groupId, date) }
             .onSuccess { page ->
                 // 조회 중 날짜가 바뀌었으면(늦게 도착한 이전 날짜 응답) 무시 — 엉뚱한 날짜 결과 덮어쓰기 방지.

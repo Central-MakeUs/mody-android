@@ -114,7 +114,11 @@ sealed interface MyPageGraph : Route {
     @Serializable
     data object ProfileEditRoute : MyPageGraph
 
-    /** 그룹 설정(내 그룹 목록/그룹 나가기) */
+    /** 알림 설정(코멘트/챌린지/식사·운동 토글 + 식사/운동 스케줄) */
+    @Serializable
+    data object NotificationSettingRoute : MyPageGraph
+
+    /** 그룹 설정(그룹 나가기) */
     @Serializable
     data object GroupSettingRoute : MyPageGraph
 }

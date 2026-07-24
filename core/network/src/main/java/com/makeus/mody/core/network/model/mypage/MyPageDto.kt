@@ -1,5 +1,7 @@
 package com.makeus.mody.core.network.model.mypage
 
+import com.makeus.mody.core.network.model.schedule.ExerciseScheduleItem
+import com.makeus.mody.core.network.model.schedule.MealScheduleItem
 import kotlinx.serialization.Serializable
 
 /** GET /api/v1/mypage/me — 마이페이지 상단 프로필. */
@@ -61,22 +63,6 @@ data class MyPageProfileUpdateRequest(
      * TODO(server): PATCH /mypage/profile 이 imageKey(및 ""=리셋)를 받는지 백엔드 확정 필요.
      */
     val imageKey: String? = null,
-)
-
-/** 식사 알림 스케줄. time: "HH:mm:ss"(LocalTime), skipped=true면 해당 끼니 알림 끔. */
-@Serializable
-data class MealScheduleItem(
-    /** BREAKFAST / LUNCH / DINNER */
-    val mealType: String,
-    val time: String? = null,
-    val skipped: Boolean = false,
-)
-
-/** 운동 알림 스케줄. dayOfWeek: MONDAY..SUNDAY, time: "HH:mm:ss". */
-@Serializable
-data class ExerciseScheduleItem(
-    val dayOfWeek: String,
-    val time: String,
 )
 
 /** GET /api/v1/mypage/notification-settings — 알림 설정(토글 3개 + 식사/운동 스케줄). */

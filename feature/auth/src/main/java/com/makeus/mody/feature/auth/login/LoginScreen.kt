@@ -44,10 +44,13 @@ fun LoginScreen(
     )
 
     // 로그인 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
-    ModyErrorDialog(
-        message = state.errorMessage,
-        onDismiss = { viewModel.onIntent(LoginIntent.ErrorShown) },
-    )
+    state.error?.let { error ->
+        ModyErrorDialog(
+            title = error.title,
+            message = error.message,
+            onDismiss = { viewModel.onIntent(LoginIntent.ErrorShown) },
+        )
+    }
 }
 
 @Composable

@@ -137,7 +137,8 @@ class FeedViewModel @Inject constructor(
     private fun refresh() {
         if (currentGroupId == null) return
         loadCalendar()
-        loadFeeds(selectedDate)
+        // 복귀 시엔 이미 피드가 떠 있으므로 스켈레톤 없이 조용히 갱신(깜빡임 방지).
+        loadFeeds(selectedDate, showLoading = false)
     }
 
     /** 그룹 선택 시트에서 다른 그룹 선택 → 현재 그룹 교체 후 재조회. */
@@ -199,23 +200,36 @@ class FeedViewModel @Inject constructor(
     /** 날짜 탭 연속 변경(주간 스와이프 등) 시 매 탭마다 조회하지 않도록 300ms 디바운스. */
     private fun selectDay(date: LocalDate) {
         selectedDate = date
-        setState { copy(weekDays = buildWeekDays()) }
+        // 캘린더상 기록 없는(불 꺼진) 날: 스켈레톤 대신 빈 화면 즉시 + 백그라운드 조용히 조회.
+        // 기록 있거나(true) 미상(null)인 날: 탭 즉시 스켈레톤(디바운스 대기 동안 이전 피드 안 남게).
+        val hasRecord = recordDates[date] != false
+        setState {
+            copy(
+                weekDays = buildWeekDays(),
+                isLoading = hasRecord,
+                feeds = if (hasRecord) feeds else emptyList(),
+            )
+        }
         selectDayJob?.cancel()
         selectDayJob = viewModelScope.launch {
             delay(300)
-            loadFeedsSuspend(date)
+            loadFeedsSuspend(date, showLoading = hasRecord)
         }
     }
 
     /** 선택 날짜의 그룹 기록 목록 첫 페이지 조회 (즉시 호출용, 디바운스 없음). */
-    private fun loadFeeds(date: LocalDate) = viewModelScope.launch {
-        loadFeedsSuspend(date)
+    private fun loadFeeds(date: LocalDate, showLoading: Boolean = true) = viewModelScope.launch {
+        loadFeedsSuspend(date, showLoading)
     }
 
-    private suspend fun loadFeedsSuspend(date: LocalDate) {
+    /**
+     * @param showLoading 스켈레톤 표시 여부. 캘린더상 기록 없는(불 꺼진) 날은 빈 화면을 즉시 보여주고
+     *  백그라운드로 조용히 조회하기 위해 false.
+     */
+    private suspend fun loadFeedsSuspend(date: LocalDate, showLoading: Boolean = true) {
         val groupId = currentGroupId ?: return
         feedsCursor = null
-        setState { copy(isLoading = true) }
+        if (showLoading) setState { copy(isLoading = true) }
         runCatching { feedRepository.getRecords(groupId, date) }
             .onSuccess { page ->
                 // 조회 중 날짜가 바뀌었으면(늦게 도착한 이전 날짜 응답) 무시 — 엉뚱한 날짜 결과 덮어쓰기 방지.

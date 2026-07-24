@@ -3,7 +3,7 @@ package com.makeus.mody.feature.auth.login
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
-import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.SocialLoginProvider
 import com.makeus.mody.feature.auth.social.SocialLoginCancelledException
@@ -30,12 +30,12 @@ class LoginViewModel @Inject constructor(
         when (intent) {
             is LoginIntent.KakaoLoginClicked -> login(SocialLoginType.KAKAO)
             is LoginIntent.GoogleLoginClicked -> login(SocialLoginType.GOOGLE)
-            is LoginIntent.ErrorShown -> setState { copy(errorMessage = null) }
+            is LoginIntent.ErrorShown -> setState { copy(error = null) }
         }
     }
 
     private suspend fun login(type: SocialLoginType) {
-        setState { copy(isLoading = true, errorMessage = null) }
+        setState { copy(isLoading = true, error = null) }
         try {
             val socialAccessToken = socialLoginProvider.getAccessToken(type)
             val status = authRepository.loginWithSocial(type, socialAccessToken)
@@ -48,9 +48,8 @@ class LoginViewModel @Inject constructor(
             // 사용자가 소셜 로그인 UI를 취소 → 에러 아님, 조용히 종료
             setState { copy(isLoading = false) }
         } catch (e: Exception) {
-            // HTTP 예외면 서버 메시지, 그 외(네트워크 등)는 폴백 문구.
-            val message = (e as? HttpResponseException)?.msg ?: "로그인에 실패했어요. 다시 시도해주세요."
-            setState { copy(isLoading = false, errorMessage = message) }
+            // 서버/네트워크/기타 분기는 toErrorAlert 공통 규칙을 따른다.
+            setState { copy(isLoading = false, error = e.toErrorAlert("로그인에 실패했어요")) }
         }
     }
 

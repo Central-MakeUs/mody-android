@@ -28,6 +28,10 @@ class KakaoLoginProvider @Inject constructor(
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             when {
                 token != null -> continuation.resume(token.accessToken)
+                // 카카오 계정(웹) 로그인 취소도 카카오톡 취소와 동일하게 조용히 종료
+                error is ClientError && error.reason == ClientErrorCause.Cancelled ->
+                    continuation.resumeWithException(SocialLoginCancelledException())
+
                 error != null -> continuation.resumeWithException(error)
                 else -> continuation.resumeWithException(IllegalStateException("카카오 토큰 없음"))
             }

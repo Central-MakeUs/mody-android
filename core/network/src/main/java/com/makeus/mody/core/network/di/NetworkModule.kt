@@ -10,6 +10,7 @@ import com.makeus.mody.core.network.api.NotificationApi
 import com.makeus.mody.core.network.api.OnboardingApi
 import com.makeus.mody.core.network.api.MyPageApi
 import com.makeus.mody.core.network.api.RecordApi
+import com.makeus.mody.core.network.api.UploadApi
 import com.makeus.mody.core.network.calladapter.ModyCallAdapterFactory
 import com.makeus.mody.core.network.interceptor.AuthInterceptor
 import com.makeus.mody.core.network.interceptor.TokenAuthenticator
@@ -112,4 +113,9 @@ object NetworkModule {
     @Singleton
     fun provideMyPageApi(retrofit: Retrofit): MyPageApi =
         retrofit.create(MyPageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUploadApi(retrofit: Retrofit): UploadApi =
+        retrofit.create(UploadApi::class.java)
 }

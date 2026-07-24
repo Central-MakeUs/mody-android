@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.record.health.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.error.ErrorAlert
 
 data class RecordHealthState(
     /** 선택/촬영한 사진 URI 문자열. null 이면 미선택 → 업로드 박스 노출. */
@@ -18,8 +19,8 @@ data class RecordHealthState(
     /** 커스텀 촬영 오버레이 표시 여부. */
     val isCameraVisible: Boolean = false,
     val isSubmitting: Boolean = false,
-    /** 작성 완료 실패 메시지 (토스트 1회 표시 후 소비). */
-    val submitError: String? = null,
+    /** 작성 실패 다이얼로그 문구. 확인 시 소비. null = 에러 없음. */
+    val submitError: ErrorAlert? = null,
 ) : UiState {
     /** ETC 면 직접입력 텍스트필드로 전환. */
     val isCustomType: Boolean get() = exerciseType == ExerciseType.ETC

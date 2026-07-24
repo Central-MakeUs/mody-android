@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.makeus.mody.core.data.cache.NotificationSettingsCache
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.SessionRepository
@@ -26,6 +27,7 @@ import javax.inject.Singleton
 class SessionRepositoryImpl @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val tokenManager: TokenManager,
+    private val notificationSettingsCache: NotificationSettingsCache,
 ) : SessionRepository {
 
     private object Keys {
@@ -83,5 +85,8 @@ class SessionRepositoryImpl @Inject constructor(
             it.remove(Keys.MAIN_ACCESSIBLE)
             it.remove(Keys.LAST_LOGIN_TYPE)
         }
+        // 계정 전환 시 이전 사용자의 알림 설정 캐시가 노출되지 않게 함께 제거
+        // (로그아웃/탈퇴/세션만료 모두 이 clear 를 지나므로 여기서 일괄 처리).
+        notificationSettingsCache.clear()
     }
 }

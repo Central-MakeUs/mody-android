@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.AuthRepository
+import com.makeus.mody.core.domain.repository.ImageUploadRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.navigation.AuthGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
@@ -17,9 +18,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
+private const val PROFILE_DOMAIN = "profile"
+private const val PROFILE_FILE_BASE = "profile"
+
 @HiltViewModel
 class ProfileEditViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
+    private val imageUploadRepository: ImageUploadRepository,
     private val authRepository: AuthRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<ProfileEditState, ProfileEditIntent>(ProfileEditState()) {
@@ -36,8 +41,23 @@ class ProfileEditViewModel @Inject constructor(
                 if (currentState.isDirty) setState { copy(showLeaveDialog = true) }
                 else navigationHelper.navigate(NavigationEvent.Up)
 
-            is ProfileEditIntent.NameChanged -> setState { copy(name = intent.value) }
+            // 저장(업로드 포함) 중 편집 차단 — submitProfile 완료 시점의 상태 덮어쓰기로
+            // 저장 도중 입력한 변경이 유실되는 것을 막는다.
+            is ProfileEditIntent.NameChanged ->
+                if (!currentState.isSaving) setState { copy(name = intent.value) }
             is ProfileEditIntent.SaveClicked -> save()
+
+            is ProfileEditIntent.AvatarClicked ->
+                if (!currentState.isSaving) setState { copy(isPhotoSheetVisible = true) }
+            is ProfileEditIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
+            is ProfileEditIntent.GalleryImageSelected ->
+                if (!currentState.isSaving) {
+                    setState { copy(pendingImageUri = intent.uri, pendingResetDefault = false, isPhotoSheetVisible = false) }
+                }
+            is ProfileEditIntent.UseDefaultImageClicked ->
+                if (!currentState.isSaving) {
+                    setState { copy(pendingResetDefault = true, pendingImageUri = null, isPhotoSheetVisible = false) }
+                }
 
             is ProfileEditIntent.LeaveSaveClicked -> saveAndLeave()
             is ProfileEditIntent.LeaveDiscardClicked -> {
@@ -52,7 +72,7 @@ class ProfileEditViewModel @Inject constructor(
             is ProfileEditIntent.WithdrawConfirmed -> withdraw()
             is ProfileEditIntent.WithdrawCompleteConfirmed -> toAuth()
 
-            is ProfileEditIntent.ErrorShown -> setState { copy(error = null) }
+            is ProfileEditIntent.ErrorShown -> setState { copy(error = null, errorTitle = null) }
         }
     }
 
@@ -91,38 +111,68 @@ class ProfileEditViewModel @Inject constructor(
     }
 
     private fun save() = viewModelScope.launch {
-        val state = currentState
-        if (!state.isDirty || state.isSaving) return@launch
-        val trimmed = state.name.trim()
-        setState { copy(isSaving = true, error = null) }
-        try {
-            myPageRepository.updateProfile(trimmed, state.birthDate)
-            // 서버 응답 name이 비어 와도 입력값 유지(필드가 비지 않도록).
-            setState { copy(name = trimmed, originalName = trimmed, isSaving = false) }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            setState { copy(isSaving = false, error = e.message()) }
-        }
+        if (!currentState.isDirty || currentState.isSaving) return@launch
+        submitProfile()
     }
 
     /** 다이얼로그에서 "저장 후 나가기". 저장 성공 시 이전 화면으로, 실패 시 머무르며 에러. */
     private fun saveAndLeave() = viewModelScope.launch {
-        val state = currentState
-        val trimmed = state.name.trim()
-        if (!state.isDirty) {
-            setState { copy(showLeaveDialog = false) }
+        if (currentState.isSaving) return@launch // 이중 제출 방지
+        setState { copy(showLeaveDialog = false) }
+        if (!currentState.isDirty) {
             navigationHelper.navigate(NavigationEvent.Up)
             return@launch
         }
-        setState { copy(showLeaveDialog = false, isSaving = true, error = null) }
-        try {
-            myPageRepository.updateProfile(trimmed, state.birthDate)
-            navigationHelper.navigate(NavigationEvent.Up)
+        if (submitProfile()) navigationHelper.navigate(NavigationEvent.Up)
+    }
+
+    /**
+     * 이름/생년월일 + (변경 시)프로필 이미지 저장.
+     * 갤러리 선택이면 먼저 업로드해 imageKey 를 얻고, 기본 리셋이면 ""(서버 기본 처리)로 보낸다.
+     * @return 저장 성공 여부.
+     */
+    private suspend fun submitProfile(): Boolean {
+        val state = currentState
+        val trimmed = state.name.trim()
+        setState { copy(isSaving = true, error = null) }
+        return try {
+            val imageKey = when {
+                state.pendingImageUri != null ->
+                    imageUploadRepository.uploadImage(state.pendingImageUri, PROFILE_DOMAIN, PROFILE_FILE_BASE)
+                state.pendingResetDefault -> "" // 기본 이미지 리셋
+                else -> null // 이미지 변경 없음
+            }
+            myPageRepository.updateProfile(trimmed, state.birthDate, imageKey)
+            // 서버 반영 후 새 아바타 URL 재조회(실패 시: 리셋=null, 갤러리=방금 고른 로컬 Uri 유지).
+            val newAvatar = when {
+                state.pendingResetDefault -> null
+                state.pendingImageUri != null ->
+                    runCatching { myPageRepository.getProfile().profileImageUrl }.getOrNull() ?: state.pendingImageUri
+                else -> state.avatarUrl
+            }
+            setState {
+                copy(
+                    name = trimmed,
+                    originalName = trimmed,
+                    avatarUrl = newAvatar,
+                    pendingImageUri = null,
+                    pendingResetDefault = false,
+                    isSaving = false,
+                )
+            }
+            true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            setState { copy(isSaving = false, error = e.message()) }
+            // 저장(이미지 업로드 포함) 실패 → 전용 다이얼로그 문구.
+            setState {
+                copy(
+                    isSaving = false,
+                    errorTitle = "프로필을 저장하지 못했어요",
+                    error = "다시 시도해주세요",
+                )
+            }
+            false
         }
     }
 

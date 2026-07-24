@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.record.food
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,7 +35,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -47,6 +44,7 @@ import coil.compose.AsyncImage
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.component.ModyTimePicker
@@ -60,20 +58,19 @@ import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
 @Composable
 fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         uri?.let { viewModel.onIntent(RecordFoodIntent.PhotoSelected(it.toString())) }
     }
 
-    // 작성 실패 → 토스트 1회 후 소비
-    LaunchedEffect(state.submitError) {
-        state.submitError?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.onIntent(RecordFoodIntent.SubmitErrorShown)
-        }
+    // 작성 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
+    state.submitError?.let { error ->
+        ModyErrorDialog(
+            title = error.title,
+            message = error.message,
+            onDismiss = { viewModel.onIntent(RecordFoodIntent.SubmitErrorShown) },
+        )
     }
 
     Column(

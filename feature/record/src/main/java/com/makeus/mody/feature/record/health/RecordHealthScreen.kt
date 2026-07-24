@@ -1,6 +1,5 @@
 package com.makeus.mody.feature.record.health
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,14 +26,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +41,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDurationPicker
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -57,20 +55,19 @@ import com.makeus.mody.feature.record.health.contract.RecordHealthIntent
 @Composable
 fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         uri?.let { viewModel.onIntent(RecordHealthIntent.PhotoSelected(it.toString())) }
     }
 
-    // 작성 실패 → 토스트 1회 후 소비
-    LaunchedEffect(state.submitError) {
-        state.submitError?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.onIntent(RecordHealthIntent.SubmitErrorShown)
-        }
+    // 작성 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
+    state.submitError?.let { error ->
+        ModyErrorDialog(
+            title = error.title,
+            message = error.message,
+            onDismiss = { viewModel.onIntent(RecordHealthIntent.SubmitErrorShown) },
+        )
     }
 
     Column(

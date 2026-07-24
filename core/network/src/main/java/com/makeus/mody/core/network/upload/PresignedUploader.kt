@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,10 +22,14 @@ import javax.inject.Singleton
 class PresignedUploader @Inject constructor(
     private val okHttpClient: OkHttpClient,
 ) {
-    suspend fun upload(presignedUrl: String, bytes: ByteArray, contentType: String) {
+    suspend fun upload(presignedUrl: String, bytes: ByteArray, contentType: String) =
+        upload(presignedUrl, bytes.toRequestBody(contentType.toMediaTypeOrNull()))
+
+    /** 대용량 파일은 [body] 를 스트리밍 RequestBody 로 넘겨 메모리 버퍼링 없이 업로드. */
+    suspend fun upload(presignedUrl: String, body: RequestBody) {
         val request = Request.Builder()
             .url(presignedUrl)
-            .put(bytes.toRequestBody(contentType.toMediaTypeOrNull()))
+            .put(body)
             .build()
 
         withContext(Dispatchers.IO) {

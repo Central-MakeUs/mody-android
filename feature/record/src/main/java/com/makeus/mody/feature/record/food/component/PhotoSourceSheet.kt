@@ -1,86 +1,22 @@
 package com.makeus.mody.feature.record.food.component
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.makeus.mody.core.designsystem.component.ModyBottomSheet
+import com.makeus.mody.core.designsystem.component.ModyPhotoSourceSheet
+import com.makeus.mody.core.designsystem.component.PhotoSourceOption
 import com.makeus.mody.core.designsystem.icon.ModyIcons
-import com.makeus.mody.core.designsystem.theme.ModyTheme
 
-/** 사진 첨부 방식 선택 바텀시트: 촬영 / 갤러리. */
+/** 사진 첨부 방식 선택 바텀시트: 촬영 / 갤러리. 공통 [ModyPhotoSourceSheet] 사용. */
 @Composable
 fun PhotoSourceSheet(
     onTakePhoto: () -> Unit,
     onPickFromGallery: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModyBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 32.dp),
-        ) {
-            PhotoSourceItem(
-                label = "사진 촬영하기",
-                icon = ModyIcons.Camera,
-                onClick = onTakePhoto,
-            )
-            // 구분선 (시안: 좌우 24 인셋)
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(1.dp)
-                    .background(ModyTheme.colors.gray01),
-            )
-            PhotoSourceItem(
-                label = "갤러리에서 선택하기",
-                icon = ModyIcons.Image,
-                onClick = onPickFromGallery,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PhotoSourceItem(
-    label: String,
-    @DrawableRes icon: Int,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = ModyTheme.colors.gray10,
-            modifier = Modifier.size(24.dp),
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = label,
-            style = ModyTheme.typography.b4,
-            color = ModyTheme.colors.gray10,
-        )
-    }
+    ModyPhotoSourceSheet(
+        options = listOf(
+            PhotoSourceOption(label = "사진 촬영하기", icon = ModyIcons.Camera, onClick = onTakePhoto),
+            PhotoSourceOption(label = "갤러리에서 선택하기", icon = ModyIcons.Image, onClick = onPickFromGallery),
+        ),
+        onDismiss = onDismiss,
+    )
 }

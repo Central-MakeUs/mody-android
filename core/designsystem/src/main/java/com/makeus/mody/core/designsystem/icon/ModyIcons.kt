@@ -16,6 +16,7 @@ object ModyIcons {
     @DrawableRes val Award = R.drawable.ic_award
     @DrawableRes val AwardFill = R.drawable.ic_award_fill
     @DrawableRes val Camera = R.drawable.ic_camera
+    @DrawableRes val Challenge = R.drawable.ic_challenge
     @DrawableRes val Check = R.drawable.ic_check
     @DrawableRes val CheckFill = R.drawable.ic_check_fill
     @DrawableRes val CheckFill1 = R.drawable.ic_check_fill_1
@@ -45,6 +46,7 @@ object ModyIcons {
     @DrawableRes val Logo = R.drawable.ic_logo
     @DrawableRes val LogoWordmark = R.drawable.ic_logo_wordmark
     @DrawableRes val Medal = R.drawable.ic_medal
+    @DrawableRes val Mypage = R.drawable.ic_mypage
     @DrawableRes val Party = R.drawable.ic_party
     @DrawableRes val Plus = R.drawable.ic_plus
     @DrawableRes val Plus1 = R.drawable.ic_plus_1

@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.notification.R
 import com.makeus.mody.feature.notification.notification.contract.NotificationIntent
@@ -53,15 +52,9 @@ private fun NotificationScreen(
     onBackClick: () -> Unit,
     onLoadMore: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ModyTheme.colors.white)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+    ModyScreenScaffold(
+        topBar = { ModyBackTopBar(title = "알림", onBackClick = onBackClick) },
     ) {
-        ModyBackTopBar(title = "알림", onBackClick = onBackClick)
-
         when {
             state.isEmpty -> NotificationEmptyContent(modifier = Modifier.fillMaxSize())
             else -> NotificationList(

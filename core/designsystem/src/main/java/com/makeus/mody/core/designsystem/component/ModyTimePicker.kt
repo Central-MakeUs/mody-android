@@ -32,7 +32,7 @@ fun ModyTimePicker(
     minute: Int,
     onTimeChange: (hour24: Int, minute: Int) -> Unit,
     modifier: Modifier = Modifier,
-    itemHeight: Dp = 39.dp,
+    itemHeight: Dp = 32.dp,
     itemSpacing: Dp = 0.dp,
     amPmColumnWidth: Dp = 44.dp,
     hourColumnWidth: Dp = 32.dp,

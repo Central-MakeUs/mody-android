@@ -136,6 +136,8 @@ fun <T> WheelPicker(
             flingBehavior = fling,
             contentPadding = PaddingValues(vertical = sidePadding),
             verticalArrangement = Arrangement.spacedBy(itemSpacing),
+            // fillItemWidth=false 일 때 좁은 항목(작은 폰트/좁은 글리프)이 왼쪽으로 붙지 않게
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             items(count = virtualCount) { index ->
                 val item = items[actualOf(index)]

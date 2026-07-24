@@ -81,7 +81,7 @@ private fun RowScope.TabItem(
                 indication = null, // 시안에 리플 없음
                 onClick = onClick,
             )
-            .padding(top = 4.dp),
+            .padding(top = 5.5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -92,7 +92,7 @@ private fun RowScope.TabItem(
         )
         Text(
             text = tab.label,
-            style = if (isSelected) ModyTheme.typography.c2 else ModyTheme.typography.c3,
+            style = if (isSelected) ModyTheme.typography.c3 else ModyTheme.typography.c4,
             color = contentColor,
         )
     }

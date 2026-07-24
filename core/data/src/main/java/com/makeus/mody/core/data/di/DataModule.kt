@@ -3,6 +3,7 @@ package com.makeus.mody.core.data.di
 import com.makeus.mody.core.data.repository.AuthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
+import com.makeus.mody.core.data.repository.ImageUploadRepositoryImpl
 import com.makeus.mody.core.data.repository.MyPageRepositoryImpl
 import com.makeus.mody.core.data.repository.NotificationRepositoryImpl
 import com.makeus.mody.core.data.repository.OnboardingRepositoryImpl
@@ -14,6 +15,7 @@ import com.makeus.mody.core.data.repository.TokenManagerImpl
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.ImageUploadRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.NotificationRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
@@ -79,4 +81,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindMyPageRepository(impl: MyPageRepositoryImpl): MyPageRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindImageUploadRepository(impl: ImageUploadRepositoryImpl): ImageUploadRepository
 }

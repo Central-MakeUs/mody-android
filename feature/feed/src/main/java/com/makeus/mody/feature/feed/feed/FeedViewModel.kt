@@ -137,7 +137,8 @@ class FeedViewModel @Inject constructor(
     private fun refresh() {
         if (currentGroupId == null) return
         loadCalendar()
-        loadFeeds(selectedDate)
+        // 복귀 시엔 이미 피드가 떠 있으므로 스켈레톤 없이 조용히 갱신(깜빡임 방지).
+        loadFeeds(selectedDate, showLoading = false)
     }
 
     /** 그룹 선택 시트에서 다른 그룹 선택 → 현재 그룹 교체 후 재조회. */
@@ -217,8 +218,8 @@ class FeedViewModel @Inject constructor(
     }
 
     /** 선택 날짜의 그룹 기록 목록 첫 페이지 조회 (즉시 호출용, 디바운스 없음). */
-    private fun loadFeeds(date: LocalDate) = viewModelScope.launch {
-        loadFeedsSuspend(date)
+    private fun loadFeeds(date: LocalDate, showLoading: Boolean = true) = viewModelScope.launch {
+        loadFeedsSuspend(date, showLoading)
     }
 
     /**

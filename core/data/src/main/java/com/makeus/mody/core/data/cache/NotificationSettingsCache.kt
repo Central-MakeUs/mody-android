@@ -48,6 +48,18 @@ class NotificationSettingsCache @Inject constructor(
         )
     }
 
+    /** 로그아웃/탈퇴/세션만료 시 호출 — 다른 계정이 이전 사용자의 설정을 보지 않게 캐시 제거. */
+    suspend fun clear() {
+        dataStore.edit { p ->
+            p.remove(Keys.HAS)
+            p.remove(Keys.RECORD_REMINDER)
+            p.remove(Keys.COMMENT)
+            p.remove(Keys.CHALLENGE)
+            p.remove(Keys.MEALS)
+            p.remove(Keys.EXERCISES)
+        }
+    }
+
     suspend fun write(settings: NotificationSettings) {
         dataStore.edit { p ->
             p[Keys.HAS] = true

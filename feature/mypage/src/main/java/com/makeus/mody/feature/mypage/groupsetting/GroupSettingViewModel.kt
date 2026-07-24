@@ -51,15 +51,24 @@ class GroupSettingViewModel @Inject constructor(
         setState { copy(isProcessing = true) }
         try {
             groupRepository.leaveGroup(target.groupId)
-            // 나간 결과 반영을 위해 목록 재조회
-            val groups = groupRepository.getMyGroups()
-            setState { copy(groups = groups, leaveTarget = null, isProcessing = false) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             setState {
                 copy(leaveTarget = null, isProcessing = false, error = e.toErrorAlert("그룹 나가기에 실패했어요"))
             }
+            return@launch
         }
+        // 나가기는 이미 성공 — 재조회 실패가 "나가기 실패"로 보이면 사용자가 재시도하게 되므로
+        // 우선 로컬에서 제거하고, 목록 재조회는 best-effort 로만 반영한다.
+        setState {
+            copy(
+                groups = groups.filterNot { it.groupId == target.groupId },
+                leaveTarget = null,
+                isProcessing = false,
+            )
+        }
+        runCatching { groupRepository.getMyGroups() }
+            .onSuccess { refreshed -> setState { copy(groups = refreshed) } }
     }
 }

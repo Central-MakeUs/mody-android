@@ -64,7 +64,8 @@ class MyPageRepositoryImpl @Inject constructor(
 
     override suspend fun refreshNotificationSettings(): NotificationSettings {
         val settings = myPageApi.getNotificationSettings().unwrapResult().toDomain()
-        notificationCache.write(settings)
+        // 캐시는 best-effort hint — 캐시 IO 실패가 서버 조회 성공을 가리면 안 됨.
+        runCatching { notificationCache.write(settings) }
         return settings
     }
 
@@ -81,14 +82,17 @@ class MyPageRepositoryImpl @Inject constructor(
             ),
         ).unwrapResult()
         // 서버 반영 성공 → 캐시의 변경된 토글만 갱신(다음 진입 즉시성 유지). 캐시 없으면 skip.
-        notificationCache.read()?.let { cached ->
-            notificationCache.write(
-                cached.copy(
-                    recordReminderEnabled = recordReminderEnabled ?: cached.recordReminderEnabled,
-                    commentNotificationEnabled = commentNotificationEnabled ?: cached.commentNotificationEnabled,
-                    challengeNotificationEnabled = challengeNotificationEnabled ?: cached.challengeNotificationEnabled,
-                ),
-            )
+        // 캐시 IO 실패가 이미 성공한 서버 반영을 실패로 둔갑시키지 않게 best-effort.
+        runCatching {
+            notificationCache.read()?.let { cached ->
+                notificationCache.write(
+                    cached.copy(
+                        recordReminderEnabled = recordReminderEnabled ?: cached.recordReminderEnabled,
+                        commentNotificationEnabled = commentNotificationEnabled ?: cached.commentNotificationEnabled,
+                        challengeNotificationEnabled = challengeNotificationEnabled ?: cached.challengeNotificationEnabled,
+                    ),
+                )
+            }
         }
     }
 
@@ -102,9 +106,11 @@ class MyPageRepositoryImpl @Inject constructor(
                 exerciseSchedules = exercises.map { it.toItem() },
             ),
         ).unwrapResult()
-        // 서버 반영 성공 → 캐시 스케줄 교체. 캐시 없으면 skip.
-        notificationCache.read()?.let { cached ->
-            notificationCache.write(cached.copy(meals = meals, exercises = exercises))
+        // 서버 반영 성공 → 캐시 스케줄 교체. 캐시 없으면 skip. 캐시 IO 실패는 무시(best-effort).
+        runCatching {
+            notificationCache.read()?.let { cached ->
+                notificationCache.write(cached.copy(meals = meals, exercises = exercises))
+            }
         }
     }
 

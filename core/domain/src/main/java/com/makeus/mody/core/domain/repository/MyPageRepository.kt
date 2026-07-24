@@ -36,7 +36,10 @@ interface MyPageRepository {
     /** 서버에서 알림 설정을 조회해 로컬 캐시에 반영하고 반환. */
     suspend fun refreshNotificationSettings(): NotificationSettings
 
-    /** 알림 토글 수정(null이면 미변경). */
+    /**
+     * 알림 토글 수정. 서버 PATCH 가 전체 교체(안 보낸 필드 false 리셋)이므로
+     * 호출 측은 세 토글의 현재 값을 항상 모두 전달해야 한다.
+     */
     suspend fun updateNotificationToggles(
         recordReminderEnabled: Boolean? = null,
         commentNotificationEnabled: Boolean? = null,

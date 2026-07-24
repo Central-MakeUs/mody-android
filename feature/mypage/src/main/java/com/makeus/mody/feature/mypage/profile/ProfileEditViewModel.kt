@@ -41,15 +41,23 @@ class ProfileEditViewModel @Inject constructor(
                 if (currentState.isDirty) setState { copy(showLeaveDialog = true) }
                 else navigationHelper.navigate(NavigationEvent.Up)
 
-            is ProfileEditIntent.NameChanged -> setState { copy(name = intent.value) }
+            // 저장(업로드 포함) 중 편집 차단 — submitProfile 완료 시점의 상태 덮어쓰기로
+            // 저장 도중 입력한 변경이 유실되는 것을 막는다.
+            is ProfileEditIntent.NameChanged ->
+                if (!currentState.isSaving) setState { copy(name = intent.value) }
             is ProfileEditIntent.SaveClicked -> save()
 
-            is ProfileEditIntent.AvatarClicked -> setState { copy(isPhotoSheetVisible = true) }
+            is ProfileEditIntent.AvatarClicked ->
+                if (!currentState.isSaving) setState { copy(isPhotoSheetVisible = true) }
             is ProfileEditIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
             is ProfileEditIntent.GalleryImageSelected ->
-                setState { copy(pendingImageUri = intent.uri, pendingResetDefault = false, isPhotoSheetVisible = false) }
+                if (!currentState.isSaving) {
+                    setState { copy(pendingImageUri = intent.uri, pendingResetDefault = false, isPhotoSheetVisible = false) }
+                }
             is ProfileEditIntent.UseDefaultImageClicked ->
-                setState { copy(pendingResetDefault = true, pendingImageUri = null, isPhotoSheetVisible = false) }
+                if (!currentState.isSaving) {
+                    setState { copy(pendingResetDefault = true, pendingImageUri = null, isPhotoSheetVisible = false) }
+                }
 
             is ProfileEditIntent.LeaveSaveClicked -> saveAndLeave()
             is ProfileEditIntent.LeaveDiscardClicked -> {
@@ -109,6 +117,7 @@ class ProfileEditViewModel @Inject constructor(
 
     /** 다이얼로그에서 "저장 후 나가기". 저장 성공 시 이전 화면으로, 실패 시 머무르며 에러. */
     private fun saveAndLeave() = viewModelScope.launch {
+        if (currentState.isSaving) return@launch // 이중 제출 방지
         setState { copy(showLeaveDialog = false) }
         if (!currentState.isDirty) {
             navigationHelper.navigate(NavigationEvent.Up)

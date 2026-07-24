@@ -76,7 +76,11 @@ data class NotificationSettingResponse(
     val exerciseSchedules: List<ExerciseScheduleItem> = emptyList(),
 )
 
-/** PATCH /api/v1/mypage/notification-settings — 토글만 수정(null이면 미변경). */
+/**
+ * PATCH /api/v1/mypage/notification-settings — 알림 토글 수정.
+ * 서버가 전체 교체 semantics(보낸 필드만 적용, 안 보낸 필드는 false 리셋)라
+ * 세 토글을 항상 모두 채워 보내야 한다. null 허용은 직렬화 형식일 뿐 "미변경" 이 아님.
+ */
 @Serializable
 data class NotificationSettingRequest(
     val recordReminderEnabled: Boolean? = null,

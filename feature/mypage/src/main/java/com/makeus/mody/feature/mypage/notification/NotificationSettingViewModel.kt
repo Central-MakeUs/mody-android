@@ -45,7 +45,11 @@ class NotificationSettingViewModel @Inject constructor(
     override suspend fun processIntent(intent: NotificationSettingIntent) {
         when (intent) {
             is NotificationSettingIntent.Load -> load()
-            is NotificationSettingIntent.BackClicked -> navigationHelper.navigate(NavigationEvent.Up)
+            is NotificationSettingIntent.BackClicked -> {
+                // 디바운스 대기 중인 변경을 먼저 전송 — 화면 이탈로 scope 가 취소되면 유실됨.
+                flushPendingSync()
+                navigationHelper.navigate(NavigationEvent.Up)
+            }
 
             is NotificationSettingIntent.CommentToggled -> {
                 setState { copy(commentEnabled = intent.enabled) }
@@ -122,6 +126,19 @@ class NotificationSettingViewModel @Inject constructor(
             exerciseTimes = s.exercises.associate { it.dayOfWeek to (it.hour to it.minute) },
             isLoading = false,
         )
+    }
+
+    /**
+     * 뒤로가기 직전 디바운스 대기 중인 토글/스케줄 변경을 즉시 전송.
+     * 실패해도 조용히 무시 — 다음 진입 시 서버값으로 재동기화되므로 이탈을 막지 않는다.
+     */
+    private suspend fun flushPendingSync() {
+        val pendingToggle = toggleSyncJob?.isActive == true
+        val pendingSchedule = scheduleSyncJob?.isActive == true
+        toggleSyncJob?.cancel()
+        scheduleSyncJob?.cancel()
+        if (pendingToggle) runCatching { pushToggles() }
+        if (pendingSchedule) runCatching { pushSchedules() }
     }
 
     /**

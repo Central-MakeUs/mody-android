@@ -9,10 +9,8 @@ enum class MainTab(
     @DrawableRes val icon: Int,
     @DrawableRes val selectedIcon: Int,
 ) {
-    FEED("피드", ModyIcons.Feed, ModyIcons.FeedFill),
-    CHALLENGE("챌린지", ModyIcons.Award, ModyIcons.AwardFill),
-
-    // TODO(designsystem): profile fill 에셋 미존재 → 시안 export 받으면 selectedIcon 교체.
-    //  지금은 outline 아이콘에 진한 tint 로 선택 상태 표현.
-    MY("마이", ModyIcons.Profile, ModyIcons.Profile),
+    // 선택/미선택 동일 아이콘, 상태는 tint(gray10/gray05)로만 구분.
+    FEED("피드", ModyIcons.Feed, ModyIcons.Feed),
+    CHALLENGE("챌린지", ModyIcons.Challenge, ModyIcons.Challenge),
+    MY("마이", ModyIcons.Mypage, ModyIcons.Mypage),
 }

@@ -60,7 +60,7 @@ fun ModyDialog(
         ) {
             Text(
                 text = title,
-                style = ModyTheme.typography.b3,
+                style = ModyTheme.typography.b2,
                 color = ModyTheme.colors.gray10,
                 textAlign = TextAlign.Center,
             )
@@ -68,7 +68,7 @@ fun ModyDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = message,
-                    style = ModyTheme.typography.b7,
+                    style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray06,
                     textAlign = TextAlign.Center,
                 )
@@ -78,7 +78,7 @@ fun ModyDialog(
                 if (dismissText != null) {
                     DialogButton(
                         text = dismissText,
-                        containerColor = ModyTheme.colors.gray01,
+                        containerColor = ModyTheme.colors.gray02,
                         contentColor = ModyTheme.colors.gray05,
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
@@ -147,6 +147,6 @@ private fun DialogButton(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = text, style = ModyTheme.typography.b5, color = contentColor)
+        Text(text = text, style = ModyTheme.typography.b6, color = contentColor)
     }
 }

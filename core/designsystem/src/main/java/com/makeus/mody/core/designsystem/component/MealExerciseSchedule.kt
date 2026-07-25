@@ -142,9 +142,11 @@ fun MealExerciseSchedule(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 요일 칩: 미선택 탭 → 기본 9:00로 선택 / 선택된 칩 탭 → 해제
+        // 칩 7개(40dp 원형)를 고정 gap 으로 두면 좁은 화면에서 폭 초과로 마지막(일) 칩이 잘림.
+        // SpaceBetween 으로 gap 을 남는 폭에 맞춰 자동 분배 → 일요일까지 모두 노출.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             DAY_LABELS.forEachIndexed { index, label ->
                 val day = index + 1

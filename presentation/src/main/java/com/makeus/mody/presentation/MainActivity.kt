@@ -25,12 +25,14 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
 import com.makeus.mody.core.domain.notification.NotificationDeepLinkHolder
+import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
-import com.makeus.mody.core.navigation.NotificationGraph
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.presentation.navigation.AppNavHost
+import com.makeus.mody.presentation.notification.NotificationDestination
+import com.makeus.mody.presentation.notification.NotificationLinkParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -40,6 +42,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var navigationHelper: NavigationHelper
     @Inject lateinit var inviteCodeHolder: InviteCodeHolder
     @Inject lateinit var notificationDeepLinkHolder: NotificationDeepLinkHolder
+    @Inject lateinit var pendingGroupSelectionHolder: PendingGroupSelectionHolder
 
     // 13+ 알림 권한 요청. 거부해도 앱은 그대로 진행(알림만 안 뜸).
     private val notificationPermissionLauncher =
@@ -124,12 +127,10 @@ class MainActivity : ComponentActivity() {
 
     /** 알림 PendingIntent extra 에서 딥링크 정보 추출 → 홀더 보관(1회성). */
     private fun handleNotificationIntent(intent: Intent?) {
-        val type = intent?.getStringExtra(NotificationDeepLink.KEY_TYPE) ?: return
-        val targetId = intent.getStringExtra(NotificationDeepLink.KEY_TARGET_ID)?.toLongOrNull()
-        notificationDeepLinkHolder.set(NotificationDeepLink(type = type, targetId = targetId))
+        val link = intent?.getStringExtra(NotificationDeepLink.KEY_LINK) ?: return
+        notificationDeepLinkHolder.set(NotificationDeepLink(link = link))
         // 소비 후 extra 제거 → 화면 회전 등 Activity 재생성 시 재파싱·재이동(엉뚱한 화면으로 튐) 방지.
-        intent.removeExtra(NotificationDeepLink.KEY_TYPE)
-        intent.removeExtra(NotificationDeepLink.KEY_TARGET_ID)
+        intent.removeExtra(NotificationDeepLink.KEY_LINK)
     }
 
     /**
@@ -142,13 +143,16 @@ class MainActivity : ComponentActivity() {
             return
         }
         val deepLink = notificationDeepLinkHolder.consume() ?: return
-        navigationHelper.navigate(NavigationEvent.To(deepLink.toRoute()))
-    }
-
-    /** 알림 종류 → 이동할 화면. 새 타입은 여기 when 에 한 줄 추가. */
-    private fun NotificationDeepLink.toRoute(): Route = when (type) {
-        // TODO(notification): 타입별 상세 분기. 예) "COMMENT" → RecordDetailRoute(groupId, targetId)
-        else -> NotificationGraph.NotificationRoute
+        when (val dest = NotificationLinkParser.parse(deepLink.link)) {
+            is NotificationDestination.Screen ->
+                navigationHelper.navigate(NavigationEvent.To(dest.route))
+            // 그룹홈은 별도 라우트가 없어 Feed 탭 + 그룹 전환으로 처리(홀더에 groupId 보관).
+            // MainScreenViewModel(탭 전환) + FeedViewModel(그룹 선택) 이 반응한다.
+            is NotificationDestination.GroupHome ->
+                pendingGroupSelectionHolder.set(dest.groupId)
+            // 미지원 경로: 무시(현재 화면 유지).
+            null -> Unit
+        }
     }
 
     /** Android 13+ 에서 알림 권한 미허용이면 런타임 요청. */

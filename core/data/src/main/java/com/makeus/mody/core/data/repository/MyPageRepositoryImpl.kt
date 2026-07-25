@@ -54,10 +54,10 @@ class MyPageRepositoryImpl @Inject constructor(
     override suspend fun getProfileDetail(): ProfileDetail =
         myPageApi.getProfile().unwrapResult().toDomain()
 
-    override suspend fun updateProfile(name: String, birthDate: String?, imageKey: String?): ProfileDetail =
+    override suspend fun updateProfile(name: String, birthDate: String?, imageKey: String?): String? =
         myPageApi.updateProfile(
             MyPageProfileUpdateRequest(nickname = name, birthDate = birthDate, imageKey = imageKey),
-        ).unwrapResult().toDomain()
+        ).unwrapResult().profileImageUrl
 
     override suspend fun getCachedNotificationSettings(): NotificationSettings? =
         notificationCache.read()

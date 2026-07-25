@@ -142,13 +142,15 @@ class ProfileEditViewModel @Inject constructor(
                 state.pendingResetDefault -> "" // 기본 이미지 리셋
                 else -> null // 이미지 변경 없음
             }
-            myPageRepository.updateProfile(trimmed, state.birthDate, imageKey)
-            // 서버 반영 후 새 아바타 URL 재조회(실패 시: 리셋=null, 갤러리=방금 고른 로컬 Uri 유지).
+            val updatedImageUrl = myPageRepository.updateProfile(trimmed, state.birthDate, imageKey)
+            // PATCH 응답의 반영된 profileImageUrl 을 그대로 사용(별도 /me 재조회 불필요).
+            //  - 이미지 미변경: 기존 값 유지
+            //  - 리셋: 서버가 준 기본 URL(없으면 null → 기본 아바타)
+            //  - 갤러리: 서버 URL, 비어 오면 방금 고른 로컬 Uri 로 폴백
             val newAvatar = when {
-                state.pendingResetDefault -> null
-                state.pendingImageUri != null ->
-                    runCatching { myPageRepository.getProfile().profileImageUrl }.getOrNull() ?: state.pendingImageUri
-                else -> state.avatarUrl
+                !state.isAvatarChanged -> state.avatarUrl
+                state.pendingResetDefault -> updatedImageUrl
+                else -> updatedImageUrl ?: state.pendingImageUri
             }
             setState {
                 copy(

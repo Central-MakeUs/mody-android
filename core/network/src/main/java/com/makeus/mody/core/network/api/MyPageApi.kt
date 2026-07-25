@@ -4,6 +4,7 @@ import com.makeus.mody.core.network.model.ApiResponse
 import com.makeus.mody.core.network.model.mypage.MyPageMeResponse
 import com.makeus.mody.core.network.model.mypage.MyPageProfileResponse
 import com.makeus.mody.core.network.model.mypage.MyPageProfileUpdateRequest
+import com.makeus.mody.core.network.model.mypage.MyPageProfileUpdateResponse
 import com.makeus.mody.core.network.model.mypage.MyPageWeightCreateRequest
 import com.makeus.mody.core.network.model.mypage.MyPageWeightCreateResponse
 import com.makeus.mody.core.network.model.mypage.MyPageWeightsResponse
@@ -37,11 +38,11 @@ interface MyPageApi {
     @GET("api/v1/mypage/profile")
     suspend fun getProfile(): ApiResponse<MyPageProfileResponse>
 
-    /** 이름/생년월일 수정. */
+    /** 이름/생년월일/프로필 이미지 수정. 응답에 반영된 profileImageUrl 포함. */
     @PATCH("api/v1/mypage/profile")
     suspend fun updateProfile(
         @Body request: MyPageProfileUpdateRequest,
-    ): ApiResponse<MyPageProfileResponse>
+    ): ApiResponse<MyPageProfileUpdateResponse>
 
     /** 알림 설정 조회(토글 3개 + 식사/운동 스케줄). */
     @GET("api/v1/mypage/notification-settings")

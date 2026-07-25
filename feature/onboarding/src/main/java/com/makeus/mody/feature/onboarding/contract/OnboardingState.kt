@@ -36,6 +36,14 @@ data class OnboardingState(
     val isExerciseValid: Boolean
         get() = exerciseTimes.size >= EXERCISE_MIN_DAYS
 
+    /** 최소 1끼는 먹어야 함(세 끼 모두 "식사 안 함" 불가). */
+    val isMealValid: Boolean
+        get() = breakfastHour != null || lunchHour != null || dinnerHour != null
+
+    /** 알림 스텝 통과 조건: 운동 요일 ≥1 + 식사 ≥1끼. */
+    val isAlarmValid: Boolean
+        get() = isExerciseValid && isMealValid
+
     /** 목표 - 현재 체중 차이(kg). 양수=증량, 음수=감량, 0=유지 */
     val weightDiff: Int
         get() = targetWeight - currentWeight

@@ -93,7 +93,10 @@ fun MealExerciseSchedule(
                 onPick = { onMealHoursChange(it, lunchHour, dinnerHour) },
                 onToggleSkip = {
                     if (breakfastHour == null) onMealHoursChange(8, lunchHour, dinnerHour)
-                    else onMealHoursChange(null, lunchHour, dinnerHour)
+                    // 마지막 남은 식사는 "식사 안 함" 불가(최소 1끼).
+                    else if (lunchHour != null || dinnerHour != null) {
+                        onMealHoursChange(null, lunchHour, dinnerHour)
+                    }
                 },
             )
             MealColumn(
@@ -104,7 +107,9 @@ fun MealExerciseSchedule(
                 onPick = { onMealHoursChange(breakfastHour, it, dinnerHour) },
                 onToggleSkip = {
                     if (lunchHour == null) onMealHoursChange(breakfastHour, 12, dinnerHour)
-                    else onMealHoursChange(breakfastHour, null, dinnerHour)
+                    else if (breakfastHour != null || dinnerHour != null) {
+                        onMealHoursChange(breakfastHour, null, dinnerHour)
+                    }
                 },
             )
             MealColumn(
@@ -115,7 +120,9 @@ fun MealExerciseSchedule(
                 onPick = { onMealHoursChange(breakfastHour, lunchHour, it) },
                 onToggleSkip = {
                     if (dinnerHour == null) onMealHoursChange(breakfastHour, lunchHour, 18)
-                    else onMealHoursChange(breakfastHour, lunchHour, null)
+                    else if (breakfastHour != null || lunchHour != null) {
+                        onMealHoursChange(breakfastHour, lunchHour, null)
+                    }
                 },
             )
         }
@@ -154,8 +161,12 @@ fun MealExerciseSchedule(
                     label = label,
                     selected = day in exerciseTimes,
                     onClick = {
-                        if (day in exerciseTimes) onExerciseDayRemoved(day)
-                        else onExerciseDaySet(day, 9, 0)
+                        if (day in exerciseTimes) {
+                            // 마지막 남은 요일은 해제 불가(최소 1일).
+                            if (exerciseTimes.size > 1) onExerciseDayRemoved(day)
+                        } else {
+                            onExerciseDaySet(day, 9, 0)
+                        }
                     },
                 )
             }

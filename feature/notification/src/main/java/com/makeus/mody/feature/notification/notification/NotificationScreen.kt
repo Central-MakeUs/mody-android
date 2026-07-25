@@ -2,6 +2,7 @@ package com.makeus.mody.feature.notification.notification
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ fun NotificationScreen(viewModel: NotificationViewModel = hiltViewModel()) {
         state = state,
         onBackClick = { viewModel.onIntent(NotificationIntent.BackClicked) },
         onLoadMore = { viewModel.onIntent(NotificationIntent.LoadMore) },
+        onItemClick = { link -> viewModel.onIntent(NotificationIntent.ItemClicked(link)) },
     )
 }
 
@@ -51,6 +53,7 @@ private fun NotificationScreen(
     state: NotificationState,
     onBackClick: () -> Unit,
     onLoadMore: () -> Unit,
+    onItemClick: (link: String?) -> Unit,
 ) {
     ModyScreenScaffold(
         topBar = { ModyBackTopBar(title = "알림", onBackClick = onBackClick) },
@@ -60,6 +63,7 @@ private fun NotificationScreen(
             else -> NotificationList(
                 notifications = state.notifications,
                 onLoadMore = onLoadMore,
+                onItemClick = onItemClick,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -70,6 +74,7 @@ private fun NotificationScreen(
 private fun NotificationList(
     notifications: List<NotificationUiModel>,
     onLoadMore: () -> Unit,
+    onItemClick: (link: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -87,17 +92,19 @@ private fun NotificationList(
 
     LazyColumn(state = listState, modifier = modifier) {
         items(notifications, key = { it.id }) { item ->
-            NotificationRow(item)
+            NotificationRow(item = item, onClick = { onItemClick(item.link) })
         }
     }
 }
 
 @Composable
-private fun NotificationRow(item: NotificationUiModel) {
+private fun NotificationRow(item: NotificationUiModel, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (item.isRead) ModyTheme.colors.white else ModyTheme.colors.primary400)
+            // link 없는 알림도 탭은 되지만 이동은 없음(ViewModel 에서 무시).
+            .clickable(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 20.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -188,6 +195,7 @@ private fun NotificationScreenPreview() {
             ),
             onBackClick = {},
             onLoadMore = {},
+            onItemClick = {},
         )
     }
 }

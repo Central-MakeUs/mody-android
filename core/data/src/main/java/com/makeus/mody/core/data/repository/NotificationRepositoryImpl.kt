@@ -43,6 +43,7 @@ private fun NotificationResponse.toNotification(): Notification =
         type = type.toNotificationType(),
         title = title,
         description = description,
+        link = link,
         createdAt = createdAt.parseServerInstant(),
         isRead = read,
     )

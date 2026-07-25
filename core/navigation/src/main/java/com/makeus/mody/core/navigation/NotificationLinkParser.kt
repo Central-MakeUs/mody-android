@@ -1,12 +1,11 @@
-package com.makeus.mody.presentation.notification
-
-import com.makeus.mody.core.navigation.RecordGraph
-import com.makeus.mody.core.navigation.Route
+package com.makeus.mody.core.navigation
 
 /**
  * 알림 딥링크 목적지. 서버가 보내는 link(URL path)를 파싱한 결과.
  *  - [Screen]: 그대로 push 할 라우트(운동/식사 기록 입력).
  *  - [GroupHome]: 별도 라우트가 없어 Feed 탭 + 그룹 전환으로 처리(groupId 만 넘김).
+ *
+ * FCM 푸시 탭(MainActivity)과 알림 목록 아이템 탭(NotificationViewModel) 공용.
  */
 sealed interface NotificationDestination {
     data class Screen(val route: Route) : NotificationDestination
@@ -15,14 +14,15 @@ sealed interface NotificationDestination {
 
 /**
  * 서버 알림 link(URL path) → 앱 목적지 매핑.
- * 지원 경로(이번 스코프 4종):
+ * 지원 경로:
  *  - /records/exercise/new           → 운동 기록 입력
  *  - /records/meal/new               → 식사 기록 입력
- *  - /groups/{groupId}/home          → 해당 그룹 홈(버디 참여/어디가셨나요)
- * 미지원/파싱 실패는 null → 호출부에서 무시(엉뚱한 화면 이동 방지).
+ *  - /groups/{groupId}/home          → 해당 그룹 홈(버디 참여/어디가셨나요/콕 찌르기)
+ * 미지원(예: /records/{recordId} 댓글 상세, 챌린지)·파싱 실패는 null → 호출부에서 무시.
  */
 object NotificationLinkParser {
-    fun parse(link: String): NotificationDestination? {
+    fun parse(link: String?): NotificationDestination? {
+        if (link.isNullOrBlank()) return null
         // 쿼리스트링 제거 후 경로 세그먼트만. 앞뒤 슬래시 무시.
         val segments = link.substringBefore('?').trim('/').split('/').filter { it.isNotBlank() }
         return when {

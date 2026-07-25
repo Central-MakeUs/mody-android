@@ -31,8 +31,8 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.presentation.navigation.AppNavHost
-import com.makeus.mody.presentation.notification.NotificationDestination
-import com.makeus.mody.presentation.notification.NotificationLinkParser
+import com.makeus.mody.core.navigation.NotificationDestination
+import com.makeus.mody.core.navigation.NotificationLinkParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

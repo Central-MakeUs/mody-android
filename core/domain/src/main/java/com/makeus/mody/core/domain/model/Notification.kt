@@ -28,6 +28,8 @@ data class Notification(
     val type: NotificationType,
     val title: String,
     val description: String,
+    /** 탭 시 이동할 경로(URL path). null 이면 이동 없음. */
+    val link: String?,
     val createdAt: Instant,
     val isRead: Boolean,
 )

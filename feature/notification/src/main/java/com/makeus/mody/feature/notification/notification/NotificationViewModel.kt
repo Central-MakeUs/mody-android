@@ -5,9 +5,12 @@ import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.domain.model.Notification
 import com.makeus.mody.core.domain.model.NotificationType
+import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.NotificationRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.core.navigation.NotificationDestination
+import com.makeus.mody.core.navigation.NotificationLinkParser
 import com.makeus.mody.feature.notification.notification.contract.NotificationIntent
 import com.makeus.mody.feature.notification.notification.contract.NotificationState
 import com.makeus.mody.feature.notification.notification.contract.NotificationUiModel
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 class NotificationViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val navigationHelper: NavigationHelper,
+    private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
 ) : BaseViewModel<NotificationState, NotificationIntent>(NotificationState()) {
 
     /** 다음 페이지 커서. null 이면 첫 페이지이거나 더 없음. */
@@ -38,6 +42,22 @@ class NotificationViewModel @Inject constructor(
         when (intent) {
             is NotificationIntent.BackClicked -> navigationHelper.navigate(NavigationEvent.Up)
             is NotificationIntent.LoadMore -> loadNotifications(initial = false)
+            is NotificationIntent.ItemClicked -> navigateByLink(intent.link)
+        }
+    }
+
+    /** 알림 link 파싱 → 이동. 미지원/파싱 실패 링크는 무시. */
+    private fun navigateByLink(link: String?) {
+        when (val dest = NotificationLinkParser.parse(link)) {
+            is NotificationDestination.Screen ->
+                navigationHelper.navigate(NavigationEvent.To(dest.route))
+            // 그룹홈은 별도 라우트가 없어 Feed 탭 + 그룹 전환으로. holder 에 groupId 보관 후
+            // 알림 목록을 pop(Up)해 Main 으로 복귀 → MainScreenViewModel/FeedViewModel 이 반응.
+            is NotificationDestination.GroupHome -> {
+                pendingGroupSelectionHolder.set(dest.groupId)
+                navigationHelper.navigate(NavigationEvent.Up)
+            }
+            null -> Unit
         }
     }
 
@@ -88,6 +108,7 @@ private fun Notification.toUiModel(now: Instant): NotificationUiModel =
         description = description,
         timeText = formatRelativeTime(createdAt, now),
         isRead = isRead,
+        link = link,
     )
 
 private fun NotificationType.iconRes(): Int = when (this) {

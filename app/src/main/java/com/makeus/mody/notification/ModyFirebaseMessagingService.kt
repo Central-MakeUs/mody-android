@@ -44,12 +44,9 @@ class ModyFirebaseMessagingService : FirebaseMessagingService() {
     private fun showNotification(title: String, body: String, data: Map<String, String>) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            // 딥링크 정보 전달 → MainActivity 가 extra 를 뽑아 라우팅.
-            data[NotificationDeepLink.KEY_TYPE]?.let {
-                putExtra(NotificationDeepLink.KEY_TYPE, it)
-            }
-            data[NotificationDeepLink.KEY_TARGET_ID]?.let {
-                putExtra(NotificationDeepLink.KEY_TARGET_ID, it)
+            // 딥링크 정보 전달 → MainActivity 가 extra(link)를 뽑아 라우팅.
+            data[NotificationDeepLink.KEY_LINK]?.let {
+                putExtra(NotificationDeepLink.KEY_LINK, it)
             }
         }
         // 알림마다 고유 id → PendingIntent request code + notify 에 동일 사용.

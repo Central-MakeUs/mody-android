@@ -3,6 +3,7 @@ package com.makeus.mody.presentation.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.AuthGraphBaseRoute
@@ -25,6 +26,7 @@ class MainScreenViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val navigationHelper: NavigationHelper,
     private val remoteConfigRepository: RemoteConfigRepository,
+    private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
 ) : ViewModel() {
 
     private companion object {
@@ -52,6 +54,13 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch {
             visibleTabs.collect { tabs ->
                 if (_selectedTab.value !in tabs) _selectedTab.value = MainTab.FEED
+            }
+        }
+        // 그룹홈 알림으로 진입 시 Feed 탭으로 전환(그룹 선택은 FeedViewModel 이 소비).
+        // 다른 탭에 있어도 그룹홈이 보이도록. consume 은 FeedViewModel 담당이라 여기선 peek 만.
+        viewModelScope.launch {
+            pendingGroupSelectionHolder.pendingGroupId.collect { groupId ->
+                if (groupId != null) _selectedTab.value = MainTab.FEED
             }
         }
     }

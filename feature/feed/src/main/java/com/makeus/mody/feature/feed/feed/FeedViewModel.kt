@@ -3,6 +3,7 @@ package com.makeus.mody.feature.feed.feed
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.FeedGraph
@@ -30,6 +31,7 @@ class FeedViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
+    private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
     /** 현재 선택된 날짜 (피드 조회 기준). */
@@ -62,6 +64,22 @@ class FeedViewModel @Inject constructor(
             )
         }
         loadMyGroup()
+        observePendingGroupSelection()
+    }
+
+    /**
+     * 그룹홈 알림 딥링크로 대기 중인 groupId 가 생기면 해당 그룹으로 전환.
+     * 앱 실행 중 알림 탭(warm) 대응. 콜드 스타트는 loadMyGroup 에서 첫 선택 시 반영한다.
+     * (myGroups 로딩 전엔 flow 값이 있어도 skip → loadMyGroup 이 처리.)
+     */
+    private fun observePendingGroupSelection() = viewModelScope.launch {
+        pendingGroupSelectionHolder.pendingGroupId.collect { groupId ->
+            if (groupId == null) return@collect
+            if (myGroups.any { it.groupId == groupId }) {
+                pendingGroupSelectionHolder.consume()
+                selectGroup(groupId)
+            }
+        }
     }
 
     override suspend fun processIntent(intent: FeedIntent) {
@@ -115,12 +133,22 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    /** 내 그룹 조회 → 첫 그룹을 현재 그룹으로. TODO(feed): 마지막 선택 그룹 기억. */
+    /**
+     * 내 그룹 조회 → 현재 그룹 결정.
+     * 그룹홈 알림 딥링크로 대기 중인 groupId 가 내 그룹에 있으면 그 그룹을, 없으면 첫 그룹을 선택.
+     * TODO(feed): 마지막 선택 그룹 기억.
+     */
     private fun loadMyGroup() = viewModelScope.launch {
         runCatching { groupRepository.getMyGroups() }
             .onSuccess { groups ->
                 myGroups = groups
-                val group = groups.firstOrNull() ?: return@onSuccess
+                val pendingGroupId = pendingGroupSelectionHolder.pendingGroupId.value
+                    ?.takeIf { id -> groups.any { it.groupId == id } }
+                val group = pendingGroupId
+                    ?.let { id -> groups.first { it.groupId == id } }
+                    ?: groups.firstOrNull()
+                    ?: return@onSuccess
+                if (pendingGroupId != null) pendingGroupSelectionHolder.consume()
                 currentGroupId = group.groupId
                 setState { copy(groupName = group.name, groups = buildGroupUis()) }
                 loadCalendar()

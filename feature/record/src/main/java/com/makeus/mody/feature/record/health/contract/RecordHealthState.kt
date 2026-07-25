@@ -1,11 +1,14 @@
 package com.makeus.mody.feature.record.health.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.error.ErrorAlert
 
 data class RecordHealthState(
-    /** 선택/촬영한 사진 URI 문자열. null 이면 미선택 → 업로드 박스 노출. */
+    /** 선택/촬영한 사진 URI 문자열(원본). null 이면 미선택 → 업로드 박스 노출. */
     val photoUri: String? = null,
+    /** 촬영 크롭 영역(정규화). 갤러리 선택 시 null → 원본 전체 표시. */
+    val cropRegion: CropRegion? = null,
     /** 선택한 운동 종류. null 이면 미선택. */
     val exerciseType: ExerciseType? = null,
     /** [ExerciseType.ETC] 선택 시 직접 입력값. */

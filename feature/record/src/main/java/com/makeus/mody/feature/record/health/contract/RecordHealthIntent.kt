@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.record.health.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
+import com.makeus.mody.core.domain.model.CropRegion
 
 sealed class RecordHealthIntent : UiIntent {
     data object BackClicked : RecordHealthIntent()
@@ -12,7 +13,9 @@ sealed class RecordHealthIntent : UiIntent {
     data object TakePhotoClicked : RecordHealthIntent()
     data object CameraDismissed : RecordHealthIntent()
     data object PickFromGalleryClicked : RecordHealthIntent()
-    data class PhotoSelected(val uri: String) : RecordHealthIntent()
+
+    /** 촬영/갤러리로 사진 선택. cropRegion 은 촬영(크롭) 시에만, 갤러리는 null. */
+    data class PhotoSelected(val uri: String, val cropRegion: CropRegion?) : RecordHealthIntent()
 
     data object TypeDropdownToggled : RecordHealthIntent()
     data object TypeDropdownDismissed : RecordHealthIntent()

@@ -11,8 +11,21 @@ data class PresignedUrlResponse(
 )
 
 /**
+ * 이미지 크롭 영역(정규화 0~1). 원본을 업로드하고 표시 시 이 영역만 잘라 보여준다.
+ * 기록 생성 요청/조회 응답 공용.
+ */
+@Serializable
+data class ImageCropRegionDto(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+)
+
+/**
  * 기록 생성 요청.
  * MEAL: mealTime + menu 사용. EXERCISE: exercise* 필드 사용 (여기선 MEAL 만 채운다).
+ * imageCropRegion: 원본 대비 표시 크롭 영역. 크롭 없으면 null.
  * null 필드는 encodeDefaults=false 로 직렬화에서 제외된다.
  */
 @Serializable
@@ -24,6 +37,7 @@ data class RecordCreateRequest(
     val exerciseDurationHours: Int? = null,
     val exerciseDurationMinutes: Int? = null,
     val exerciseName: String? = null,
+    val imageCropRegion: ImageCropRegionDto? = null,
 )
 
 @Serializable

@@ -24,8 +24,9 @@ interface MyPageRepository {
     /**
      * 이름/생년월일/프로필 이미지 수정.
      * @param imageKey 이미지 변경 시에만 지정. null=변경 없음, ""=기본 이미지 리셋, 그 외=업로드한 키.
+     * @return 반영된 프로필 이미지 URL(기본 이미지면 null일 수 있음).
      */
-    suspend fun updateProfile(name: String, birthDate: String?, imageKey: String? = null): ProfileDetail
+    suspend fun updateProfile(name: String, birthDate: String?, imageKey: String? = null): String?
 
     /**
      * 캐시된 알림 설정(로컬). 아직 캐시가 없으면 null.

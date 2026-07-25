@@ -50,19 +50,26 @@ data class MyPageProfileResponse(
     val birthDate: String? = null,
 )
 
-/** PATCH /api/v1/mypage/profile — 이름/생년월일 수정. */
+/** PATCH /api/v1/mypage/profile — 이름/생년월일/프로필 이미지 수정. */
 @Serializable
 data class MyPageProfileUpdateRequest(
     val nickname: String,
     val birthDate: String?,
     /**
-     * 프로필 이미지 참조 키.
+     * 프로필 이미지 참조 키(업로드 후 발급받은 imageKey).
      *  - null: 이미지 변경 없음(필드 생략 → encodeDefaults=false).
      *  - "": 기본 이미지로 리셋(서버가 빈 값을 기본 아바타로 처리).
      *  - 그 외: 업로드한 imageKey 로 설정.
-     * TODO(server): PATCH /mypage/profile 이 imageKey(및 ""=리셋)를 받는지 백엔드 확정 필요.
      */
     val imageKey: String? = null,
+)
+
+/** PATCH /api/v1/mypage/profile 응답 — 수정 결과(반영된 프로필 이미지 URL 포함). */
+@Serializable
+data class MyPageProfileUpdateResponse(
+    val nickname: String = "",
+    val birthDate: String? = null,
+    val profileImageUrl: String? = null,
 )
 
 /** GET /api/v1/mypage/notification-settings — 알림 설정(토글 3개 + 식사/운동 스케줄). */

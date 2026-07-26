@@ -1,5 +1,6 @@
 package com.makeus.mody.core.network.model.feed
 
+import com.makeus.mody.core.network.model.record.ImageCropRegionDto
 import kotlinx.serialization.Serializable
 
 /** 주간 기록 캘린더 응답. baseDate 가 속한 주(일~토)의 기록 유무. */
@@ -42,6 +43,7 @@ data class RecordSummaryResponse(
     val exerciseDurationMinutes: Int? = null,
     val exerciseName: String? = null,
     val imageUrl: String? = null,
+    val imageCropRegion: ImageCropRegionDto? = null,
     val recordingStreakDays: Int = 0,
 )
 
@@ -71,6 +73,7 @@ data class RecordDetailItemResponse(
     val exerciseDurationMinutes: Int? = null,
     val exerciseName: String? = null,
     val imageUrl: String? = null,
+    val imageCropRegion: ImageCropRegionDto? = null,
 )
 
 /** 기록 댓글 목록. 커서 페이지네이션. */

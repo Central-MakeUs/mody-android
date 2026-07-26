@@ -58,22 +58,6 @@ fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
     )
 }
 
-/**
- * 업라이트 이미지에서 [sourceTop] 부터 세로 [sourceHeight] px(가로 전체)을 잘라 새 파일로 저장.
- * 좌표는 업라이트 픽셀 기준. 반환은 결과 파일 uri 문자열.
- */
-fun cropVertical(context: Context, uprightPath: String, sourceTop: Int, sourceHeight: Int): String {
-    val bmp = BitmapFactory.decodeFile(uprightPath) ?: error("이미지 디코딩 실패")
-    val top = sourceTop.coerceIn(0, (bmp.height - 1).coerceAtLeast(0))
-    val height = sourceHeight.coerceIn(1, bmp.height - top)
-    val cropped = Bitmap.createBitmap(bmp, 0, top, bmp.width, height)
-    if (cropped != bmp) bmp.recycle()
-    val out = cameraCacheFile(context, "crop_${System.currentTimeMillis()}.jpg")
-    FileOutputStream(out).use { cropped.compress(Bitmap.CompressFormat.JPEG, 95, it) }
-    cropped.recycle()
-    return fileUri(context, out).toString()
-}
-
 /** 촬영 결과를 받을 임시 원본 파일. */
 fun createRawFile(context: Context): File =
     cameraCacheFile(context, "raw_${System.currentTimeMillis()}.jpg")

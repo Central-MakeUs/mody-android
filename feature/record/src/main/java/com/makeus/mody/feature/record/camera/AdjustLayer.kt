@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
@@ -41,9 +39,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.makeus.mody.core.domain.model.CropRegion
 import kotlin.math.roundToInt
 
 /** 기록 카드 비율(354:200). */
@@ -52,18 +48,18 @@ private const val FRAME_RATIO = 200f / 354f
 /**
  * 조정 단계: 촬영본을 세로로 드래그해 354:200 크롭 영역을 맞춘다.
  * 프레임은 화면 중앙 고정, 사진이 위아래로 움직인다. 프레임 밖은 어둡게.
+ *
+ * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
+ * 세로 슬라이스만 지원하므로 x=0, width=1, y/height 만 변한다.
  */
 @Composable
 fun AdjustLayer(
     image: UprightImage,
     onRetake: () -> Unit,
-    onConfirm: (croppedUri: String) -> Unit,
+    onConfirm: (originalUri: String, cropRegion: CropRegion) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val density = LocalDensity.current
         val screenW = constraints.maxWidth.toFloat()
@@ -175,14 +171,12 @@ fun AdjustLayer(
         ) {
             RetakeButton(onClick = onRetake)
             UploadButton(onClick = {
-                val sourceTop = ((frameTop - imageTop) / scale).roundToInt()
-                val sourceHeight = (frameH / scale).roundToInt()
-                scope.launch {
-                    val uri = withContext(Dispatchers.Default) {
-                        cropVertical(context, image.path, sourceTop, sourceHeight)
-                    }
-                    onConfirm(uri)
-                }
+                // 프레임(표시 좌표)을 원본 픽셀 기준으로 환산 후 원본 높이로 정규화.
+                val topInImage = (frameTop - imageTop) / scale
+                val heightInImage = frameH / scale
+                val y = (topInImage / image.height).coerceIn(0f, 1f)
+                val h = (heightInImage / image.height).coerceIn(0f, 1f - y)
+                onConfirm(image.uri, CropRegion(x = 0f, y = y, width = 1f, height = h))
             })
         }
     }

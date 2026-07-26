@@ -34,13 +34,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
@@ -50,6 +49,7 @@ import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.feature.record.camera.RecordCameraOverlay
 import com.makeus.mody.feature.record.component.SectionHeader
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
@@ -61,7 +61,8 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
-        uri?.let { viewModel.onIntent(RecordFoodIntent.PhotoSelected(it.toString())) }
+        // 갤러리 선택은 크롭 없음 → region null(원본 전체 표시).
+        uri?.let { viewModel.onIntent(RecordFoodIntent.PhotoSelected(it.toString(), cropRegion = null)) }
     }
 
     // 작성 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
@@ -98,6 +99,7 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
 
             PhotoBox(
                 photoUri = state.photoUri,
+                cropRegion = state.cropRegion,
                 onClick = { viewModel.onIntent(RecordFoodIntent.PhotoBoxClicked) },
             )
 
@@ -151,7 +153,9 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
 
     if (state.isCameraVisible) {
         RecordCameraOverlay(
-            onConfirm = { uri -> viewModel.onIntent(RecordFoodIntent.PhotoSelected(uri)) },
+            onConfirm = { uri, region ->
+                viewModel.onIntent(RecordFoodIntent.PhotoSelected(uri, region))
+            },
             onPickGallery = {
                 galleryLauncher.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -164,12 +168,16 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
 
 /** 사진 영역. 미선택: 점선 업로드 박스 / 선택: 사진 채움. 탭 시 사진 소스 시트. */
 @Composable
-private fun PhotoBox(photoUri: String?, onClick: () -> Unit) {
+private fun PhotoBox(photoUri: String?, cropRegion: CropRegion?, onClick: () -> Unit) {
     if (photoUri != null) {
-        AsyncImage(
+        // 원본을 로드하고 크롭 영역만 잘라 미리보기 — 조회 화면 표시와 동일하게.
+        CroppedAsyncImage(
             model = photoUri,
             contentDescription = "선택한 식사 사진",
-            contentScale = ContentScale.Crop,
+            cropX = cropRegion?.x,
+            cropY = cropRegion?.y,
+            cropWidth = cropRegion?.width,
+            cropHeight = cropRegion?.height,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)

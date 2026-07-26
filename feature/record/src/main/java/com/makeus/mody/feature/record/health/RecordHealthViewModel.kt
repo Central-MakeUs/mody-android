@@ -32,7 +32,9 @@ class RecordHealthViewModel @Inject constructor(
             is RecordHealthIntent.CameraDismissed -> setState { copy(isCameraVisible = false) }
             is RecordHealthIntent.PickFromGalleryClicked -> setState { copy(isPhotoSheetVisible = false) }
             is RecordHealthIntent.PhotoSelected ->
-                setState { copy(photoUri = intent.uri, isCameraVisible = false) }
+                setState {
+                    copy(photoUri = intent.uri, cropRegion = intent.cropRegion, isCameraVisible = false)
+                }
 
             is RecordHealthIntent.TypeDropdownToggled ->
                 setState { copy(isTypeDropdownExpanded = !isTypeDropdownExpanded) }
@@ -72,6 +74,7 @@ class RecordHealthViewModel @Inject constructor(
                 exerciseName = state.resolvedExerciseName,
                 durationHours = state.durationHours,
                 durationMinutes = state.durationMinutes,
+                cropRegion = state.cropRegion,
             )
             // 기록 완료 → 피드로 복귀
             navigationHelper.navigate(NavigationEvent.Up)

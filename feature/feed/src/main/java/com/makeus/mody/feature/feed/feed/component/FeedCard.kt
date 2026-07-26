@@ -22,10 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -127,11 +126,14 @@ private fun FeedCardImage(
             .background(ModyTheme.colors.gray04) // 로딩 전/실패 시 플레이스홀더
             .clickable(onClick = onClick),
     ) {
-        // 기록 사진. url null/로딩 실패 시 gray04 배경만 보임.
-        AsyncImage(
+        // 기록 사진(원본 + 크롭 영역). url null/로딩 실패 시 gray04 배경만 보임.
+        CroppedAsyncImage(
             model = card.imageUrl,
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            cropX = card.cropRegion?.x,
+            cropY = card.cropRegion?.y,
+            cropWidth = card.cropRegion?.width,
+            cropHeight = card.cropRegion?.height,
             modifier = Modifier.fillMaxSize(),
         )
         // 하단 그라데이션 (텍스트 가독성)

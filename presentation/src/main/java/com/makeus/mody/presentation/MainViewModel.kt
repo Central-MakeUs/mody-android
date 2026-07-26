@@ -19,6 +19,7 @@ import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.core.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -82,8 +83,15 @@ class MainViewModel @Inject constructor(
 
     private fun checkSplashGate() = viewModelScope.launch {
         // 실패/타임아웃이어도 마지막 활성값(캐시)·기본값으로 평가 — 게이트가 앱 진입을 영구 차단하면 안 됨.
+        // 취소(타임아웃 포함)는 삼키지 않고 전파해야 withTimeoutOrNull 이 정상 동작한다.
         withTimeoutOrNull(REMOTE_CONFIG_TIMEOUT_MS) {
-            runCatching { remoteConfigRepository.refresh() }
+            try {
+                remoteConfigRepository.refresh()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // fetch 실패 → 캐시/기본값으로 평가
+            }
         }
         val gate = remoteConfigRepository.splashGate()
         val notice = gate.notice

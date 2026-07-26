@@ -35,16 +35,22 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         )
     }
 
-    private val _phaseTwoFeaturesEnabled = MutableStateFlow(readPhaseTwoEnabled())
+    // 초기값은 하드코딩 안전 기본(Phase 2 숨김). 생성 시점에 getBoolean 을 읽으면
+    // setDefaultsAsync 가 아직 적용 전이라 내장 기본(false)이 나와 !false = true 로
+    // Phase 2 가 잠깐 노출될 수 있다 → 원격/캐시값은 refresh 이후에만 반영.
+    private val _phaseTwoFeaturesEnabled = MutableStateFlow(false)
     override val phaseTwoFeaturesEnabled: StateFlow<Boolean> = _phaseTwoFeaturesEnabled.asStateFlow()
 
     override suspend fun refresh() {
-        suspendCancellableCoroutine { cont ->
-            remoteConfig.fetchAndActivate()
-                .addOnCompleteListener { task -> cont.resume(task.isSuccessful) }
+        try {
+            suspendCancellableCoroutine { cont ->
+                remoteConfig.fetchAndActivate()
+                    .addOnCompleteListener { task -> cont.resume(task.isSuccessful) }
+            }
+        } finally {
+            // 성공/실패/타임아웃 취소 모두 현재 활성값(캐시·기본값)으로 상태 갱신.
+            _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
         }
-        // 성공/실패 무관하게 현재 활성값 반영(실패 시 캐시/기본값).
-        _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
     }
 
     // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.

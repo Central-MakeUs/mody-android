@@ -8,7 +8,7 @@ data class NotificationSettingState(
     val commentEnabled: Boolean = false,
     val challengeEnabled: Boolean = false,
     /** 챌린지 기능 노출(Remote Config). Phase 1 에선 챌린지 알림 토글 행 자체를 숨김. */
-    val challengeFeatureEnabled: Boolean = false,
+    val phaseTwoFeaturesEnabled: Boolean = false,
     // 식사 시각(null = 식사 안 함).
     val breakfastHour: Int? = 8,
     val lunchHour: Int? = 12,

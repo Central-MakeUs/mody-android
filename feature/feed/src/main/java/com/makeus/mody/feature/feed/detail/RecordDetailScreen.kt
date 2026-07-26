@@ -96,12 +96,15 @@ private fun RecordDetailContent(
             )
         }
 
-        CommentInputBar(
-            value = state.commentInput,
-            canSend = state.canSend,
-            onChange = { onIntent(RecordDetailIntent.CommentInputChanged(it)) },
-            onSend = { onIntent(RecordDetailIntent.SendCommentClicked) },
-        )
+        // 응원 댓글 입력바: Phase 2 기능이 열렸을 때만 노출(Phase 1 전송 차단).
+        if (state.phaseTwoFeaturesEnabled) {
+            CommentInputBar(
+                value = state.commentInput,
+                canSend = state.canSend,
+                onChange = { onIntent(RecordDetailIntent.CommentInputChanged(it)) },
+                onSend = { onIntent(RecordDetailIntent.SendCommentClicked) },
+            )
+        }
     }
 }
 
@@ -138,11 +141,14 @@ private fun DetailBody(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = headerHeightDp, bottom = 12.dp),
         ) {
-            if (state.comments.isEmpty() && !state.isCommentsLoading) {
-                item { EmptyComments() }
-            } else {
-                items(state.comments, key = { it.id }) { comment ->
-                    CommentBubble(comment)
+            // 응원 댓글: Phase 2 기능이 열렸을 때만 노출(빈 상태 문구 포함).
+            if (state.phaseTwoFeaturesEnabled) {
+                if (state.comments.isEmpty() && !state.isCommentsLoading) {
+                    item { EmptyComments() }
+                } else {
+                    items(state.comments, key = { it.id }) { comment ->
+                        CommentBubble(comment)
+                    }
                 }
             }
         }

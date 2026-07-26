@@ -110,7 +110,7 @@ private fun FeedContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     FeedEmptyContent(
-                        showPoke = state.challengeFeatureEnabled,
+                        showPoke = state.phaseTwoFeaturesEnabled,
                         onPokeClick = { onIntent(FeedIntent.PokeClicked) },
                     )
                 }

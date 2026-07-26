@@ -37,9 +37,9 @@ class MainScreenViewModel @Inject constructor(
     val selectedTab: StateFlow<MainTab> = _selectedTab.asStateFlow()
 
     /** 노출할 하단 탭. 챌린지는 Remote Config 플래그가 켜졌을 때만 포함. */
-    val visibleTabs: StateFlow<List<MainTab>> = remoteConfigRepository.challengeEnabled
-        .map { challengeEnabled ->
-            MainTab.entries.filter { it != MainTab.CHALLENGE || challengeEnabled }
+    val visibleTabs: StateFlow<List<MainTab>> = remoteConfigRepository.phaseTwoFeaturesEnabled
+        .map { phaseTwoEnabled ->
+            MainTab.entries.filter { it != MainTab.CHALLENGE || phaseTwoEnabled }
         }
         .stateIn(
             scope = viewModelScope,

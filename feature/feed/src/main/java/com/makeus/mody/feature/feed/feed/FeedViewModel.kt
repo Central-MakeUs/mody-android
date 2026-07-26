@@ -39,8 +39,8 @@ class FeedViewModel @Inject constructor(
     init {
         // 챌린지 기능 플래그 반영 — Phase 1 에선 콕 찌르기 등 챌린지 접점 숨김.
         viewModelScope.launch {
-            remoteConfigRepository.challengeEnabled.collect { enabled ->
-                setState { copy(challengeFeatureEnabled = enabled) }
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
     }

@@ -35,8 +35,8 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         )
     }
 
-    private val _challengeEnabled = MutableStateFlow(readChallengeEnabled())
-    override val challengeEnabled: StateFlow<Boolean> = _challengeEnabled.asStateFlow()
+    private val _phaseTwoFeaturesEnabled = MutableStateFlow(readPhaseTwoEnabled())
+    override val phaseTwoFeaturesEnabled: StateFlow<Boolean> = _phaseTwoFeaturesEnabled.asStateFlow()
 
     override suspend fun refresh() {
         suspendCancellableCoroutine { cont ->
@@ -44,12 +44,12 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
                 .addOnCompleteListener { task -> cont.resume(task.isSuccessful) }
         }
         // 성공/실패 무관하게 현재 활성값 반영(실패 시 캐시/기본값).
-        _challengeEnabled.value = readChallengeEnabled()
+        _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
     }
 
     // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.
-    // Phase 1 = 챌린지 미노출 단계 → 챌린지 노출은 그 부정.
-    private fun readChallengeEnabled(): Boolean = !remoteConfig.getBoolean(KEY_IS_PHASE_ONE)
+    // Phase 1 = 챌린지 미노출 단계 → Phase 2 기능 노출은 그 부정.
+    private fun readPhaseTwoEnabled(): Boolean = !remoteConfig.getBoolean(KEY_IS_PHASE_ONE)
 
     override fun splashGate(): SplashGate = SplashGate(
         forceUpdate = remoteConfig.getBoolean(KEY_FORCE_UPDATE),

@@ -37,8 +37,8 @@ class NotificationSettingViewModel @Inject constructor(
     init {
         // 챌린지 기능 플래그 — Phase 1 에선 챌린지 알림 토글 행 숨김(서버 전송값은 그대로 유지).
         viewModelScope.launch {
-            remoteConfigRepository.challengeEnabled.collect { enabled ->
-                setState { copy(challengeFeatureEnabled = enabled) }
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
     }

@@ -8,8 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
  * 아직 공개하지 않을 기능을 서버에서 켜고 끌 수 있게 한다.
  */
 interface RemoteConfigRepository {
-    /** 챌린지 탭 노출 여부. 기본 false(숨김) → 서버에서 true 로 켜면 노출. */
-    val challengeEnabled: StateFlow<Boolean>
+    /**
+     * Phase 2 기능(챌린지 탭·콕 찌르기·응원 댓글·관련 알림 토글) 노출 여부.
+     * is_phase_one_flag 의 부정 — 기본 false(전부 숨김, 심사 안전).
+     */
+    val phaseTwoFeaturesEnabled: StateFlow<Boolean>
 
     /** 원격 값 fetch & activate. 실패해도 마지막 활성값/기본값 유지. */
     suspend fun refresh()

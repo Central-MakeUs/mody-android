@@ -73,15 +73,16 @@ private fun NotificationSettingContent(
 
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(8.dp))
-            ToggleRow(
-                title = "코멘트 알림",
-                description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
-                checked = state.commentEnabled,
-                onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
-            )
-            RowDivider()
-            // 챌린지 알림 토글: 챌린지 기능이 열렸을 때만 노출(Phase 1 숨김).
-            if (state.challengeFeatureEnabled) {
+            // 코멘트/챌린지 알림 토글: Phase 2 기능이 열렸을 때만 노출.
+            // 숨겨져도 서버 PATCH(전체 교체)엔 보관된 값을 그대로 실어 설정을 보존한다.
+            if (state.phaseTwoFeaturesEnabled) {
+                ToggleRow(
+                    title = "코멘트 알림",
+                    description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
+                    checked = state.commentEnabled,
+                    onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
+                )
+                RowDivider()
                 ToggleRow(
                     title = "챌린지 알림",
                     description = "챌린지와 관련된 모든 알림을 받아요.",

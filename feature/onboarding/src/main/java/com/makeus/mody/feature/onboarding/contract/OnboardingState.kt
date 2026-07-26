@@ -11,9 +11,9 @@ data class TimeOfDay(val hour: Int, val minute: Int)
  */
 data class OnboardingState(
     val nickname: String = "",
-    val birthYear: Int = 2003,
+    val birthYear: Int = 2000,
     val birthMonth: Int = 1,
-    val birthDay: Int = 19,
+    val birthDay: Int = 1,
     val currentWeight: Int = 57,
     val targetWeight: Int = 57,
     // null = "식사 안 함" (해당 끼니 알림 끔)

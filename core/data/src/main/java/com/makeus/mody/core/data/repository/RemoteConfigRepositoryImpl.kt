@@ -60,16 +60,14 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
 
     /**
      * notice_flag JSON → [RemoteNotice]. 비었거나 파싱 실패면 공지 없음(null).
-     * 필드 명은 iOS 정의를 방어적으로 수용: message|body|content.
+     * iOS 정의 스키마: {"title","contents","skipPossible"} — 혹시 모를 변형(message)도 수용.
      */
     private fun parseNotice(raw: String): RemoteNotice? {
         if (raw.isBlank()) return null
         return runCatching {
             val json = JSONObject(raw)
             val title = json.optString("title")
-            val message = json.optString("message")
-                .ifBlank { json.optString("body") }
-                .ifBlank { json.optString("content") }
+            val message = json.optString("contents").ifBlank { json.optString("message") }
             if (title.isBlank() && message.isBlank()) return null
             RemoteNotice(
                 title = title.ifBlank { "공지사항" },

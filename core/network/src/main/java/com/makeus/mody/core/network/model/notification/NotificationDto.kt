@@ -38,7 +38,10 @@ data class NotificationResponse(
     val type: String = "",
     val title: String = "",
     val description: String = "",
-    /** 탭 시 이동할 경로(URL path). 예: "/records/10", "/groups/3/home". 없으면 이동 없음. */
+    /**
+     * 탭 시 이동할 경로(URL path). 예: "/records/meal", "/records/exercise/new", "/groups/3/home".
+     * 지원 경로는 NotificationLinkParser 참고 — 미지원 경로(예: "/records/{recordId}")는 무시됨.
+     */
     val link: String? = null,
     val createdAt: String = "",
     val read: Boolean = false,

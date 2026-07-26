@@ -79,8 +79,7 @@ fun <T> WheelPicker(
     val fling = rememberSnapFlingBehavior(lazyListState = state)
     val sidePadding = itemHeight * (visibleCount / 2)
 
-    // 콜백/파생 계산이 항상 최신 prop 을 보도록 (stale capture 방지)
-    val currentSelectedIndex by rememberUpdatedState(selectedIndex)
+    // 콜백이 항상 최신 람다를 보도록 (stale capture 방지)
     val currentOnSelectedChange by rememberUpdatedState(onSelectedChange)
 
     // 이 휠 스크롤이 방금 보고한 값. 부모가 이 값을 그대로 돌려주면(우리 변경) 재스크롤하지 않는다.
@@ -114,9 +113,13 @@ fun <T> WheelPicker(
 
     // 중앙 항목이 바뀔 때마다 즉시 콜백 → 부모 state 가 항상 최신.
     // (스크롤 도중 멈추자마자 "확인"을 눌러도 최신 값이 이미 반영돼 있도록. 항목 단위 emit 이라 과하지 않음.)
+    // 중복 억제는 부모 prop(selectedIndex) 이 아니라 "우리가 마지막으로 보고한 값"(lastReportedIndex)
+    // 으로 판단한다. 부모 recompose 전에 A→B→A 로 되돌아오면 prop 은 아직 A 라서, prop 기준이면
+    // 되돌아온 A 를 stale 값과 같다고 억제해 최종 A 를 잃는다(휠은 A, 부모는 B). lastReportedIndex
+    // 기준이면 B→A 도 (직전 보고 B ≠ A) 정상 emit 된다.
     LaunchedEffect(state) {
         snapshotFlow { actualOf(centerVirtual) }.collect { actual ->
-            if (actual != currentSelectedIndex) {
+            if (actual != lastReportedIndex) {
                 lastReportedIndex = actual
                 currentOnSelectedChange(actual)
             }

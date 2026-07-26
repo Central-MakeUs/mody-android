@@ -57,6 +57,8 @@ data class FeedState(
     val isGroupSheetVisible: Boolean = false,
     // 그룹 추가 방식(참여/생성) 선택 다이얼로그
     val isAddGroupDialogVisible: Boolean = false,
+    // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
+    val phaseTwoFeaturesEnabled: Boolean = false,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

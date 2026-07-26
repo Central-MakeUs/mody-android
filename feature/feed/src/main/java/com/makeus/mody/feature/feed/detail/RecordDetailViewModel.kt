@@ -6,6 +6,7 @@ import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Comment
 import com.makeus.mody.core.domain.repository.FeedRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 class RecordDetailViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
+    remoteConfigRepository: RemoteConfigRepository,
     savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<RecordDetailState, RecordDetailIntent>(RecordDetailState()) {
 
@@ -32,6 +34,12 @@ class RecordDetailViewModel @Inject constructor(
 
     init {
         loadDetail()
+        // Phase 2 기능 플래그 — Phase 1 에선 댓글 UI 숨김·전송 차단.
+        viewModelScope.launch {
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
     }
 
     override suspend fun processIntent(intent: RecordDetailIntent) {
@@ -40,7 +48,9 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.PageChanged -> onPageChanged(intent.index)
             is RecordDetailIntent.CommentInputChanged ->
                 setState { copy(commentInput = intent.text) }
-            is RecordDetailIntent.SendCommentClicked -> sendComment()
+            // Phase 1 에선 UI 가 숨겨져 있지만, 만약을 위해 전송 자체도 차단.
+            is RecordDetailIntent.SendCommentClicked ->
+                if (currentState.phaseTwoFeaturesEnabled) sendComment()
         }
     }
 

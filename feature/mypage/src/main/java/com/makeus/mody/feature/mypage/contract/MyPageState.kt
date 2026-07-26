@@ -15,4 +15,6 @@ data class MyPageState(
     val isRecordingWeight: Boolean = false,
     /** 체중 기록 저장 실패 메시지(토스트 후 소비). */
     val weightError: String? = null,
+    /** Phase 2 기능 노출(Remote Config). Phase 1 에선 건강 데이터 연동 설정 메뉴 숨김. */
+    val phaseTwoFeaturesEnabled: Boolean = false,
 ) : UiState

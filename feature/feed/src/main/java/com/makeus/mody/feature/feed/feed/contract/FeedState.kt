@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.feed.feed.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.CropRegion
 import java.time.LocalDate
 
 /** 피드 카드 표시 모델. TODO(feed): API 연동 시 도메인 모델 매핑으로 교체. */
@@ -16,6 +17,8 @@ data class FeedCardUi(
     val secondaryValue: String,
     val avatarUrl: String? = null,
     val imageUrl: String? = null,
+    /** 원본 이미지에서 표시할 크롭 영역(정규화). null 이면 원본 전체. */
+    val cropRegion: CropRegion? = null,
 )
 
 /** 주간 스트립 한 칸 (일~토 7개). */
@@ -57,6 +60,8 @@ data class FeedState(
     val isGroupSheetVisible: Boolean = false,
     // 그룹 추가 방식(참여/생성) 선택 다이얼로그
     val isAddGroupDialogVisible: Boolean = false,
+    // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
+    val phaseTwoFeaturesEnabled: Boolean = false,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

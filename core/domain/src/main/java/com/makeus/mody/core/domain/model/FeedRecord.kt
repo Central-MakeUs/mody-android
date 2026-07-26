@@ -15,6 +15,8 @@ data class FeedRecord(
     val nickname: String,
     val profileImageUrl: String?,
     val imageUrl: String?,
+    /** 원본 이미지에서 표시할 크롭 영역(정규화 0~1). null 이면 원본 전체 표시(예: 갤러리 선택). */
+    val cropRegion: CropRegion?,
     val streakDays: Int,
     // MEAL
     val recordedTime: LocalTime?,

@@ -19,16 +19,17 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.core.domain.model.CropRegion
 
 /**
  * 기록 사진 영역(식사/운동 공용). 미선택: 점선 업로드 박스 / 선택: 사진 채움. 탭 시 사진 소스 시트.
+ * [cropRegion] 이 있으면 원본에서 해당 영역만 잘라 표시(조회 화면과 동일). null 이면 원본 전체.
  */
 @Composable
 fun RecordPhotoBox(
@@ -36,12 +37,16 @@ fun RecordPhotoBox(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    cropRegion: CropRegion? = null,
 ) {
     if (photoUri != null) {
-        AsyncImage(
+        CroppedAsyncImage(
             model = photoUri,
             contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
+            cropX = cropRegion?.x,
+            cropY = cropRegion?.y,
+            cropWidth = cropRegion?.width,
+            cropHeight = cropRegion?.height,
             modifier = modifier
                 .fillMaxWidth()
                 .height(200.dp)

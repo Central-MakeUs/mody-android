@@ -42,6 +42,9 @@ fun ModyDurationPicker(
     itemHeight: Dp = 39.dp,
     selectionBarHeight: Dp = 34.dp,
     selectionBarCornerRadius: Dp = 8.dp,
+    // 고정 컬럼 폭. 내용폭 wrap 이면 스크롤 중 글자 크기(선택/이웃)에 따라 폭이 바뀌며 좌우로 떨린다.
+    hourColumnWidth: Dp = 18.dp,
+    minuteColumnWidth: Dp = 32.dp,
     hourToHourLabel: Dp = 11.5.dp,
     hourLabelToColon: Dp = 19.5.dp,
     colonToMinute: Dp = 18.dp,
@@ -71,9 +74,11 @@ fun ModyDurationPicker(
                     val h = HOURS[it]
                     onChange(h, if (h >= HOURS.last()) 0 else minutes)
                 },
+                modifier = Modifier.width(hourColumnWidth),
                 itemHeight = itemHeight,
+                itemSpacing = 0.dp,
                 showSelectionBox = false,
-                fillItemWidth = false,
+                fillItemWidth = true,
                 loop = true,
                 label = { "$it" },
             )
@@ -94,9 +99,11 @@ fun ModyDurationPicker(
                     items = minuteItems,
                     selectedIndex = minutes.coerceIn(0, minuteItems.lastIndex),
                     onSelectedChange = { onChange(hours, minuteItems[it]) },
+                    modifier = Modifier.width(minuteColumnWidth),
                     itemHeight = itemHeight,
+                    itemSpacing = 0.dp,
                     showSelectionBox = false,
-                    fillItemWidth = false,
+                    fillItemWidth = true,
                     loop = true,
                     label = { "%02d".format(it) },
                 )

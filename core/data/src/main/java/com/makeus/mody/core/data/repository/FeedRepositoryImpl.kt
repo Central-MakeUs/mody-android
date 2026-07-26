@@ -4,6 +4,7 @@ import com.makeus.mody.core.domain.model.ActivityCalendar
 import com.makeus.mody.core.domain.model.ActivityDay
 import com.makeus.mody.core.domain.model.Comment
 import com.makeus.mody.core.domain.model.CommentPage
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.FeedRecord
 import com.makeus.mody.core.domain.model.FeedRecordPage
 import com.makeus.mody.core.domain.model.RecordDetail
@@ -17,6 +18,7 @@ import com.makeus.mody.core.network.model.feed.RecordCursorResponse
 import com.makeus.mody.core.network.model.feed.RecordDetailItemResponse
 import com.makeus.mody.core.network.model.feed.RecordDetailResponse
 import com.makeus.mody.core.network.model.feed.RecordSummaryResponse
+import com.makeus.mody.core.network.model.record.ImageCropRegionDto
 import com.makeus.mody.core.network.model.unwrapResult
 import java.time.LocalDate
 import java.time.LocalTime
@@ -93,6 +95,7 @@ private fun RecordSummaryResponse.toFeedRecord(): FeedRecord =
         nickname = nickname,
         profileImageUrl = profileImageUrl,
         imageUrl = imageUrl,
+        cropRegion = imageCropRegion?.toCropRegion(),
         streakDays = recordingStreakDays,
         recordedTime = recordedTime?.takeIf { it.isNotBlank() }?.let(LocalTime::parse),
         menu = menu,
@@ -118,6 +121,7 @@ private fun RecordDetailItemResponse.toFeedRecord(): FeedRecord =
         nickname = nickname,
         profileImageUrl = profileImageUrl,
         imageUrl = imageUrl,
+        cropRegion = imageCropRegion?.toCropRegion(),
         streakDays = 0,
         recordedTime = recordedTime?.takeIf { it.isNotBlank() }?.let(LocalTime::parse),
         menu = menu,
@@ -146,3 +150,6 @@ private fun String.toRecordType(): RecordType = when (this) {
     "EXERCISE" -> RecordType.EXERCISE
     else -> RecordType.UNKNOWN
 }
+
+private fun ImageCropRegionDto.toCropRegion(): CropRegion =
+    CropRegion(x = x, y = y, width = width, height = height)

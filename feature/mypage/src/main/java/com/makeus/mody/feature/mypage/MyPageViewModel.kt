@@ -3,6 +3,7 @@ package com.makeus.mody.feature.mypage
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -20,10 +21,17 @@ import javax.inject.Inject
 class MyPageViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
+    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<MyPageState, MyPageIntent>(MyPageState()) {
 
     init {
         load()
+        // Phase 2 기능 플래그 — Phase 1 에선 건강 데이터 연동 설정 메뉴 숨김.
+        viewModelScope.launch {
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
     }
 
     override suspend fun processIntent(intent: MyPageIntent) {

@@ -48,6 +48,8 @@ fun ModyDialog(
     onDismiss: () -> Unit = onDismissRequest,
     confirmContainerColor: Color = ModyTheme.colors.primary100,
     confirmContentColor: Color = ModyTheme.colors.gray10,
+    // 진행 차단형 공지 등 확정 버튼을 비활성으로 노출해야 할 때 false.
+    confirmEnabled: Boolean = true,
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
         Column(
@@ -90,6 +92,7 @@ fun ModyDialog(
                     contentColor = confirmContentColor,
                     onClick = onConfirm,
                     modifier = Modifier.weight(1f),
+                    enabled = confirmEnabled,
                 )
             }
         }
@@ -138,15 +141,20 @@ private fun DialogButton(
     contentColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier = modifier
             .height(48.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(containerColor)
-            .clickable(onClick = onClick),
+            .background(if (enabled) containerColor else ModyTheme.colors.gray02)
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = text, style = ModyTheme.typography.b6, color = contentColor)
+        Text(
+            text = text,
+            style = ModyTheme.typography.b6,
+            color = if (enabled) contentColor else ModyTheme.colors.gray05,
+        )
     }
 }

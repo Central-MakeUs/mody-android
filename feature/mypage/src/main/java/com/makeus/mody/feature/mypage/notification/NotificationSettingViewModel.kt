@@ -7,6 +7,7 @@ import com.makeus.mody.core.domain.model.MealSchedule
 import com.makeus.mody.core.domain.model.MealType
 import com.makeus.mody.core.domain.model.NotificationSettings
 import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingIntent
@@ -30,7 +31,17 @@ private const val SCHEDULE_DEBOUNCE_MS = 500L
 class NotificationSettingViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
+    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<NotificationSettingState, NotificationSettingIntent>(NotificationSettingState()) {
+
+    init {
+        // 챌린지 기능 플래그 — Phase 1 에선 챌린지 알림 토글 행 숨김(서버 전송값은 그대로 유지).
+        viewModelScope.launch {
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
+    }
 
     // 토글 디바운스 job. 새 토글마다 리셋.
     private var toggleSyncJob: Job? = null

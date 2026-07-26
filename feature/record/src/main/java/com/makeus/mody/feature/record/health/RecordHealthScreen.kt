@@ -58,7 +58,8 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
-        uri?.let { viewModel.onIntent(RecordHealthIntent.PhotoSelected(it.toString())) }
+        // 갤러리 선택은 크롭 없음 → region null(원본 전체 표시).
+        uri?.let { viewModel.onIntent(RecordHealthIntent.PhotoSelected(it.toString(), cropRegion = null)) }
     }
 
     // 작성 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
@@ -95,6 +96,7 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
 
             RecordPhotoBox(
                 photoUri = state.photoUri,
+                cropRegion = state.cropRegion,
                 contentDescription = "선택한 운동 사진",
                 onClick = { viewModel.onIntent(RecordHealthIntent.PhotoBoxClicked) },
             )
@@ -153,7 +155,9 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
 
     if (state.isCameraVisible) {
         RecordCameraOverlay(
-            onConfirm = { uri -> viewModel.onIntent(RecordHealthIntent.PhotoSelected(uri)) },
+            onConfirm = { uri, region ->
+                viewModel.onIntent(RecordHealthIntent.PhotoSelected(uri, region))
+            },
             onPickGallery = {
                 galleryLauncher.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),

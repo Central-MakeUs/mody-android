@@ -92,7 +92,10 @@ private fun MyPageContent(
 
         SettingsRow("알림 설정") { onIntent(MyPageIntent.NotificationSettingClicked) }
         SettingsRow("그룹 설정") { onIntent(MyPageIntent.GroupSettingClicked) }
-        SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
+        // 건강 데이터 연동(걸음 수 챌린지용): Phase 2 기능이 열렸을 때만 노출.
+        if (state.phaseTwoFeaturesEnabled) {
+            SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
+        }
     }
 
     if (state.showWeightSheet) {

@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.GroupEntrySource
@@ -34,7 +35,17 @@ class FeedViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
     private val sessionRepository: SessionRepository,
+    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
+
+    init {
+        // 챌린지 기능 플래그 반영 — Phase 1 에선 콕 찌르기 등 챌린지 접점 숨김.
+        viewModelScope.launch {
+            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
+                setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
+    }
 
     /** 현재 선택된 날짜 (피드 조회 기준). */
     private var selectedDate: LocalDate = LocalDate.now()

@@ -18,6 +18,7 @@ fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
         secondaryValue = menu.orEmpty(),
         avatarUrl = profileImageUrl,
         imageUrl = imageUrl,
+        cropRegion = cropRegion,
     )
     else -> FeedCardUi(
         id = recordId,
@@ -29,5 +30,6 @@ fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
         secondaryValue = exerciseName.orEmpty(),
         avatarUrl = profileImageUrl,
         imageUrl = imageUrl,
+        cropRegion = cropRegion,
     )
 }

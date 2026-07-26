@@ -35,19 +35,20 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.core.domain.model.CropRegion
 
 /**
  * 커스텀 촬영 오버레이(식사·운동 공용). 풀스크린으로 띄운다.
- * 촬영 → 조정(354:200 크롭) → [onConfirm] 으로 크롭 결과 uri 전달.
+ * 촬영 → 조정(354:200 크롭) → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
  *
- * @param onConfirm 크롭 완료된 이미지 uri(문자열).
+ * @param onConfirm (원본 이미지 uri, 정규화 크롭 영역).
  * @param onPickGallery 갤러리 버튼 → 시스템 갤러리 열기(호출부의 런처).
  * @param onDismiss 닫기/취소.
  */
 @Suppress("unused")
 @Composable
 fun RecordCameraOverlay(
-    onConfirm: (uri: String) -> Unit,
+    onConfirm: (uri: String, cropRegion: CropRegion) -> Unit,
     onPickGallery: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,

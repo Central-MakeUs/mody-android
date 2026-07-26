@@ -1,26 +1,23 @@
 package com.makeus.mody.presentation
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.Box
+import android.net.Uri
+import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
@@ -31,8 +28,8 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.presentation.navigation.AppNavHost
-import com.makeus.mody.presentation.notification.NotificationDestination
-import com.makeus.mody.presentation.notification.NotificationLinkParser
+import com.makeus.mody.core.navigation.NotificationDestination
+import com.makeus.mody.core.navigation.NotificationLinkParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -44,9 +41,9 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var notificationDeepLinkHolder: NotificationDeepLinkHolder
     @Inject lateinit var pendingGroupSelectionHolder: PendingGroupSelectionHolder
 
-    // 13+ 알림 권한 요청. 거부해도 앱은 그대로 진행(알림만 안 뜸).
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    // 알림 권한(13+)은 온보딩 PermissionScreen 한 곳에서만 요청한다.
+    // 여기서 선제 요청하면 온보딩 화면 도달 전에 팝업을 소비해(거부 시 2회째부터
+    // 시스템이 다이얼로그를 안 띄움) 온보딩 요청이 무시되는 것처럼 보인다.
 
     // 확정된 시작 목적지. 알림 딥링크는 메인(로그인 완료) 상태에서만 소비한다.
     private var resolvedStartRoute: Route? = null
@@ -67,7 +64,6 @@ class MainActivity : ComponentActivity() {
         handleInviteDeepLink(intent)
         // 알림 탭으로 실행된 경우 딥링크 보관 → NavHost 준비 후 소비.
         handleNotificationIntent(intent)
-        requestNotificationPermissionIfNeeded()
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
@@ -81,6 +77,11 @@ class MainActivity : ComponentActivity() {
                             launchSingleTop = true
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
+                        is NavigationEvent.BackTo -> {
+                            // 대상 라우트까지 pop(대상 유지). 스택에 없으면 Up 폴백.
+                            val popped = navController.popBackStack(event.route, inclusive = false)
+                            if (!popped) navController.navigateUp()
+                        }
                         is NavigationEvent.TopLevelTo -> navController.navigate(event.route) {
                             popUpTo(navController.graph.id) {
                                 inclusive = false
@@ -96,20 +97,42 @@ class MainActivity : ComponentActivity() {
             ModyTheme {
                 val mainViewModel: MainViewModel = hiltViewModel()
                 val startRoute by mainViewModel.startRoute.collectAsState()
+                val gate by mainViewModel.splashGate.collectAsState()
 
-                // startRoute 판정 전에는 스플래시(빈 화면). 판정되면 그 목적지로 NavHost 구성.
+                // startRoute 판정 전·게이트 통과 전에는 스플래시(빈 화면) 유지.
                 val route = startRoute
-                // NavHost 준비(시작 목적지 확정) 후 알림 딥링크 1회 소비 → 라우팅.
-                LaunchedEffect(route) {
+                val gatePassed = gate is SplashGateState.Passed
+                // NavHost 준비(시작 목적지 확정 + 게이트 통과) 후 알림 딥링크 1회 소비 → 라우팅.
+                LaunchedEffect(route, gatePassed) {
                     resolvedStartRoute = route
-                    if (route != null) consumeNotificationDeepLink()
+                    if (route != null && gatePassed) consumeNotificationDeepLink()
                 }
-                if (route == null) {
+                if (route == null || !gatePassed) {
                     Box(modifier = Modifier
                         .fillMaxSize()
                         .background(ModyTheme.colors.white))
                 } else {
                     AppNavHost(navController = navController, startDestination = route)
+                }
+
+                // 스플래시 게이트 다이얼로그(iOS 와 동일 순서: 강제 업데이트 → 최소 버전 → 공지).
+                when (val g = gate) {
+                    is SplashGateState.UpdateRequired -> ModyDialog(
+                        title = "업데이트가 필요해요",
+                        message = "원활한 이용을 위해 최신 버전으로 업데이트해주세요.",
+                        confirmText = "업데이트하기",
+                        onConfirm = { openStore(g.storeUrl) },
+                        onDismissRequest = {}, // 백키/스크림으로 우회 불가
+                    )
+                    is SplashGateState.Notice -> ModyDialog(
+                        title = g.notice.title,
+                        message = g.notice.message,
+                        confirmText = "확인",
+                        confirmEnabled = g.notice.skipPossible,
+                        onConfirm = mainViewModel::confirmNotice,
+                        onDismissRequest = {}, // 진행 여부는 skipPossible 이 결정
+                    )
+                    else -> Unit
                 }
             }
         }
@@ -155,16 +178,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Android 13+ 에서 알림 권한 미허용이면 런타임 요청. */
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+    /** 스토어로 이동. 원격 URL 없으면 마켓 스킴, 마켓 미설치면 웹 스토어 폴백. */
+    private fun openStore(url: String?) {
+        val target = url?.takeIf { it.isNotBlank() } ?: "market://details?id=$packageName"
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }
+            .onFailure {
+                runCatching {
+                    startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://play.google.com/store/apps/details?id=$packageName"),
+                        ),
+                    )
+                }
+            }
     }
 
     /**

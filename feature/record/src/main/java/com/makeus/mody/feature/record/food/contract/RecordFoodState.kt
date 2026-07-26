@@ -1,11 +1,14 @@
 package com.makeus.mody.feature.record.food.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.error.ErrorAlert
 
 data class RecordFoodState(
-    /** 선택/촬영한 사진 URI 문자열. null 이면 미선택 → 업로드 박스 노출. */
+    /** 선택/촬영한 사진 URI 문자열(원본). null 이면 미선택 → 업로드 박스 노출. */
     val photoUri: String? = null,
+    /** 촬영 크롭 영역(정규화). 갤러리 선택 시 null → 원본 전체 표시. */
+    val cropRegion: CropRegion? = null,
     val menu: String = "",
     /** 식사 시간 (24h). 초기값은 진입 시각. */
     val hour24: Int = 12,

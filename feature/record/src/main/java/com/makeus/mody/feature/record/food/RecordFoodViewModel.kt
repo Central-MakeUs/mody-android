@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.RecordRepository
+import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
@@ -39,7 +40,9 @@ class RecordFoodViewModel @Inject constructor(
             is RecordFoodIntent.CameraDismissed -> setState { copy(isCameraVisible = false) }
             is RecordFoodIntent.PickFromGalleryClicked -> setState { copy(isPhotoSheetVisible = false) }
             is RecordFoodIntent.PhotoSelected ->
-                setState { copy(photoUri = intent.uri, isCameraVisible = false) }
+                setState {
+                    copy(photoUri = intent.uri, cropRegion = intent.cropRegion, isCameraVisible = false)
+                }
 
             is RecordFoodIntent.MenuChanged -> setState { copy(menu = intent.value) }
             is RecordFoodIntent.TimeChanged ->
@@ -60,9 +63,10 @@ class RecordFoodViewModel @Inject constructor(
                 imageUri = state.photoUri,
                 menu = state.menu.trim(),
                 mealTime = LocalTime.of(state.hour24, state.minute),
+                cropRegion = state.cropRegion,
             )
-            // 기록 완료 → 피드로 복귀
-            navigationHelper.navigate(NavigationEvent.Up)
+            // 기록 완료 → 진입 경로(피드 FAB/알림 목록/FCM 푸시)와 무관하게 피드까지 복귀
+            navigationHelper.navigate(NavigationEvent.BackTo(MainRoute))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -2,11 +2,13 @@ package com.makeus.mody.core.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.model.error.ModyErrorCode
 import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.network.api.RecordApi
+import com.makeus.mody.core.network.model.record.ImageCropRegionDto
 import com.makeus.mody.core.network.model.record.RecordCreateRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import com.makeus.mody.core.network.upload.PresignedUploader
@@ -29,6 +31,7 @@ class RecordRepositoryImpl @Inject constructor(
         imageUri: String,
         menu: String,
         mealTime: LocalTime,
+        cropRegion: CropRegion?,
     ): Long {
         val uri = Uri.parse(imageUri)
         val contentType = context.contentResolver.getType(uri) ?: DEFAULT_MIME
@@ -50,6 +53,7 @@ class RecordRepositoryImpl @Inject constructor(
                 imageKey = presigned.imageKey,
                 mealTime = mealTime.format(TIME_FORMATTER),
                 menu = menu,
+                imageCropRegion = cropRegion?.toDto(),
             ),
         ).unwrapResult().recordId
     }
@@ -59,6 +63,7 @@ class RecordRepositoryImpl @Inject constructor(
         exerciseName: String,
         durationHours: Int,
         durationMinutes: Int,
+        cropRegion: CropRegion?,
     ): Long {
         val uri = Uri.parse(imageUri)
         val contentType = context.contentResolver.getType(uri) ?: DEFAULT_MIME
@@ -81,6 +86,7 @@ class RecordRepositoryImpl @Inject constructor(
                 exerciseName = exerciseName,
                 exerciseDurationHours = durationHours,
                 exerciseDurationMinutes = durationMinutes,
+                imageCropRegion = cropRegion?.toDto(),
             ),
         ).unwrapResult().recordId
     }
@@ -93,6 +99,9 @@ class RecordRepositoryImpl @Inject constructor(
                 msg = "사진을 불러오지 못했어요. 다시 선택해주세요.",
             )
     }
+
+    private fun CropRegion.toDto(): ImageCropRegionDto =
+        ImageCropRegionDto(x = x, y = y, width = width, height = height)
 
     private fun String.toExtension(): String = when (this.lowercase()) {
         "image/png" -> "png"

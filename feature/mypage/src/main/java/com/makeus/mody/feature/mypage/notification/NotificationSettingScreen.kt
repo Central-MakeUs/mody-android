@@ -80,13 +80,16 @@ private fun NotificationSettingContent(
                 onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
             )
             RowDivider()
-            ToggleRow(
-                title = "챌린지 알림",
-                description = "챌린지와 관련된 모든 알림을 받아요.",
-                checked = state.challengeEnabled,
-                onCheckedChange = { onIntent(NotificationSettingIntent.ChallengeToggled(it)) },
-            )
-            RowDivider()
+            // 챌린지 알림 토글: 챌린지 기능이 열렸을 때만 노출(Phase 1 숨김).
+            if (state.challengeFeatureEnabled) {
+                ToggleRow(
+                    title = "챌린지 알림",
+                    description = "챌린지와 관련된 모든 알림을 받아요.",
+                    checked = state.challengeEnabled,
+                    onCheckedChange = { onIntent(NotificationSettingIntent.ChallengeToggled(it)) },
+                )
+                RowDivider()
+            }
             ToggleRow(
                 title = "식사 및 운동 알림",
                 description = null,

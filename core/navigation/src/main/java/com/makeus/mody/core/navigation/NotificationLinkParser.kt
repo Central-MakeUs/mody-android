@@ -25,6 +25,8 @@ object NotificationLinkParser {
         if (link.isNullOrBlank()) return null
         // 쿼리스트링 제거 후 경로 세그먼트만. 앞뒤 슬래시 무시.
         val segments = link.substringBefore('?').trim('/').split('/').filter { it.isNotBlank() }
+        // "/", "///" 등은 blank 가 아니어도 세그먼트가 비어 segments[0] 접근 시 크래시 → 선제 차단.
+        if (segments.isEmpty()) return null
         return when {
             // 서버 실제 발송값은 "/records/meal" 형태(/new 없음) — 둘 다 허용.
             segments[0] == "records" && (segments.size == 2 || (segments.size == 3 && segments[2] == "new")) ->

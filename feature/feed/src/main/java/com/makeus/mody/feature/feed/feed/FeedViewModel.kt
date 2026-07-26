@@ -10,7 +10,6 @@ import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph
-import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
@@ -155,7 +154,10 @@ class FeedViewModel @Inject constructor(
                             ),
                         )
                     }
-                    navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute, popUpTo = true))
+                    navigationHelper.navigate(NavigationEvent.To(
+                        GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
+                        popUpTo = true,
+                    ))
                     return@onSuccess
                 }
                 myGroups = groups

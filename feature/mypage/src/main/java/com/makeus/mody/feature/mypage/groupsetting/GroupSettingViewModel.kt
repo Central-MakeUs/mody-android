@@ -5,7 +5,8 @@ import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
-import com.makeus.mody.core.navigation.GroupGraphBaseRoute
+import com.makeus.mody.core.navigation.GroupEntrySource
+import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingIntent
@@ -95,6 +96,9 @@ class GroupSettingViewModel @Inject constructor(
                 ),
             )
         }
-        navigationHelper.navigate(NavigationEvent.To(GroupGraphBaseRoute, popUpTo = true))
+        navigationHelper.navigate(NavigationEvent.To(
+            GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
+            popUpTo = true,
+        ))
     }
 }

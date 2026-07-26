@@ -48,6 +48,9 @@ enum class GroupEntrySource {
 
     /** 피드 "그룹 추가하기 → 참여" — 피드로 복귀하는 뒤로가기 있음. */
     Feed,
+
+    /** 전체 그룹 탈퇴 후 강제 재참여 — 돌아갈 곳이 없어 뒤로가기 없음. */
+    NoGroup,
 }
 
 sealed interface GroupGraph : Route {

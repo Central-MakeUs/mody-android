@@ -21,6 +21,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.Box
+import android.net.Uri
+import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
@@ -96,20 +98,42 @@ class MainActivity : ComponentActivity() {
             ModyTheme {
                 val mainViewModel: MainViewModel = hiltViewModel()
                 val startRoute by mainViewModel.startRoute.collectAsState()
+                val gate by mainViewModel.splashGate.collectAsState()
 
-                // startRoute 판정 전에는 스플래시(빈 화면). 판정되면 그 목적지로 NavHost 구성.
+                // startRoute 판정 전·게이트 통과 전에는 스플래시(빈 화면) 유지.
                 val route = startRoute
-                // NavHost 준비(시작 목적지 확정) 후 알림 딥링크 1회 소비 → 라우팅.
-                LaunchedEffect(route) {
+                val gatePassed = gate is SplashGateState.Passed
+                // NavHost 준비(시작 목적지 확정 + 게이트 통과) 후 알림 딥링크 1회 소비 → 라우팅.
+                LaunchedEffect(route, gatePassed) {
                     resolvedStartRoute = route
-                    if (route != null) consumeNotificationDeepLink()
+                    if (route != null && gatePassed) consumeNotificationDeepLink()
                 }
-                if (route == null) {
+                if (route == null || !gatePassed) {
                     Box(modifier = Modifier
                         .fillMaxSize()
                         .background(ModyTheme.colors.white))
                 } else {
                     AppNavHost(navController = navController, startDestination = route)
+                }
+
+                // 스플래시 게이트 다이얼로그(iOS 와 동일 순서: 강제 업데이트 → 최소 버전 → 공지).
+                when (val g = gate) {
+                    is SplashGateState.UpdateRequired -> ModyDialog(
+                        title = "업데이트가 필요해요",
+                        message = "원활한 이용을 위해 최신 버전으로 업데이트해주세요.",
+                        confirmText = "업데이트하기",
+                        onConfirm = { openStore(g.storeUrl) },
+                        onDismissRequest = {}, // 백키/스크림으로 우회 불가
+                    )
+                    is SplashGateState.Notice -> ModyDialog(
+                        title = g.notice.title,
+                        message = g.notice.message,
+                        confirmText = "확인",
+                        confirmEnabled = g.notice.skipPossible,
+                        onConfirm = mainViewModel::confirmNotice,
+                        onDismissRequest = {}, // 진행 여부는 skipPossible 이 결정
+                    )
+                    else -> Unit
                 }
             }
         }
@@ -153,6 +177,22 @@ class MainActivity : ComponentActivity() {
             // 미지원 경로: 무시(현재 화면 유지).
             null -> Unit
         }
+    }
+
+    /** 스토어로 이동. 원격 URL 없으면 마켓 스킴, 마켓 미설치면 웹 스토어 폴백. */
+    private fun openStore(url: String?) {
+        val target = url?.takeIf { it.isNotBlank() } ?: "market://details?id=$packageName"
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }
+            .onFailure {
+                runCatching {
+                    startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://play.google.com/store/apps/details?id=$packageName"),
+                        ),
+                    )
+                }
+            }
     }
 
     /** Android 13+ 에서 알림 권한 미허용이면 런타임 요청. */

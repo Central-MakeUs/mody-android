@@ -1,5 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
+import com.makeus.mody.core.domain.model.SplashGate
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -12,4 +13,7 @@ interface RemoteConfigRepository {
 
     /** 원격 값 fetch & activate. 실패해도 마지막 활성값/기본값 유지. */
     suspend fun refresh()
+
+    /** 스플래시 게이트 구성값 스냅샷. [refresh] 이후 호출해야 최신 활성값 기준. */
+    fun splashGate(): SplashGate
 }

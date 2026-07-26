@@ -1,23 +1,18 @@
 package com.makeus.mody.presentation
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.Box
@@ -46,9 +41,9 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var notificationDeepLinkHolder: NotificationDeepLinkHolder
     @Inject lateinit var pendingGroupSelectionHolder: PendingGroupSelectionHolder
 
-    // 13+ 알림 권한 요청. 거부해도 앱은 그대로 진행(알림만 안 뜸).
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    // 알림 권한(13+)은 온보딩 PermissionScreen 한 곳에서만 요청한다.
+    // 여기서 선제 요청하면 온보딩 화면 도달 전에 팝업을 소비해(거부 시 2회째부터
+    // 시스템이 다이얼로그를 안 띄움) 온보딩 요청이 무시되는 것처럼 보인다.
 
     // 확정된 시작 목적지. 알림 딥링크는 메인(로그인 완료) 상태에서만 소비한다.
     private var resolvedStartRoute: Route? = null
@@ -69,7 +64,6 @@ class MainActivity : ComponentActivity() {
         handleInviteDeepLink(intent)
         // 알림 탭으로 실행된 경우 딥링크 보관 → NavHost 준비 후 소비.
         handleNotificationIntent(intent)
-        requestNotificationPermissionIfNeeded()
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
@@ -193,18 +187,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-    }
-
-    /** Android 13+ 에서 알림 권한 미허용이면 런타임 요청. */
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
     }
 
     /**

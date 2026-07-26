@@ -81,6 +81,11 @@ class MainActivity : ComponentActivity() {
                             launchSingleTop = true
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
+                        is NavigationEvent.BackTo -> {
+                            // 대상 라우트까지 pop(대상 유지). 스택에 없으면 Up 폴백.
+                            val popped = navController.popBackStack(event.route, inclusive = false)
+                            if (!popped) navController.navigateUp()
+                        }
                         is NavigationEvent.TopLevelTo -> navController.navigate(event.route) {
                             popUpTo(navController.graph.id) {
                                 inclusive = false

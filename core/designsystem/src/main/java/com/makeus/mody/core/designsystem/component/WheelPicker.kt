@@ -21,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +83,10 @@ fun <T> WheelPicker(
     val currentSelectedIndex by rememberUpdatedState(selectedIndex)
     val currentOnSelectedChange by rememberUpdatedState(onSelectedChange)
 
+    // 이 휠 스크롤이 방금 보고한 값. 부모가 이 값을 그대로 돌려주면(우리 변경) 재스크롤하지 않는다.
+    // (재스크롤이 진행 중인 fling/settle 을 끊어 휠이 툭 멈추던 피드백 루프 방지.)
+    var lastReportedIndex by remember { mutableIntStateOf(selectedIndex) }
+
     // 뷰포트 중앙에 가장 가까운 항목의 가상 index
     val centerVirtual by remember {
         derivedStateOf {
@@ -94,9 +100,11 @@ fun <T> WheelPicker(
         }
     }
 
-    // 부모가 selectedIndex 를 바꾸면(예: 날짜 clamp) 휠을 해당 위치로 스크롤
+    // 부모가 selectedIndex 를 "외부에서" 바꿨을 때만(예: 날짜 clamp) 휠을 해당 위치로 스크롤.
+    // 우리 스크롤이 보고한 값이면(lastReportedIndex 와 동일) 재스크롤 금지 → fling/settle 안 끊김.
     LaunchedEffect(selectedIndex) {
         if (state.isScrollInProgress) return@LaunchedEffect
+        if (selectedIndex == lastReportedIndex) return@LaunchedEffect
         val currentActual = actualOf(centerVirtual)
         if (selectedIndex != currentActual) {
             // looping 이면 현재 블록에서 목표 값으로만 이동(가상 index 유지)
@@ -104,9 +112,14 @@ fun <T> WheelPicker(
         }
     }
 
+    // 중앙 항목이 바뀔 때마다 즉시 콜백 → 부모 state 가 항상 최신.
+    // (스크롤 도중 멈추자마자 "확인"을 눌러도 최신 값이 이미 반영돼 있도록. 항목 단위 emit 이라 과하지 않음.)
     LaunchedEffect(state) {
         snapshotFlow { actualOf(centerVirtual) }.collect { actual ->
-            if (actual != currentSelectedIndex) currentOnSelectedChange(actual)
+            if (actual != currentSelectedIndex) {
+                lastReportedIndex = actual
+                currentOnSelectedChange(actual)
+            }
         }
     }
 

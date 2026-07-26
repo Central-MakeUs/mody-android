@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,7 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -39,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -345,7 +351,15 @@ private fun ExerciseTimeRow(label: String, time: String, onClick: () -> Unit) {
     }
 }
 
-/** 오전/오후 · 시 · 분 3열 휠 시트. */
+/**
+ * 오전/오후 · 시 · 분 3열 휠 시트.
+ *
+ * 휠(무한 스크롤)은 드래그를 스스로 소비하므로 표준 ModalBottomSheet 로도 시트가 내려가지 않는다.
+ * 다만 (1) 부분확장 상태면 위로 드래그가 시트 확장으로 가로채져 휠이 안 돌고,
+ *     (2) 오전/오후 2개 휠은 경계 초과분이 시트로 새어 dismiss 될 수 있어
+ * skipPartiallyExpanded + 잔여 스크롤/플링 소비(nestedScroll)로 막는다.
+ * 버튼/여백 등 피커 밖 영역 드래그는 그대로 시트 dismiss 로 동작.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerSheet(
@@ -357,15 +371,35 @@ private fun TimePickerSheet(
     var hour24 by remember { mutableStateOf(initialHour) }
     var minute by remember { mutableStateOf(initialMinute) }
 
+    // 휠이 경계에서 못 먹은 잔여 스크롤/플링(오전/오후 2개 휠 등)을 소비 → 시트로 전파 차단.
+    val blockSheetDrag = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset = available
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
+
+    // 항상 완전 확장 → 위로 드래그가 시트 확장으로 가로채져 휠이 안 도는 문제 제거.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = ModyTheme.colors.white,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp),
         ) {
+            // 시안 간격: 피커 위 20dp, 피커↔확인 버튼 60dp.
+            Spacer(modifier = Modifier.height(20.dp))
             ModyTimePicker(
                 hour24 = hour24,
                 minute = minute,
@@ -373,8 +407,9 @@ private fun TimePickerSheet(
                     hour24 = h
                     minute = m
                 },
+                modifier = Modifier.nestedScroll(blockSheetDrag),
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(60.dp))
             ModyButton(
                 text = "확인",
                 onClick = { onPick(hour24, minute) },

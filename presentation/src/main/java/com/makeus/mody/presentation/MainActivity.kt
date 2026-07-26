@@ -31,8 +31,8 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.presentation.navigation.AppNavHost
-import com.makeus.mody.presentation.notification.NotificationDestination
-import com.makeus.mody.presentation.notification.NotificationLinkParser
+import com.makeus.mody.core.navigation.NotificationDestination
+import com.makeus.mody.core.navigation.NotificationLinkParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -81,6 +81,11 @@ class MainActivity : ComponentActivity() {
                             launchSingleTop = true
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
+                        is NavigationEvent.BackTo -> {
+                            // 대상 라우트까지 pop(대상 유지). 스택에 없으면 Up 폴백.
+                            val popped = navController.popBackStack(event.route, inclusive = false)
+                            if (!popped) navController.navigateUp()
+                        }
                         is NavigationEvent.TopLevelTo -> navController.navigate(event.route) {
                             popUpTo(navController.graph.id) {
                                 inclusive = false

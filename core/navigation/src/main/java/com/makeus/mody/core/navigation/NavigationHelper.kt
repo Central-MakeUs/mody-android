@@ -23,4 +23,11 @@ sealed class NavigationEvent {
     data class To(val route: Route, val popUpTo: Boolean = false) : NavigationEvent()
     data object Up : NavigationEvent()
     data class TopLevelTo(val route: Route) : NavigationEvent()
+
+    /**
+     * 백스택에서 [route] 까지 pop (route 는 유지). 진입 경로와 무관하게 특정 화면으로 복귀할 때
+     * 사용 — 예: 기록 작성 완료 → 어디서 진입했든(피드 FAB/알림 목록/FCM 푸시) 피드로.
+     * [route] 가 스택에 없으면 Up 으로 폴백.
+     */
+    data class BackTo(val route: Route) : NavigationEvent()
 }

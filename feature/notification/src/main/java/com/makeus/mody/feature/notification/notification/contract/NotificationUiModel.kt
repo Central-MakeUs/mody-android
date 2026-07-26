@@ -10,4 +10,6 @@ data class NotificationUiModel(
     val description: String,
     val timeText: String,
     val isRead: Boolean,
+    /** 탭 시 이동할 경로(URL path). null 이면 이동 없음. */
+    val link: String? = null,
 )

@@ -15,9 +15,9 @@ sealed interface NotificationDestination {
 /**
  * 서버 알림 link(URL path) → 앱 목적지 매핑.
  * 지원 경로:
- *  - /records/exercise/new           → 운동 기록 입력
- *  - /records/meal/new               → 식사 기록 입력
- *  - /groups/{groupId}/home          → 해당 그룹 홈(버디 참여/어디가셨나요/콕 찌르기)
+ *  - /records/exercise, /records/exercise/new → 운동 기록 입력
+ *  - /records/meal, /records/meal/new         → 식사 기록 입력
+ *  - /groups/{groupId}/home                   → 해당 그룹 홈(버디 참여/어디가셨나요/콕 찌르기)
  * 미지원(예: /records/{recordId} 댓글 상세, 챌린지)·파싱 실패는 null → 호출부에서 무시.
  */
 object NotificationLinkParser {
@@ -26,7 +26,8 @@ object NotificationLinkParser {
         // 쿼리스트링 제거 후 경로 세그먼트만. 앞뒤 슬래시 무시.
         val segments = link.substringBefore('?').trim('/').split('/').filter { it.isNotBlank() }
         return when {
-            segments.size == 3 && segments[0] == "records" && segments[2] == "new" ->
+            // 서버 실제 발송값은 "/records/meal" 형태(/new 없음) — 둘 다 허용.
+            segments[0] == "records" && (segments.size == 2 || (segments.size == 3 && segments[2] == "new")) ->
                 when (segments[1]) {
                     "exercise" -> NotificationDestination.Screen(RecordGraph.HealthRoute)
                     "meal" -> NotificationDestination.Screen(RecordGraph.FoodRoute)

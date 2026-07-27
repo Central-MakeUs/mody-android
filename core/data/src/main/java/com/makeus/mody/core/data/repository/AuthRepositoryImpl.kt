@@ -7,9 +7,6 @@ import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.AuthApi
-import com.makeus.mody.core.network.api.DevAuthApi
-import com.makeus.mody.core.network.model.auth.CreateMockMemberRequest
-import com.makeus.mody.core.network.model.auth.IssueTokenRequest
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -19,7 +16,6 @@ import kotlin.coroutines.cancellation.CancellationException
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
-    private val devAuthApi: DevAuthApi,
     private val sessionRepository: SessionRepository,
     private val pushTokenRepository: PushTokenRepository,
     private val pushTokenSynchronizer: PushTokenSynchronizer,
@@ -48,19 +44,13 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun loginForReview(): AuthStatus {
-        // 심사원마다 새 멤버를 만들어 계정 충돌 방지. 개인정보 온보딩은 건너뛰고
-        // 그룹 온보딩(그룹 생성/참여)부터 직접 체험하도록 구성.
-        val member = devAuthApi.createMockMember(
-            CreateMockMemberRequest(
-                nickname = REVIEW_NICKNAME,
-                birthDate = REVIEW_BIRTH_DATE,
-                targetWeightKg = REVIEW_TARGET_WEIGHT_KG,
-                personalInfoCompleted = true,
-                groupOnboardingCompleted = false,
-            ),
+        // 서버 데모 provider(ANDROIDTEST) 로그인 — 외부 토큰 검증이 없어 accessToken 없이 호출.
+        // 일반 소셜 로그인과 동일한 경로/응답이라 프로필 조회·수정까지 전 기능이 그대로 동작한다.
+        // lastLoginType 은 저장하지 않음(무음 재로그인 provider 가 없으므로).
+        val response = authApi.clientLogin(
+            loginType = DEMO_LOGIN_TYPE,
+            socialAccessToken = null,
         ).unwrapResult()
-
-        val response = devAuthApi.issueToken(IssueTokenRequest(member.memberId)).unwrapResult()
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
         val status = AuthStatus(
@@ -100,8 +90,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private companion object {
-        const val REVIEW_NICKNAME = "모디심사"
-        const val REVIEW_BIRTH_DATE = "2000-01-01"
-        const val REVIEW_TARGET_WEIGHT_KG = 60.0
+        /** 심사용 데모 로그인 provider. 서버 DEMO_LOGIN_ENABLED=true 에서만 허용됨. */
+        const val DEMO_LOGIN_TYPE = "ANDROIDTEST"
     }
 }

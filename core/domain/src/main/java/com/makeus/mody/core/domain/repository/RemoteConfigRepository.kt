@@ -20,6 +20,12 @@ interface RemoteConfigRepository {
      */
     val guestLoginEnabled: StateFlow<Boolean>
 
+    /** 개인정보처리방침 웹 URL(약관 상세 WebView). 기본값 = GitHub Pages. */
+    fun privacyPolicyUrl(): String
+
+    /** 이용약관 웹 URL(약관 상세 WebView). 기본값 = GitHub Pages. */
+    fun termsOfServiceUrl(): String
+
     /** 원격 값 fetch & activate. 실패해도 마지막 활성값/기본값 유지. */
     suspend fun refresh()
 

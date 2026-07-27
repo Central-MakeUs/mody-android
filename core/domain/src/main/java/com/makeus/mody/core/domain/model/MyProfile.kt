@@ -19,6 +19,9 @@ data class ProfileDetail(
 enum class LoginType {
     KAKAO,
     GOOGLE,
+
+    /** 심사용 데모 계정(서버 데모 provider 로 로그인). */
+    DEMO,
     UNKNOWN,
     ;
 
@@ -26,6 +29,7 @@ enum class LoginType {
         fun from(raw: String): LoginType = when (raw.uppercase()) {
             "KAKAO" -> KAKAO
             "GOOGLE" -> GOOGLE
+            "ANDROIDTEST", "IOSTEST" -> DEMO
             else -> UNKNOWN
         }
     }

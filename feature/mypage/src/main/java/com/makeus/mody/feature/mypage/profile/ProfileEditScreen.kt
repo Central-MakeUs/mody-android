@@ -355,6 +355,8 @@ private fun LoginBadge(loginType: LoginType) {
             Triple(ModyButtonVariant.Kakao, ModyIcons.Kakao, "카카오 계정으로 로그인 중")
         LoginType.GOOGLE ->
             Triple(ModyButtonVariant.Google, ModyIcons.Google, "Google 계정으로 로그인 중")
+        LoginType.DEMO ->
+            Triple(ModyButtonVariant.Gray, null, "데모 계정으로 로그인 중")
         LoginType.UNKNOWN -> return
     }
     ModyButton(

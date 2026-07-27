@@ -100,13 +100,13 @@ private fun GroupRow(
                 Text(
                     text = group.name,
                     style = ModyTheme.typography.b3,
-                    color = ModyTheme.colors.gray10,
+                    color = ModyTheme.colors.gray09,
                     modifier = Modifier.alignByBaseline(),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "그룹",
-                    style = ModyTheme.typography.b7,
+                    style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray05,
                     modifier = Modifier.alignByBaseline(),
                 )
@@ -121,7 +121,7 @@ private fun GroupRow(
                 Text(
                     text = "그룹 나가기",
                     style = ModyTheme.typography.c1,
-                    color = ModyTheme.colors.gray05,
+                    color = ModyTheme.colors.white,
                 )
             }
         }

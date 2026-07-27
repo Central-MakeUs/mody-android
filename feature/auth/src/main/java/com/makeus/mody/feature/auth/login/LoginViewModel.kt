@@ -5,6 +5,7 @@ import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.AuthRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SocialLoginProvider
 import com.makeus.mody.feature.auth.social.SocialLoginCancelledException
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
@@ -24,6 +25,7 @@ class LoginViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val authRepository: AuthRepository,
     private val socialLoginProvider: SocialLoginProvider,
+    private val remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<LoginState, LoginIntent>(LoginState()) {
 
     // 심사용 히든 로그인 진입: 로고 연타 카운트(간격 벌어지면 리셋)
@@ -45,6 +47,9 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun onLogoClicked() {
+        // guest_login_flag 꺼져 있으면(기본값) 히든 진입 자체를 차단.
+        // 심사 기간에만 콘솔에서 true 게시 → 스플래시 refresh 로 반영됨.
+        if (!remoteConfigRepository.guestLoginEnabled.value) return
         val now = System.currentTimeMillis()
         // 탭 간격이 벌어지면 우연 터치로 보고 처음부터 다시 센다.
         logoTapCount = if (now - lastLogoTapAtMs <= REVIEW_TAP_WINDOW_MS) logoTapCount + 1 else 1
@@ -103,6 +108,6 @@ class LoginViewModel @Inject constructor(
         /** 심사용 히든 로그인: 로고 연속 탭 목표 횟수 / 허용 간격 / 비밀번호 */
         const val REVIEW_TAP_TARGET = 20
         const val REVIEW_TAP_WINDOW_MS = 2_000L
-        const val REVIEW_PASSWORD = "mody2026!"
+        const val REVIEW_PASSWORD = "77777"
     }
 }

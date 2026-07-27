@@ -46,7 +46,7 @@ fun GroupEntryScreen(
 
     val title = when (source) {
         GroupEntrySource.Onboarding -> "회원가입 완료!"
-        GroupEntrySource.Feed -> "그룹 참여하기"
+        GroupEntrySource.Feed, GroupEntrySource.NoGroup -> "그룹 참여하기"
     }
     val subtitle = when (source) {
         GroupEntrySource.Onboarding -> buildAnnotatedString {
@@ -54,15 +54,15 @@ fun GroupEntryScreen(
             withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) { append("모디") }
             append("에서\n건강한 다이어트 습관을 길러보세요!")
         }
-        GroupEntrySource.Feed -> buildAnnotatedString {
+        GroupEntrySource.Feed, GroupEntrySource.NoGroup -> buildAnnotatedString {
             append("친구들과 함께, ")
             withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) { append("모디") }
             append("에서\n건강한 다이어트 습관을 길러보세요!")
         }
     }
-    // 온보딩=플로우 시작점(뒤로가기 없음). 피드=복귀용 뒤로가기.
+    // 온보딩·그룹없음=돌아갈 곳 없음(뒤로가기 미표시). 피드=복귀용 뒤로가기.
     val showBack = when (source) {
-        GroupEntrySource.Onboarding -> false
+        GroupEntrySource.Onboarding, GroupEntrySource.NoGroup -> false
         GroupEntrySource.Feed -> true
     }
 

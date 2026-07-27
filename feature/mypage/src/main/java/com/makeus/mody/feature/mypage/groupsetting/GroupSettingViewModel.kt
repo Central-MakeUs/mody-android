@@ -4,6 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.SessionRepository
+import com.makeus.mody.core.navigation.GroupEntrySource
+import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingIntent
@@ -17,6 +20,7 @@ import javax.inject.Inject
 class GroupSettingViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val navigationHelper: NavigationHelper,
+    private val sessionRepository: SessionRepository,
 ) : BaseViewModel<GroupSettingState, GroupSettingIntent>(GroupSettingState()) {
 
     init {
@@ -68,7 +72,33 @@ class GroupSettingViewModel @Inject constructor(
                 isProcessing = false,
             )
         }
+        if (currentState.groups.isEmpty()) {
+            redirectToGroupOnboarding()
+            return@launch
+        }
         runCatching { groupRepository.getMyGroups() }
-            .onSuccess { refreshed -> setState { copy(groups = refreshed) } }
+            .onSuccess { refreshed ->
+                if (refreshed.isEmpty()) redirectToGroupOnboarding()
+                else setState { copy(groups = refreshed) }
+            }
+    }
+
+    /**
+     * 그룹이 하나도 없으면 그룹 참여/생성 화면으로 강제 이동(백스택 제거 → 피드 복귀 불가).
+     * 세션 플래그도 내려 재접속 시 시작 라우팅이 GROUP 으로 가게 한다.
+     */
+    private suspend fun redirectToGroupOnboarding() {
+        runCatching {
+            sessionRepository.saveStatus(
+                sessionRepository.getStatus().copy(
+                    groupOnboardingCompleted = false,
+                    mainAccessible = false,
+                ),
+            )
+        }
+        navigationHelper.navigate(NavigationEvent.To(
+            GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
+            popUpTo = true,
+        ))
     }
 }

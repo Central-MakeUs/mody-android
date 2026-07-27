@@ -7,6 +7,7 @@ import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
+import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph
@@ -33,6 +34,7 @@ class FeedViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
+    private val sessionRepository: SessionRepository,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
@@ -152,6 +154,23 @@ class FeedViewModel @Inject constructor(
     private fun loadMyGroup() = viewModelScope.launch {
         runCatching { groupRepository.getMyGroups() }
             .onSuccess { groups ->
+                // 속한 그룹이 없으면(다른 기기에서 전부 나감 등) 그룹 참여/생성으로 강제 이동.
+                // 백스택 제거 → 피드 복귀 불가. 세션 플래그도 내려 재접속 시 GROUP 시작.
+                if (groups.isEmpty()) {
+                    runCatching {
+                        sessionRepository.saveStatus(
+                            sessionRepository.getStatus().copy(
+                                groupOnboardingCompleted = false,
+                                mainAccessible = false,
+                            ),
+                        )
+                    }
+                    navigationHelper.navigate(NavigationEvent.To(
+                        GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
+                        popUpTo = true,
+                    ))
+                    return@onSuccess
+                }
                 myGroups = groups
                 val pendingGroupId = pendingGroupSelectionHolder.pendingGroupId.value
                     ?.takeIf { id -> groups.any { it.groupId == id } }

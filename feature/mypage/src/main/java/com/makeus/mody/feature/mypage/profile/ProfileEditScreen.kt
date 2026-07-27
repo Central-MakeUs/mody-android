@@ -122,15 +122,23 @@ private fun ProfileEditContent(
         Spacer(modifier = Modifier.height(32.dp))
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
             FieldLabel("이름")
-            EditableNameField(
-                value = state.name,
-                isOverLimit = state.isNameOverLimit,
-                onValueChange = { onIntent(ProfileEditIntent.NameChanged(it)) },
-            )
+            if (state.isDemo) {
+                // 데모 세션은 편집 불가 → 읽기 전용 표시.
+                ReadOnlyField(text = state.name)
+            } else {
+                EditableNameField(
+                    value = state.name,
+                    isOverLimit = state.isNameOverLimit,
+                    onValueChange = { onIntent(ProfileEditIntent.NameChanged(it)) },
+                )
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            FieldLabel("생년월일")
-            ReadOnlyField(text = state.birthDateDisplay)
+            // 데모 세션은 생년월일 정보가 없어 섹션 자체를 숨김.
+            if (!state.isDemo) {
+                Spacer(modifier = Modifier.height(20.dp))
+                FieldLabel("생년월일")
+                ReadOnlyField(text = state.birthDateDisplay)
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
             LoginBadge(loginType = state.loginType)
@@ -355,6 +363,8 @@ private fun LoginBadge(loginType: LoginType) {
             Triple(ModyButtonVariant.Kakao, ModyIcons.Kakao, "카카오 계정으로 로그인 중")
         LoginType.GOOGLE ->
             Triple(ModyButtonVariant.Google, ModyIcons.Google, "Google 계정으로 로그인 중")
+        LoginType.DEMO ->
+            Triple(ModyButtonVariant.Gray, null, "데모 계정으로 로그인 중")
         LoginType.UNKNOWN -> return
     }
     ModyButton(

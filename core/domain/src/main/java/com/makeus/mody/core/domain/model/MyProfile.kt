@@ -19,6 +19,9 @@ data class ProfileDetail(
 enum class LoginType {
     KAKAO,
     GOOGLE,
+
+    /** 심사용 데모 계정(소셜 연결 없음). 서버 값이 아닌 클라 세션 판단으로만 설정. */
+    DEMO,
     UNKNOWN,
     ;
 

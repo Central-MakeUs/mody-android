@@ -7,6 +7,9 @@ import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.AuthApi
+import com.makeus.mody.core.network.api.DevAuthApi
+import com.makeus.mody.core.network.model.auth.CreateMockMemberRequest
+import com.makeus.mody.core.network.model.auth.IssueTokenRequest
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -16,6 +19,7 @@ import kotlin.coroutines.cancellation.CancellationException
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
+    private val devAuthApi: DevAuthApi,
     private val sessionRepository: SessionRepository,
     private val pushTokenRepository: PushTokenRepository,
     private val pushTokenSynchronizer: PushTokenSynchronizer,
@@ -39,6 +43,32 @@ class AuthRepositoryImpl @Inject constructor(
         )
         sessionRepository.saveStatus(status)
         // 로그인 직후 이 기기 FCM 토큰 서버 등록(앱 재시작 없이도 푸시 수신되도록). fire-and-forget.
+        pushTokenSynchronizer.sync()
+        return status
+    }
+
+    override suspend fun loginForReview(): AuthStatus {
+        // 심사원마다 새 멤버를 만들어 계정 충돌 방지. 개인정보 온보딩은 건너뛰고
+        // 그룹 온보딩(그룹 생성/참여)부터 직접 체험하도록 구성.
+        val member = devAuthApi.createMockMember(
+            CreateMockMemberRequest(
+                nickname = REVIEW_NICKNAME,
+                birthDate = REVIEW_BIRTH_DATE,
+                targetWeightKg = REVIEW_TARGET_WEIGHT_KG,
+                personalInfoCompleted = true,
+                groupOnboardingCompleted = false,
+            ),
+        ).unwrapResult()
+
+        val response = devAuthApi.issueToken(IssueTokenRequest(member.memberId)).unwrapResult()
+
+        sessionRepository.saveTokens(response.accessToken, response.refreshToken)
+        val status = AuthStatus(
+            personalInfoCompleted = response.personalInfoCompleted,
+            groupOnboardingCompleted = response.groupOnboardingCompleted,
+            mainAccessible = response.mainAccessible,
+        )
+        sessionRepository.saveStatus(status)
         pushTokenSynchronizer.sync()
         return status
     }
@@ -67,5 +97,11 @@ class AuthRepositoryImpl @Inject constructor(
      */
     private inline fun runCatchingIgnoringCancellation(block: () -> Unit) {
         runCatching(block).onFailure { if (it is CancellationException) throw it }
+    }
+
+    private companion object {
+        const val REVIEW_NICKNAME = "모디심사"
+        const val REVIEW_BIRTH_DATE = "2000-01-01"
+        const val REVIEW_TARGET_WEIGHT_KG = 60.0
     }
 }

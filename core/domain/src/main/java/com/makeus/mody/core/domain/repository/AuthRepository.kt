@@ -14,6 +14,12 @@ interface AuthRepository {
      */
     suspend fun loginWithSocial(type: SocialLoginType, socialAccessToken: String): AuthStatus
 
+    /**
+     * 스토어 심사용 히든 로그인. 소셜 계정 없이 심사용 멤버를 생성하고 토큰을 발급받는다.
+     * 성공 시 토큰/상태를 저장하고 진행 상태를 반환한다(소셜 로그인과 동일 흐름).
+     */
+    suspend fun loginForReview(): AuthStatus
+
     /** 로그아웃(서버 통지 + 로컬 세션 초기화). */
     suspend fun logout()
 

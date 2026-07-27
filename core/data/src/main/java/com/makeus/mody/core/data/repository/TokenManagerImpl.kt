@@ -1,53 +1,103 @@
 package com.makeus.mody.core.data.repository
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.stringPreferencesKey
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.makeus.mody.core.network.interceptor.TokenManager
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import java.io.IOException
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * DataStore(Preferences) 기반 토큰 저장소. 앱 재시작 후에도 유지.
+ * 세션 토큰 암호화 저장소. Android Keystore 로 감싼 MasterKey 로
+ * EncryptedSharedPreferences 에 저장 → 디스크 평문 노출/백업 유출 방지.
+ *
+ * 저장 표현만 암호문이고 [TokenManager] 계약은 그대로라, 재발급/재시도 로직
+ * ([com.makeus.mody.core.network.interceptor.TokenAuthenticator])은 영향받지 않는다.
+ *
+ * 키 무효화(잠금화면 해제 등)나 파일 손상으로 복호화가 실패하면 저장소를 초기화하고
+ * 빈 토큰을 반환한다. 빈 refresh 토큰은 TokenAuthenticator 에서 "세션 만료"로 흡수돼
+ * 재로그인으로 이어지므로 크래시 없이 복구된다.
  */
 @Singleton
 class TokenManagerImpl @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
+    @ApplicationContext private val context: Context,
 ) : TokenManager {
 
-    private object Keys {
-        val ACCESS = stringPreferencesKey("access_token")
-        val REFRESH = stringPreferencesKey("refresh_token")
+    // 최초 접근 시 생성. 손상 시 reset() 으로 무효화 후 재생성.
+    @Volatile
+    private var cached: SharedPreferences? = null
+
+    private fun prefs(): SharedPreferences =
+        cached ?: synchronized(this) {
+            cached ?: create().also { cached = it }
+        }
+
+    // 키/파일 손상으로 생성 실패 시 파일 삭제 후 1회 재생성.
+    private fun create(): SharedPreferences =
+        runCatching { build() }.getOrElse {
+            context.deleteSharedPreferences(FILE)
+            build()
+        }
+
+    private fun build(): SharedPreferences {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return EncryptedSharedPreferences.create(
+            context,
+            FILE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
+
+    // 개별 값 복호화 실패도 저장소 초기화로 흡수(→ 빈 문자열 = 미로그인 상태).
+    private fun read(key: String): String =
+        runCatching { prefs().getString(key, null).orEmpty() }
+            .getOrElse { reset(); "" }
+
+    // commit() 이 false(디스크 쓰기 실패) 를 반환해도 in-memory 엔 값이 남으므로,
+    // 예외뿐 아니라 false 결과도 reset() 으로 흡수해 stale 토큰이 남지 않게 한다.
+    private fun write(key: String, value: String) {
+        val ok = runCatching { prefs().edit().putString(key, value).commit() }
+            .getOrDefault(false)
+        if (!ok) reset()
+    }
+
+    private fun reset() {
+        synchronized(this) {
+            runCatching { context.deleteSharedPreferences(FILE) }
+            cached = null
+        }
     }
 
     override suspend fun getAccessToken(): String =
-        dataStore.data
-            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
-            .map { it[Keys.ACCESS].orEmpty() }.first()
+        withContext(Dispatchers.IO) { read(KEY_ACCESS) }
 
     override suspend fun getRefreshToken(): String =
-        dataStore.data
-            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
-            .map { it[Keys.REFRESH].orEmpty() }.first()
+        withContext(Dispatchers.IO) { read(KEY_REFRESH) }
 
-    override suspend fun setAccessToken(accessToken: String) {
-        dataStore.edit { it[Keys.ACCESS] = accessToken }
-    }
+    override suspend fun setAccessToken(accessToken: String) =
+        withContext(Dispatchers.IO) { write(KEY_ACCESS, accessToken) }
 
-    override suspend fun setRefreshToken(refreshToken: String) {
-        dataStore.edit { it[Keys.REFRESH] = refreshToken }
-    }
+    override suspend fun setRefreshToken(refreshToken: String) =
+        withContext(Dispatchers.IO) { write(KEY_REFRESH, refreshToken) }
 
     override suspend fun clear() {
-        dataStore.edit {
-            it.remove(Keys.ACCESS)
-            it.remove(Keys.REFRESH)
+        withContext(Dispatchers.IO) {
+            val ok = runCatching { prefs().edit().clear().commit() }.getOrDefault(false)
+            if (!ok) reset()
         }
+    }
+
+    private companion object {
+        const val FILE = "mody_secure_session"
+        const val KEY_ACCESS = "access_token"
+        const val KEY_REFRESH = "refresh_token"
     }
 }

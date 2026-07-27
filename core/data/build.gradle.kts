@@ -23,6 +23,8 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.datastore.preferences)
+    // 세션 토큰 암호화 저장 (EncryptedSharedPreferences)
+    implementation(libs.androidx.security.crypto)
 
     // 이미지 스트리밍 업로드용 RequestBody 구성 (PresignedUploader 에 전달)
     implementation(libs.okhttp)

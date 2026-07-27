@@ -1,6 +1,14 @@
 package com.makeus.mody.feature.mypage.notification
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.MealExerciseSchedule
@@ -43,13 +53,52 @@ fun NotificationSettingScreen(viewModel: NotificationSettingViewModel = hiltView
         }
     }
 
-    NotificationSettingContent(state = state, onIntent = viewModel::onIntent)
+    // 알림 토글을 켤 때 OS 알림 권한(POST_NOTIFICATIONS, 13+)이 없으면 한 번 더 요청한다.
+    // 서버 토글 값은 권한과 무관하게 저장하되(사용자 의도 보존), 권한이 없으면 실제 푸시가
+    // 조용히 무시되므로(ModyFirebaseMessagingService) 이 지점에서 권한을 유도한다.
+    val activity = context as? Activity
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        // 영구 거부(다이얼로그 없이 즉시 거부 + rationale 도 false)면 시스템 알림 설정으로 안내.
+        if (!granted && activity != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        ) {
+            context.startActivity(appNotificationSettingsIntent(context.packageName))
+        }
+    }
+    val ensureNotificationPermission: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    NotificationSettingContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        onNotificationEnabled = ensureNotificationPermission,
+    )
 }
+
+/** 시스템 앱별 알림 설정 화면 인텐트(영구 거부 시 유도). API 26+ 지원. */
+private fun appNotificationSettingsIntent(packageName: String): Intent =
+    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
 @Composable
 private fun NotificationSettingContent(
     state: NotificationSettingState,
     onIntent: (NotificationSettingIntent) -> Unit,
+    onNotificationEnabled: () -> Unit,
 ) {
     ModyScreenScaffold(
         topBar = {
@@ -80,14 +129,20 @@ private fun NotificationSettingContent(
                     title = "코멘트 알림",
                     description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
                     checked = state.commentEnabled,
-                    onCheckedChange = { onIntent(NotificationSettingIntent.CommentToggled(it)) },
+                    onCheckedChange = {
+                        if (it) onNotificationEnabled()
+                        onIntent(NotificationSettingIntent.CommentToggled(it))
+                    },
                 )
                 RowDivider()
                 ToggleRow(
                     title = "챌린지 알림",
                     description = "챌린지와 관련된 모든 알림을 받아요.",
                     checked = state.challengeEnabled,
-                    onCheckedChange = { onIntent(NotificationSettingIntent.ChallengeToggled(it)) },
+                    onCheckedChange = {
+                        if (it) onNotificationEnabled()
+                        onIntent(NotificationSettingIntent.ChallengeToggled(it))
+                    },
                 )
                 RowDivider()
             }
@@ -95,7 +150,10 @@ private fun NotificationSettingContent(
                 title = "식사 및 운동 알림",
                 description = null,
                 checked = state.recordReminderEnabled,
-                onCheckedChange = { onIntent(NotificationSettingIntent.RecordReminderToggled(it)) },
+                onCheckedChange = {
+                    if (it) onNotificationEnabled()
+                    onIntent(NotificationSettingIntent.RecordReminderToggled(it))
+                },
             )
 
             if (state.recordReminderEnabled) {

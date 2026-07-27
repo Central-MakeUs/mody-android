@@ -27,6 +27,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         setDefaultsAsync(
             mapOf(
                 KEY_IS_PHASE_ONE to true,
+                KEY_GUEST_LOGIN to false,
                 KEY_FORCE_UPDATE to false,
                 KEY_MIN_SUPPORTED_VERSION to "",
                 KEY_APP_STORE_URL to "",
@@ -41,6 +42,10 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     private val _phaseTwoFeaturesEnabled = MutableStateFlow(false)
     override val phaseTwoFeaturesEnabled: StateFlow<Boolean> = _phaseTwoFeaturesEnabled.asStateFlow()
 
+    // 히든 로그인도 같은 이유로 fetch 전엔 하드코딩 차단(false).
+    private val _guestLoginEnabled = MutableStateFlow(false)
+    override val guestLoginEnabled: StateFlow<Boolean> = _guestLoginEnabled.asStateFlow()
+
     override suspend fun refresh() {
         try {
             suspendCancellableCoroutine { cont ->
@@ -50,6 +55,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         } finally {
             // 성공/실패/타임아웃 취소 모두 현재 활성값(캐시·기본값)으로 상태 갱신.
             _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
+            _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
     }
 
@@ -86,6 +92,9 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     private companion object {
         /** [Phase 1.0] Visible 플래그 — true 면 Phase 1(챌린지 숨김). iOS/Android 공용 키. */
         const val KEY_IS_PHASE_ONE = "is_phase_one_flag"
+
+        /** 심사용 히든 로그인 허용 — 심사 기간에만 콘솔에서 true 게시. */
+        const val KEY_GUEST_LOGIN = "guest_login_flag"
         const val KEY_FORCE_UPDATE = "force_update_flag"
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
         const val KEY_APP_STORE_URL = "app_store_url"

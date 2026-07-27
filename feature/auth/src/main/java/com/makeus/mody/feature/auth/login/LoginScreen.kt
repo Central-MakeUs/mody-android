@@ -2,6 +2,8 @@ package com.makeus.mody.feature.auth.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -41,7 +44,19 @@ fun LoginScreen(
         isLoading = state.isLoading,
         onKakaoLoginClick = { viewModel.onIntent(LoginIntent.KakaoLoginClicked) },
         onGoogleLoginClick = { viewModel.onIntent(LoginIntent.GoogleLoginClicked) },
+        onLogoClick = { viewModel.onIntent(LoginIntent.LogoClicked) },
     )
+
+    // 심사용 히든 로그인(로고 연타 → 비밀번호 확인)
+    if (state.showReviewLogin) {
+        ReviewLoginDialog(
+            password = state.reviewPassword,
+            isPasswordError = state.reviewPasswordError,
+            onPasswordChange = { viewModel.onIntent(LoginIntent.ReviewPasswordChanged(it)) },
+            onSubmit = { viewModel.onIntent(LoginIntent.ReviewLoginSubmitted) },
+            onDismiss = { viewModel.onIntent(LoginIntent.ReviewDialogDismissed) },
+        )
+    }
 
     // 로그인 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
     state.error?.let { error ->
@@ -58,6 +73,7 @@ private fun LoginContent(
     isLoading: Boolean,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
+    onLogoClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -71,7 +87,14 @@ private fun LoginContent(
         Image(
             painter = painterResource(ModyIcons.Logo),
             contentDescription = "MODY",
-            modifier = Modifier.size(78.dp),
+            modifier = Modifier
+                .size(78.dp)
+                // 심사용 히든 진입: 리플 없이 탭 카운트만 전달(일반 사용자에겐 반응 없음)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onLogoClick,
+                ),
         )
 
         Spacer(modifier = Modifier.height(24.dp))

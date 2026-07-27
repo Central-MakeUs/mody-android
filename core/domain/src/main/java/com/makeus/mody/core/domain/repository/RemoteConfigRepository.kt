@@ -14,6 +14,12 @@ interface RemoteConfigRepository {
      */
     val phaseTwoFeaturesEnabled: StateFlow<Boolean>
 
+    /**
+     * 스토어 심사용 히든(게스트) 로그인 허용 여부 — guest_login_flag.
+     * 기본 false(차단). 심사 기간에만 콘솔에서 PRD true 로 열어둔다.
+     */
+    val guestLoginEnabled: StateFlow<Boolean>
+
     /** 원격 값 fetch & activate. 실패해도 마지막 활성값/기본값 유지. */
     suspend fun refresh()
 

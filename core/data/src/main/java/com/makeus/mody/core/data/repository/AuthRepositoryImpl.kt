@@ -36,6 +36,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
         sessionRepository.saveLastLoginType(type)
+        sessionRepository.saveGuestLogin(false)
         val status = AuthStatus(
             personalInfoCompleted = response.personalInfoCompleted,
             groupOnboardingCompleted = response.groupOnboardingCompleted,
@@ -48,14 +49,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun loginForReview(): AuthStatus {
-        // 심사원마다 새 멤버를 만들어 계정 충돌 방지. 개인정보 온보딩은 건너뛰고
-        // 그룹 온보딩(그룹 생성/참여)부터 직접 체험하도록 구성.
+        // 심사원마다 새 멤버를 만들어 계정 충돌 방지. 모든 온보딩을 미완료로 생성해
+        // 개인정보 입력부터 그룹 생성/참여까지 전 기능을 심사할 수 있게 한다.
         val member = devAuthApi.createMockMember(
             CreateMockMemberRequest(
-                nickname = REVIEW_NICKNAME,
-                birthDate = REVIEW_BIRTH_DATE,
-                targetWeightKg = REVIEW_TARGET_WEIGHT_KG,
-                personalInfoCompleted = true,
+                personalInfoCompleted = false,
                 groupOnboardingCompleted = false,
             ),
         ).unwrapResult()
@@ -63,6 +61,8 @@ class AuthRepositoryImpl @Inject constructor(
         val response = devAuthApi.issueToken(IssueTokenRequest(member.memberId)).unwrapResult()
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
+        // 데모 세션 마킹 — 소셜 계정이 없어 실패하는 화면(프로필 설정 등)에서 분기용.
+        sessionRepository.saveGuestLogin(true)
         val status = AuthStatus(
             personalInfoCompleted = response.personalInfoCompleted,
             groupOnboardingCompleted = response.groupOnboardingCompleted,
@@ -97,11 +97,5 @@ class AuthRepositoryImpl @Inject constructor(
      */
     private inline fun runCatchingIgnoringCancellation(block: () -> Unit) {
         runCatching(block).onFailure { if (it is CancellationException) throw it }
-    }
-
-    private companion object {
-        const val REVIEW_NICKNAME = "모디심사"
-        const val REVIEW_BIRTH_DATE = "2000-01-01"
-        const val REVIEW_TARGET_WEIGHT_KG = 60.0
     }
 }

@@ -2,14 +2,18 @@ package com.makeus.mody.core.network.model.auth
 
 import kotlinx.serialization.Serializable
 
-/** 심사용 목 멤버 생성 요청. personalInfoCompleted=true 면 개인정보 온보딩 건너뜀. */
+/**
+ * 심사용 목 멤버 생성 요청.
+ * 개인정보 필드(nickname 등)를 보내면 서버가 personalInfoCompleted=true 로 간주하므로,
+ * 온보딩부터 체험시키려면 flag 만 보내고 나머지는 생략(null → 직렬화 제외)해야 한다.
+ */
 @Serializable
 data class CreateMockMemberRequest(
-    val nickname: String,
-    val birthDate: String,
-    val targetWeightKg: Double,
     val personalInfoCompleted: Boolean,
     val groupOnboardingCompleted: Boolean,
+    val nickname: String? = null,
+    val birthDate: String? = null,
+    val targetWeightKg: Double? = null,
 )
 
 @Serializable

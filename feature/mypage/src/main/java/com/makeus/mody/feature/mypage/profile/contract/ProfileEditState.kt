@@ -19,8 +19,6 @@ data class ProfileEditState(
     /** 생년월일(서버 원본, 예: 2002-08-11). 읽기 전용. */
     val birthDate: String? = null,
     val loginType: LoginType = LoginType.UNKNOWN,
-    /** 심사용 데모 세션 — 프로필 상세 조회/편집 불가, 읽기 전용 표시. */
-    val isDemo: Boolean = false,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     /** 로그아웃/탈퇴 처리 중. */

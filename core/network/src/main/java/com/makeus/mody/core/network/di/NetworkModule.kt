@@ -3,7 +3,6 @@ package com.makeus.mody.core.network.di
 import android.util.Log
 import com.makeus.mody.core.network.BuildConfig
 import com.makeus.mody.core.network.api.AuthApi
-import com.makeus.mody.core.network.api.DevAuthApi
 import com.makeus.mody.core.network.api.FeedApi
 import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
@@ -119,9 +118,4 @@ object NetworkModule {
     @Singleton
     fun provideUploadApi(retrofit: Retrofit): UploadApi =
         retrofit.create(UploadApi::class.java)
-
-    @Provides
-    @Singleton
-    fun provideDevAuthApi(retrofit: Retrofit): DevAuthApi =
-        retrofit.create(DevAuthApi::class.java)
 }

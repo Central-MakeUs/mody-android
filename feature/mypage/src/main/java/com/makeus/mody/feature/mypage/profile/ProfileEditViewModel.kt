@@ -5,9 +5,7 @@ import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
-import com.makeus.mody.core.domain.model.LoginType
 import com.makeus.mody.core.domain.repository.MyPageRepository
-import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.AuthGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -28,7 +26,6 @@ class ProfileEditViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val imageUploadRepository: ImageUploadRepository,
     private val authRepository: AuthRepository,
-    private val sessionRepository: SessionRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<ProfileEditState, ProfileEditIntent>(ProfileEditState()) {
 
@@ -47,12 +44,11 @@ class ProfileEditViewModel @Inject constructor(
             // 저장(업로드 포함) 중 편집 차단 — submitProfile 완료 시점의 상태 덮어쓰기로
             // 저장 도중 입력한 변경이 유실되는 것을 막는다.
             is ProfileEditIntent.NameChanged ->
-                if (!currentState.isSaving && !currentState.isDemo) setState { copy(name = intent.value) }
+                if (!currentState.isSaving) setState { copy(name = intent.value) }
             is ProfileEditIntent.SaveClicked -> save()
 
-            // 데모 세션은 프로필 편집 불가(저장 API 가 생년월일 등 소셜 가입 정보를 요구).
             is ProfileEditIntent.AvatarClicked ->
-                if (!currentState.isSaving && !currentState.isDemo) setState { copy(isPhotoSheetVisible = true) }
+                if (!currentState.isSaving) setState { copy(isPhotoSheetVisible = true) }
             is ProfileEditIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
             is ProfileEditIntent.GalleryImageSelected ->
                 if (!currentState.isSaving) {
@@ -82,22 +78,6 @@ class ProfileEditViewModel @Inject constructor(
 
     private fun load() = viewModelScope.launch {
         setState { copy(isLoading = true) }
-        // 심사용 데모 세션: 소셜 계정이 없어 프로필 상세(/mypage/profile)가 항상 실패(MYPAGE302)
-        // → 호출 자체를 생략하고 정상 동작하는 /mypage/me 값만으로 읽기 전용 표시.
-        if (sessionRepository.isGuestLogin()) {
-            val me = runCatching { myPageRepository.getProfile() }.getOrNull()
-            setState {
-                copy(
-                    name = me?.nickname ?: "데모 계정",
-                    originalName = me?.nickname ?: "데모 계정",
-                    avatarUrl = me?.profileImageUrl,
-                    loginType = LoginType.DEMO,
-                    isDemo = true,
-                    isLoading = false,
-                )
-            }
-            return@launch
-        }
         // async 를 launch 자식으로 두고 던지면 try/catch 를 우회해 부모로 전파(크래시).
         // 각 호출을 null 로 흡수한 뒤 supervisorScope 로 병렬 실행한다.
         val (detail, avatar) = supervisorScope {

@@ -7,9 +7,6 @@ import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.AuthApi
-import com.makeus.mody.core.network.api.DevAuthApi
-import com.makeus.mody.core.network.model.auth.CreateMockMemberRequest
-import com.makeus.mody.core.network.model.auth.IssueTokenRequest
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -19,7 +16,6 @@ import kotlin.coroutines.cancellation.CancellationException
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
-    private val devAuthApi: DevAuthApi,
     private val sessionRepository: SessionRepository,
     private val pushTokenRepository: PushTokenRepository,
     private val pushTokenSynchronizer: PushTokenSynchronizer,
@@ -36,7 +32,6 @@ class AuthRepositoryImpl @Inject constructor(
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
         sessionRepository.saveLastLoginType(type)
-        sessionRepository.saveGuestLogin(false)
         val status = AuthStatus(
             personalInfoCompleted = response.personalInfoCompleted,
             groupOnboardingCompleted = response.groupOnboardingCompleted,
@@ -49,20 +44,15 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun loginForReview(): AuthStatus {
-        // 심사원마다 새 멤버를 만들어 계정 충돌 방지. 모든 온보딩을 미완료로 생성해
-        // 개인정보 입력부터 그룹 생성/참여까지 전 기능을 심사할 수 있게 한다.
-        val member = devAuthApi.createMockMember(
-            CreateMockMemberRequest(
-                personalInfoCompleted = false,
-                groupOnboardingCompleted = false,
-            ),
+        // 서버 데모 provider(ANDROIDTEST) 로그인 — 외부 토큰 검증이 없어 accessToken 없이 호출.
+        // 일반 소셜 로그인과 동일한 경로/응답이라 프로필 조회·수정까지 전 기능이 그대로 동작한다.
+        // lastLoginType 은 저장하지 않음(무음 재로그인 provider 가 없으므로).
+        val response = authApi.clientLogin(
+            loginType = DEMO_LOGIN_TYPE,
+            socialAccessToken = null,
         ).unwrapResult()
 
-        val response = devAuthApi.issueToken(IssueTokenRequest(member.memberId)).unwrapResult()
-
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
-        // 데모 세션 마킹 — 소셜 계정이 없어 실패하는 화면(프로필 설정 등)에서 분기용.
-        sessionRepository.saveGuestLogin(true)
         val status = AuthStatus(
             personalInfoCompleted = response.personalInfoCompleted,
             groupOnboardingCompleted = response.groupOnboardingCompleted,
@@ -97,5 +87,10 @@ class AuthRepositoryImpl @Inject constructor(
      */
     private inline fun runCatchingIgnoringCancellation(block: () -> Unit) {
         runCatching(block).onFailure { if (it is CancellationException) throw it }
+    }
+
+    private companion object {
+        /** 심사용 데모 로그인 provider. 서버 DEMO_LOGIN_ENABLED=true 에서만 허용됨. */
+        const val DEMO_LOGIN_TYPE = "ANDROIDTEST"
     }
 }

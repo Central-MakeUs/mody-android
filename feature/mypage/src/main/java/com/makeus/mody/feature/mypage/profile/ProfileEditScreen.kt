@@ -122,23 +122,15 @@ private fun ProfileEditContent(
         Spacer(modifier = Modifier.height(32.dp))
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
             FieldLabel("이름")
-            if (state.isDemo) {
-                // 데모 세션은 편집 불가 → 읽기 전용 표시.
-                ReadOnlyField(text = state.name)
-            } else {
-                EditableNameField(
-                    value = state.name,
-                    isOverLimit = state.isNameOverLimit,
-                    onValueChange = { onIntent(ProfileEditIntent.NameChanged(it)) },
-                )
-            }
+            EditableNameField(
+                value = state.name,
+                isOverLimit = state.isNameOverLimit,
+                onValueChange = { onIntent(ProfileEditIntent.NameChanged(it)) },
+            )
 
-            // 데모 세션은 생년월일 정보가 없어 섹션 자체를 숨김.
-            if (!state.isDemo) {
-                Spacer(modifier = Modifier.height(20.dp))
-                FieldLabel("생년월일")
-                ReadOnlyField(text = state.birthDateDisplay)
-            }
+            Spacer(modifier = Modifier.height(20.dp))
+            FieldLabel("생년월일")
+            ReadOnlyField(text = state.birthDateDisplay)
 
             Spacer(modifier = Modifier.height(20.dp))
             LoginBadge(loginType = state.loginType)

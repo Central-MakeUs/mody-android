@@ -17,12 +17,14 @@ interface AuthApi {
 
     /**
      * 소셜 SDK 로 받은 accessToken 을 서버에 넘겨 우리 JWT + 진행 상태를 받는다.
-     * loginType: "kakao" | "google"
+     * loginType: "kakao" | "google" | "ANDROIDTEST"(심사용 데모)
+     * 데모 provider 는 외부 토큰 검증이 없어 accessToken 없이(null) 호출한다.
+     * 서버 DEMO_LOGIN_ENABLED=true 에서만 동작(꺼져 있으면 AUTH411).
      */
     @GET("api/v1/oauth/client/{loginType}")
     suspend fun clientLogin(
         @Path("loginType") loginType: String,
-        @Query("accessToken") socialAccessToken: String,
+        @Query("accessToken") socialAccessToken: String?,
     ): ApiResponse<SocialLoginResponse>
 
     @GET("api/v1/oauth/{loginType}/redirect-url")

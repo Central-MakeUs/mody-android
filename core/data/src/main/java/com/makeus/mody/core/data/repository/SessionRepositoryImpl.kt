@@ -35,7 +35,6 @@ class SessionRepositoryImpl @Inject constructor(
         val GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
         val MAIN_ACCESSIBLE = booleanPreferencesKey("main_accessible")
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
-        val GUEST_LOGIN = booleanPreferencesKey("guest_login")
     }
 
     private val safePreferences: Flow<Preferences>
@@ -69,13 +68,6 @@ class SessionRepositoryImpl @Inject constructor(
             )
         }.first()
 
-    override suspend fun saveGuestLogin(isGuest: Boolean) {
-        dataStore.edit { it[Keys.GUEST_LOGIN] = isGuest }
-    }
-
-    override suspend fun isGuestLogin(): Boolean =
-        safePreferences.map { it[Keys.GUEST_LOGIN] ?: false }.first()
-
     override suspend fun saveLastLoginType(type: SocialLoginType) {
         dataStore.edit { it[Keys.LAST_LOGIN_TYPE] = type.value }
     }
@@ -92,7 +84,6 @@ class SessionRepositoryImpl @Inject constructor(
             it.remove(Keys.GROUP_ONBOARDING_COMPLETED)
             it.remove(Keys.MAIN_ACCESSIBLE)
             it.remove(Keys.LAST_LOGIN_TYPE)
-            it.remove(Keys.GUEST_LOGIN)
         }
         // 계정 전환 시 이전 사용자의 알림 설정 캐시가 노출되지 않게 함께 제거
         // (로그아웃/탈퇴/세션만료 모두 이 clear 를 지나므로 여기서 일괄 처리).

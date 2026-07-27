@@ -24,12 +24,6 @@ interface SessionRepository {
     suspend fun getStatus(): AuthStatus
 
     /** 마지막 로그인 소셜 타입 저장(무음 재로그인 시 provider 선택용). */
-    /** 심사용 데모(게스트) 로그인 세션 여부 저장. [clear] 시 함께 초기화. */
-    suspend fun saveGuestLogin(isGuest: Boolean)
-
-    /** 현재 세션이 심사용 데모 로그인인지. */
-    suspend fun isGuestLogin(): Boolean
-
     suspend fun saveLastLoginType(type: SocialLoginType)
 
     /** 마지막 로그인 소셜 타입. 로그인 이력 없으면 null. */

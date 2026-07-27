@@ -61,9 +61,12 @@ class TokenManagerImpl @Inject constructor(
         runCatching { prefs().getString(key, null).orEmpty() }
             .getOrElse { reset(); "" }
 
+    // commit() 이 false(디스크 쓰기 실패) 를 반환해도 in-memory 엔 값이 남으므로,
+    // 예외뿐 아니라 false 결과도 reset() 으로 흡수해 stale 토큰이 남지 않게 한다.
     private fun write(key: String, value: String) {
-        runCatching { prefs().edit().putString(key, value).commit() }
-            .onFailure { reset() }
+        val ok = runCatching { prefs().edit().putString(key, value).commit() }
+            .getOrDefault(false)
+        if (!ok) reset()
     }
 
     private fun reset() {
@@ -87,7 +90,8 @@ class TokenManagerImpl @Inject constructor(
 
     override suspend fun clear() {
         withContext(Dispatchers.IO) {
-            runCatching { prefs().edit().clear().commit() }.onFailure { reset() }
+            val ok = runCatching { prefs().edit().clear().commit() }.getOrDefault(false)
+            if (!ok) reset()
         }
     }
 

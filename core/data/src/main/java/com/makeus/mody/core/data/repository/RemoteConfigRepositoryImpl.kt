@@ -114,9 +114,9 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         const val KEY_PRIVACY_POLICY_URL = "privacy_policy_url"
         const val KEY_TERMS_OF_SERVICE_URL = "terms_of_service_url"
 
-        // TODO: 실제 GitHub Pages 게시 후 URL 확정(또는 RC 콘솔에서 덮어쓰기).
-        const val DEFAULT_PRIVACY_POLICY_URL = "https://central-makeus.github.io/mody-legal/privacy.html"
-        const val DEFAULT_TERMS_OF_SERVICE_URL = "https://central-makeus.github.io/mody-legal/terms.html"
+        // GitHub Pages 게시본. 조직 계정 확보 시 RC 콘솔에서 덮어써 무중단 교체.
+        const val DEFAULT_PRIVACY_POLICY_URL = "https://doyun-1999.github.io/mody-legal/privacy.html"
+        const val DEFAULT_TERMS_OF_SERVICE_URL = "https://doyun-1999.github.io/mody-legal/terms.html"
 
         // 개발 단계: 매 실행 즉시 fetch 로 플래그 토글 확인 용이. 배포 시 3600 등으로 상향 권장.
         const val MIN_FETCH_INTERVAL = 0L

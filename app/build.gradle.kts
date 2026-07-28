@@ -27,9 +27,11 @@ android {
         applicationId = "com.makeus.mody"
         minSdk = 26
         targetSdk = 36
-        // CI(태그 push)에서 VERSION_CODE/VERSION_NAME 주입, 로컬은 fallback
+        // CI(태그 push)에서 VERSION_CODE/VERSION_NAME 주입, 로컬 빌드는 아래 기본값.
+        // 스토어에 올릴 AAB 를 로컬에서 빌드할 땐 이 기본값이 그대로 실리므로
+        // 릴리스마다 versionCode 를 1 올리고 versionName 을 갱신할 것.
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
-        versionName = System.getenv("VERSION_NAME") ?: "1.0.0-local"
+        versionName = System.getenv("VERSION_NAME") ?: "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

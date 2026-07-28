@@ -2,6 +2,7 @@ package com.makeus.mody.feature.onboarding.terms
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +49,9 @@ private fun TermsContent(
                 .weight(1f)
                 .padding(horizontal = 24.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            // 온보딩 스텝(OnboardingScaffold)과 타이틀 y 정렬: 진행바 top 20 + 높이 4 + spacer 48 = 72dp.
+            // 약관 화면엔 진행바가 없어 동일 오프셋을 스페이서로 맞춘다.
+            Spacer(modifier = Modifier.height(72.dp))
             Text(
                 text = "필수 약관에 동의해주세요",
                 style = ModyTheme.typography.h2,
@@ -56,8 +60,8 @@ private fun TermsContent(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "MODY를 시작하려면 약관 동의가 필요해요.",
-                style = ModyTheme.typography.b4,
-                color = ModyTheme.colors.gray05,
+                style = ModyTheme.typography.b7,
+                color = ModyTheme.colors.gray06,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -131,13 +135,18 @@ private fun RequiredTermsRow(
                 .padding(4.dp),
         )
         Spacer(modifier = Modifier.width(8.dp))
+        // 전문 보기(라벨/셰브론) 탭 시 회색 ripple 배경 제거 → indication=null.
+        val detailInteraction = remember { MutableInteractionSource() }
         Text(
             text = label,
-            style = ModyTheme.typography.b4,
-            color = ModyTheme.colors.gray08,
+            style = ModyTheme.typography.b7,
+            color = ModyTheme.colors.gray07,
             modifier = Modifier
                 .weight(1f)
-                .clickable { onDetailClick() },
+                .clickable(
+                    interactionSource = detailInteraction,
+                    indication = null,
+                ) { onDetailClick() },
         )
         Icon(
             painter = painterResource(R.drawable.ic_right),
@@ -145,7 +154,10 @@ private fun RequiredTermsRow(
             tint = ModyTheme.colors.gray04,
             modifier = Modifier
                 .size(20.dp)
-                .clickable { onDetailClick() },
+                .clickable(
+                    interactionSource = detailInteraction,
+                    indication = null,
+                ) { onDetailClick() },
         )
     }
 }
@@ -158,7 +170,7 @@ private fun CheckIcon(
     Icon(
         painter = painterResource(R.drawable.ic_check),
         contentDescription = null,
-        tint = if (checked) ModyTheme.colors.primary100 else ModyTheme.colors.gray04,
+        tint = if (checked) ModyTheme.colors.primary0 else ModyTheme.colors.gray04,
         modifier = modifier.size(20.dp),
     )
 }

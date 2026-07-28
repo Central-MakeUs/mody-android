@@ -32,8 +32,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
                 KEY_MIN_SUPPORTED_VERSION to "",
                 KEY_APP_STORE_URL to "",
                 KEY_NOTICE to "",
-                KEY_PRIVACY_POLICY_URL to DEFAULT_PRIVACY_POLICY_URL,
-                KEY_TERMS_OF_SERVICE_URL to DEFAULT_TERMS_OF_SERVICE_URL,
             ),
         )
     }
@@ -60,14 +58,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
             _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
     }
-
-    // 약관 URL 은 플래그와 달리 fetch 전에도 기본값(setDefaultsAsync)이 즉시 반환되므로
-    // refresh 없이 바로 사용 가능. 콘솔에 값이 있으면 그 값이, 없으면 GitHub Pages 기본값이 나온다.
-    override fun privacyPolicyUrl(): String =
-        remoteConfig.getString(KEY_PRIVACY_POLICY_URL).ifBlank { DEFAULT_PRIVACY_POLICY_URL }
-
-    override fun termsOfServiceUrl(): String =
-        remoteConfig.getString(KEY_TERMS_OF_SERVICE_URL).ifBlank { DEFAULT_TERMS_OF_SERVICE_URL }
 
     // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.
     // Phase 1 = 챌린지 미노출 단계 → Phase 2 기능 노출은 그 부정.
@@ -109,14 +99,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
         const val KEY_APP_STORE_URL = "app_store_url"
         const val KEY_NOTICE = "notice_flag"
-
-        /** 약관 상세 웹 URL. 콘솔 미설정 시 아래 기본값(GitHub Pages) 사용. */
-        const val KEY_PRIVACY_POLICY_URL = "privacy_policy_url"
-        const val KEY_TERMS_OF_SERVICE_URL = "terms_of_service_url"
-
-        // GitHub Pages 게시본. 조직 계정 확보 시 RC 콘솔에서 덮어써 무중단 교체.
-        const val DEFAULT_PRIVACY_POLICY_URL = "https://doyun-1999.github.io/mody-legal/privacy.html"
-        const val DEFAULT_TERMS_OF_SERVICE_URL = "https://doyun-1999.github.io/mody-legal/terms.html"
 
         // 개발 단계: 매 실행 즉시 fetch 로 플래그 토글 확인 용이. 배포 시 3600 등으로 상향 권장.
         const val MIN_FETCH_INTERVAL = 0L

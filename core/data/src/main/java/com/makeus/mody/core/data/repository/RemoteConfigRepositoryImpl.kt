@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.model.RemoteNotice
 import com.makeus.mody.core.domain.model.SplashGate
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import org.json.JSONObject
+import java.net.URI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,10 +65,27 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     // 약관 URL 은 플래그와 달리 fetch 전에도 기본값(setDefaultsAsync)이 즉시 반환되므로
     // refresh 없이 바로 사용 가능. 콘솔에 값이 있으면 그 값이, 없으면 GitHub Pages 기본값이 나온다.
     override fun privacyPolicyUrl(): String =
-        remoteConfig.getString(KEY_PRIVACY_POLICY_URL).ifBlank { DEFAULT_PRIVACY_POLICY_URL }
+        sanitizeLegalUrl(remoteConfig.getString(KEY_PRIVACY_POLICY_URL), DEFAULT_PRIVACY_POLICY_URL)
 
     override fun termsOfServiceUrl(): String =
-        remoteConfig.getString(KEY_TERMS_OF_SERVICE_URL).ifBlank { DEFAULT_TERMS_OF_SERVICE_URL }
+        sanitizeLegalUrl(remoteConfig.getString(KEY_TERMS_OF_SERVICE_URL), DEFAULT_TERMS_OF_SERVICE_URL)
+
+    /**
+     * 원격 설정 URL 방어. 콘솔 값이 변조/오설정돼도 JS 활성 WebView 에 임의 페이지가
+     * 로드되지 않도록, HTTPS 이면서 약관 호스트 허용목록에 든 값만 사용하고 나머지는 기본값으로 폴백.
+     */
+    private fun sanitizeLegalUrl(raw: String, default: String): String {
+        if (raw.isBlank()) return default
+        return runCatching {
+            val uri = URI(raw)
+            val host = uri.host?.lowercase()
+            if (uri.scheme.equals("https", ignoreCase = true) && host in LEGAL_URL_ALLOWED_HOSTS) {
+                raw
+            } else {
+                default
+            }
+        }.getOrDefault(default)
+    }
 
     // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.
     // Phase 1 = 챌린지 미노출 단계 → Phase 2 기능 노출은 그 부정.
@@ -117,6 +135,9 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         // GitHub Pages 게시본. 조직 계정 확보 시 RC 콘솔에서 덮어써 무중단 교체.
         const val DEFAULT_PRIVACY_POLICY_URL = "https://doyun-1999.github.io/mody-legal/privacy.html"
         const val DEFAULT_TERMS_OF_SERVICE_URL = "https://doyun-1999.github.io/mody-legal/terms.html"
+
+        // 약관 URL 로 허용하는 호스트(현재 개인 게시본 + 조직 이관 대비). RC 값이 이 밖이면 기본값으로 폴백.
+        val LEGAL_URL_ALLOWED_HOSTS = setOf("doyun-1999.github.io", "central-makeus.github.io")
 
         // 개발 단계: 매 실행 즉시 fetch 로 플래그 토글 확인 용이. 배포 시 3600 등으로 상향 권장.
         const val MIN_FETCH_INTERVAL = 0L

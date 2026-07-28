@@ -3,6 +3,7 @@ package com.makeus.mody.feature.onboarding.terms
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,7 +75,11 @@ private fun TermsContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .background(ModyTheme.colors.primary100.copy(alpha = 0.12f))
-                    .clickable { onIntent(TermsIntent.AllToggled) }
+                    .toggleable(
+                        value = state.allChecked,
+                        role = Role.Checkbox,
+                        onValueChange = { onIntent(TermsIntent.AllToggled) },
+                    )
                     .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -126,15 +133,20 @@ private fun RequiredTermsRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 체크는 동의 토글, 라벨/셰브론은 전문 보기로 분리.
-        CheckIcon(
-            checked = checked,
+        // 체크는 동의 토글(Role.Checkbox, 48dp 터치타겟), 라벨/셰브론은 전문 보기로 분리.
+        Box(
             modifier = Modifier
+                .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable { onCheckClick() }
-                .padding(4.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
+                .toggleable(
+                    value = checked,
+                    role = Role.Checkbox,
+                    onValueChange = { onCheckClick() },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CheckIcon(checked = checked)
+        }
         // 전문 보기(라벨/셰브론) 탭 시 회색 ripple 배경 제거 → indication=null.
         val detailInteraction = remember { MutableInteractionSource() }
         Text(

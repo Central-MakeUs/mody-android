@@ -27,8 +27,8 @@ fun TermsDetailScreen(viewModel: TermsDetailViewModel = hiltViewModel()) {
 
     ModyScreenScaffold(
         topBar = {
+            // 약관 전문은 WebView 문서 자체에 제목이 있어 탑바는 뒤로가기만 노출.
             ModyBackTopBar(
-                title = state.title,
                 onBackClick = { viewModel.onIntent(TermsDetailIntent.BackClicked) },
             )
         },

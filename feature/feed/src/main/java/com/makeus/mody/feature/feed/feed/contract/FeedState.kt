@@ -62,6 +62,11 @@ data class FeedState(
     val isAddGroupDialogVisible: Boolean = false,
     // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
     val phaseTwoFeaturesEnabled: Boolean = false,
+    // 신고 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 접수 중 → 완료/실패 다이얼로그
+    val reportTargetRecordId: Long? = null,
+    val isReporting: Boolean = false,
+    val showReportComplete: Boolean = false,
+    val reportError: String? = null,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

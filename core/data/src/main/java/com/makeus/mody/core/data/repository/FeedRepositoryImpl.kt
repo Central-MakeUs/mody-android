@@ -71,6 +71,10 @@ class FeedRepositoryImpl @Inject constructor(
             recordId = recordId,
             request = CommentCreateRequest(content = content),
         ).unwrapResult().commentId
+
+    override suspend fun reportRecord(groupId: Long, recordId: Long) {
+        feedApi.reportRecord(groupId = groupId, recordId = recordId).unwrapResult()
+    }
 }
 
 private fun ActivityCalendarResponse.toActivityCalendar(): ActivityCalendar =

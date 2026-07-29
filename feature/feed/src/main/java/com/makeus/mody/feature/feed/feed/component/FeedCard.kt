@@ -3,6 +3,7 @@ package com.makeus.mody.feature.feed.feed.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +43,7 @@ private val FireOrange = Color(0xFFFF5C00)
  * 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안).
  * showHeader=false 면 헤더(아바타·이름·N일차) 생략 — 상세 화면처럼 탑바가 이미 작성자 정보를 보일 때.
  * showArrow=false 면 우상단 화살표(→상세 이동) 생략 — 상세 화면처럼 더 들어갈 곳이 없을 때.
+ * onReportClick 지정 시 헤더 우측에 미트볼(⋯) → "신고" 메뉴 노출.
  */
 @Composable
 fun FeedCard(
@@ -44,6 +51,7 @@ fun FeedCard(
     onClick: () -> Unit,
     showHeader: Boolean = true,
     showArrow: Boolean = true,
+    onReportClick: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (showHeader) {
@@ -51,6 +59,7 @@ fun FeedCard(
                 authorName = card.authorName,
                 avatarUrl = card.avatarUrl,
                 dayCount = card.dayCount,
+                onReportClick = onReportClick,
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -63,8 +72,10 @@ private fun FeedCardHeader(
     authorName: String,
     avatarUrl: String?,
     dayCount: Int,
+    onReportClick: (() -> Unit)? = null,
 ) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -79,6 +90,47 @@ private fun FeedCardHeader(
             color = ModyTheme.colors.gray09,
         )
         DayCountChip(dayCount = dayCount)
+        if (onReportClick != null) {
+            Spacer(modifier = Modifier.weight(1f))
+            ReportMenu(onReportClick = onReportClick)
+        }
+    }
+}
+
+/** 미트볼(⋯) 버튼 + "신고" 드롭다운. */
+@Composable
+private fun ReportMenu(onReportClick: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Icon(
+            painter = painterResource(ModyIcons.Meatball),
+            contentDescription = "더보기",
+            tint = ModyTheme.colors.gray05,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { expanded = true },
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(10.dp),
+            containerColor = ModyTheme.colors.white,
+        ) {
+            Text(
+                text = "신고",
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.gray09,
+                modifier = Modifier
+                    .clickable {
+                        expanded = false
+                        onReportClick()
+                    }
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
     }
 }
 

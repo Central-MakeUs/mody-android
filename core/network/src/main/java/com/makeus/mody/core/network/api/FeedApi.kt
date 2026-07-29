@@ -7,6 +7,7 @@ import com.makeus.mody.core.network.model.feed.CommentCreateResponse
 import com.makeus.mody.core.network.model.feed.CommentCursorResponse
 import com.makeus.mody.core.network.model.feed.RecordCursorResponse
 import com.makeus.mody.core.network.model.feed.RecordDetailResponse
+import com.makeus.mody.core.network.model.feed.RecordReportResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -56,4 +57,11 @@ interface FeedApi {
         @Path("recordId") recordId: Long,
         @Body request: CommentCreateRequest,
     ): ApiResponse<CommentCreateResponse>
+
+    /** 기록(게시물) 신고. 접수만 하고 삭제 등 처리는 서버 검토 후 진행. */
+    @POST("api/v1/groups/{groupId}/records/{recordId}/report")
+    suspend fun reportRecord(
+        @Path("groupId") groupId: Long,
+        @Path("recordId") recordId: Long,
+    ): ApiResponse<RecordReportResponse>
 }

@@ -135,6 +135,11 @@ class FeedViewModel @Inject constructor(
                     ),
                 )
             }
+            is FeedIntent.ReportClicked -> setState { copy(reportTargetRecordId = intent.recordId) }
+            is FeedIntent.ReportDialogDismissed -> setState { copy(reportTargetRecordId = null) }
+            is FeedIntent.ReportConfirmed -> reportRecord()
+            is FeedIntent.ReportCompleteConfirmed -> setState { copy(showReportComplete = false) }
+            is FeedIntent.ReportErrorShown -> setState { copy(reportError = null) }
             is FeedIntent.WriteExerciseClicked -> {
                 setState { copy(isFabExpanded = false) }
                 navigationHelper.navigate(NavigationEvent.To(RecordGraph.HealthRoute))
@@ -305,6 +310,29 @@ class FeedViewModel @Inject constructor(
                 if (date != selectedDate) return@onFailure
                 // TODO(feed): 에러 노출 정책. 지금은 빈 목록.
                 setState { copy(feeds = emptyList(), isLoading = false, hasMoreFeeds = false) }
+            }
+    }
+
+    /** 신고 확인 다이얼로그 "신고하기" → 서버 접수 후 완료/실패 다이얼로그 전환. */
+    private fun reportRecord() = viewModelScope.launch {
+        val groupId = currentGroupId ?: return@launch
+        val recordId = currentState.reportTargetRecordId ?: return@launch
+        if (currentState.isReporting) return@launch
+        setState { copy(isReporting = true) }
+        runCatching { feedRepository.reportRecord(groupId, recordId) }
+            .onSuccess {
+                setState {
+                    copy(isReporting = false, reportTargetRecordId = null, showReportComplete = true)
+                }
+            }
+            .onFailure {
+                setState {
+                    copy(
+                        isReporting = false,
+                        reportTargetRecordId = null,
+                        reportError = "신고 접수에 실패했어요. 다시 시도해주세요.",
+                    )
+                }
             }
     }
 

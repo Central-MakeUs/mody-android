@@ -104,3 +104,10 @@ data class CommentCreateResponse(
     val commentId: Long = 0,
     val recordId: Long = 0,
 )
+
+/** 기록(게시물) 신고 접수 응답. */
+@Serializable
+data class RecordReportResponse(
+    val reportId: Long = 0,
+    val recordId: Long = 0,
+)

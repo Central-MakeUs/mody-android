@@ -47,6 +47,21 @@ sealed class FeedIntent : UiIntent {
     /** 피드 카드 탭 → 댓글(chat) 화면 */
     data class FeedCardClicked(val id: Long) : FeedIntent()
 
+    /** 카드 미트볼 메뉴 "신고" 탭 → 신고 확인 다이얼로그 */
+    data class ReportClicked(val recordId: Long) : FeedIntent()
+
+    /** 신고 확인 다이얼로그 "신고하기" → 서버 접수 */
+    data object ReportConfirmed : FeedIntent()
+
+    /** 신고 확인 다이얼로그 닫기(취소/스크림) */
+    data object ReportDialogDismissed : FeedIntent()
+
+    /** 신고 완료 다이얼로그 "확인" */
+    data object ReportCompleteConfirmed : FeedIntent()
+
+    /** 신고 실패 다이얼로그 소비 */
+    data object ReportErrorShown : FeedIntent()
+
     /** FAB 탭 → 기록 메뉴 확장/축소 */
     data object FabClicked : FeedIntent()
 

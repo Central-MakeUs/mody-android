@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.makeus.mody.core.data.cache.NotificationSettingsCache
 import com.makeus.mody.core.domain.model.AuthStatus
@@ -35,6 +36,7 @@ class SessionRepositoryImpl @Inject constructor(
         val GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
         val MAIN_ACCESSIBLE = booleanPreferencesKey("main_accessible")
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
+        val LAST_GROUP_ID = longPreferencesKey("last_group_id")
     }
 
     private val safePreferences: Flow<Preferences>
@@ -77,6 +79,13 @@ class SessionRepositoryImpl @Inject constructor(
             SocialLoginType.entries.firstOrNull { it.value == prefs[Keys.LAST_LOGIN_TYPE] }
         }.first()
 
+    override suspend fun saveLastGroupId(groupId: Long) {
+        dataStore.edit { it[Keys.LAST_GROUP_ID] = groupId }
+    }
+
+    override suspend fun getLastGroupId(): Long? =
+        safePreferences.map { it[Keys.LAST_GROUP_ID] }.first()
+
     override suspend fun clear() {
         tokenManager.clear()
         dataStore.edit {
@@ -84,6 +93,7 @@ class SessionRepositoryImpl @Inject constructor(
             it.remove(Keys.GROUP_ONBOARDING_COMPLETED)
             it.remove(Keys.MAIN_ACCESSIBLE)
             it.remove(Keys.LAST_LOGIN_TYPE)
+            it.remove(Keys.LAST_GROUP_ID)
         }
         // 계정 전환 시 이전 사용자의 알림 설정 캐시가 노출되지 않게 함께 제거
         // (로그아웃/탈퇴/세션만료 모두 이 clear 를 지나므로 여기서 일괄 처리).

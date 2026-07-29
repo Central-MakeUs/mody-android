@@ -24,14 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
@@ -45,47 +43,34 @@ private data class PermissionItem(
     val description: String,
 )
 
+// 사진은 Photo Picker(PickVisualMedia) 사용 → 권한 불필요라 항목에서 제외.
 private val BasePermissionItems = listOf(
     PermissionItem(ModyIcons.Alarm, "알림", "버디 인증, 응원 댓글, 챌린지 달성 소식 받기"),
     PermissionItem(ModyIcons.Camera, "카메라", "오늘의 식사와 운동을 사진으로 기록"),
-    PermissionItem(ModyIcons.Image, "사진", "갤러리에서 식단·운동 사진을 바로 불러오기"),
 )
 
-/** 건강 정보(걸음 수 챌린지)는 Phase 2 기능 — 플래그가 열렸을 때만 표기/요청. */
-private val HealthPermissionItem = PermissionItem(ModyIcons.Exercise, "건강 정보", "걸음 수 챌린지")
-
 /** "확인" 시 실제로 요청할 런타임 권한. 전부 선택(거부해도 진행). */
-private fun requestedPermissions(includeHealth: Boolean): Array<String> = buildList {
+private fun requestedPermissions(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         add(Manifest.permission.POST_NOTIFICATIONS)
-        add(Manifest.permission.READ_MEDIA_IMAGES)
-    } else {
-        add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
     add(Manifest.permission.CAMERA)
-    if (includeHealth && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        add(Manifest.permission.ACTIVITY_RECOGNITION)
-    }
 }.toTypedArray()
 
 @Composable
 fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
     // 결과(허용/거부)와 무관하게 다음(그룹)으로 진입 — 전부 선택 권한.
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { viewModel.onIntent(PermissionIntent.Continue) }
 
     PermissionContent(
-        showHealth = state.phaseTwoFeaturesEnabled,
-        onConfirm = {
-            permissionLauncher.launch(requestedPermissions(includeHealth = state.phaseTwoFeaturesEnabled))
-        },
+        onConfirm = { permissionLauncher.launch(requestedPermissions()) },
     )
 }
 
 @Composable
-private fun PermissionContent(showHealth: Boolean, onConfirm: () -> Unit) {
+private fun PermissionContent(onConfirm: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -109,8 +94,7 @@ private fun PermissionContent(showHealth: Boolean, onConfirm: () -> Unit) {
         )
 
         Spacer(modifier = Modifier.height(40.dp))
-        val items = if (showHealth) BasePermissionItems + HealthPermissionItem else BasePermissionItems
-        items.forEach { item ->
+        BasePermissionItems.forEach { item ->
             PermissionRow(item)
             Spacer(modifier = Modifier.height(24.dp))
         }

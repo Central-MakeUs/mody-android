@@ -96,6 +96,10 @@ private fun MyPageContent(
         if (state.phaseTwoFeaturesEnabled) {
             SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
         }
+
+        // 스토어 정책 필수: 앱 내 약관/개인정보처리방침 접근 경로.
+        SettingsRow("이용약관") { onIntent(MyPageIntent.TermsOfServiceClicked) }
+        SettingsRow("개인정보처리방침") { onIntent(MyPageIntent.PrivacyPolicyClicked) }
     }
 
     if (state.showWeightSheet) {

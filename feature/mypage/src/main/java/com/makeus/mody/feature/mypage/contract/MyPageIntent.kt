@@ -24,7 +24,6 @@ sealed class MyPageIntent : UiIntent {
     data object GroupSettingClicked : MyPageIntent()
     data object HealthDataSettingClicked : MyPageIntent()
 
-    /** 이용약관 / 개인정보처리방침 전문 보기(WebView). */
-    data object TermsOfServiceClicked : MyPageIntent()
-    data object PrivacyPolicyClicked : MyPageIntent()
+    /** 이용약관·개인정보처리방침·문의 지원 페이지(인앱 WebView). */
+    data object SupportClicked : MyPageIntent()
 }

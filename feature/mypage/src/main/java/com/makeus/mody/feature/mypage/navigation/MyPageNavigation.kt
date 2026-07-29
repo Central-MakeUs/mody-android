@@ -8,11 +8,13 @@ import com.makeus.mody.core.navigation.MyPageGraphBaseRoute
 import com.makeus.mody.feature.mypage.groupsetting.GroupSettingScreen
 import com.makeus.mody.feature.mypage.notification.NotificationSettingScreen
 import com.makeus.mody.feature.mypage.profile.ProfileEditScreen
+import com.makeus.mody.feature.mypage.support.SupportScreen
 
 fun NavGraphBuilder.myPageNavGraph() {
     navigation<MyPageGraphBaseRoute>(startDestination = MyPageGraph.ProfileEditRoute) {
         composable<MyPageGraph.ProfileEditRoute> { ProfileEditScreen() }
         composable<MyPageGraph.NotificationSettingRoute> { NotificationSettingScreen() }
         composable<MyPageGraph.GroupSettingRoute> { GroupSettingScreen() }
+        composable<MyPageGraph.SupportRoute> { SupportScreen() }
     }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug 빌드(com.makeus.mody.dev) 전용 앱 이름 오버라이드.
+     release 와 폰에 동시 설치될 때 런처에서 구분하기 위함. -->
+<resources>
+    <string name="app_name">Mody Dev</string>
+</resources>

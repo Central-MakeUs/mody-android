@@ -22,8 +22,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"https://dev-mody.store/\"")
         }
         release {
-            // TODO: prod URL 확정되면 교체 (현재 dev 동일)
-            buildConfigField("String", "BASE_URL", "\"https://dev-mody.store/\"")
+            buildConfigField("String", "BASE_URL", "\"https://prod-mody.shop/\"")
         }
     }
 }

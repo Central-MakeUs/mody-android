@@ -23,9 +23,12 @@ object KakaoInviteSharer {
     // 도메인은 카카오 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 등록 필요.
     private const val INVITE_BASE_URL = "https://dev-mody.store/invite"
 
-    // TODO(group): 초대 카드 대표 이미지(2:1). 현재는 카카오 공식 샘플로 테스트.
+    // 초대 카드 대표 이미지(2:1). GCS 공개 객체 — 카카오가 스크랩하려면 공개 읽기여야 함.
+    // (버킷: mody-dev-images. storage.cloud.google.com 이 아닌 공개 직링크 storage.googleapis.com 사용)
     private const val SHARE_IMAGE_URL =
-        "https://mud-kage.kakao.com/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png"
+        "https://storage.googleapis.com/mody-dev-images/" +
+            "%E1%84%86%E1%85%A9%E1%84%83%E1%85%B5%20%E1%84%8F%E1%85%A1%E1%84%90%E1%85%A9%E1%86%A8%20" +
+            "%E1%84%80%E1%85%A9%E1%86%BC%E1%84%8B%E1%85%B2%20%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5.png"
 
     fun share(context: Context, code: String, groupName: String, onError: (Throwable) -> Unit) {
         val inviteUrl = "$INVITE_BASE_URL?code=${Uri.encode(code)}"

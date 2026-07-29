@@ -49,6 +49,9 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.GroupSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.GroupSettingRoute))
 
+            is MyPageIntent.SupportClicked ->
+                navigationHelper.navigate(NavigationEvent.To(MyPageGraph.SupportRoute))
+
             is MyPageIntent.WeightRecordClicked -> setState { copy(showWeightSheet = true) }
             is MyPageIntent.WeightRecordDismissed -> setState { copy(showWeightSheet = false) }
             is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)

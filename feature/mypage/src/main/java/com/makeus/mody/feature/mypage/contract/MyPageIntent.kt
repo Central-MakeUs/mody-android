@@ -23,4 +23,7 @@ sealed class MyPageIntent : UiIntent {
     data object NotificationSettingClicked : MyPageIntent()
     data object GroupSettingClicked : MyPageIntent()
     data object HealthDataSettingClicked : MyPageIntent()
+
+    /** 이용약관·개인정보처리방침·문의 지원 페이지(인앱 WebView). */
+    data object SupportClicked : MyPageIntent()
 }

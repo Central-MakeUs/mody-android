@@ -142,6 +142,10 @@ sealed interface MyPageGraph : Route {
     /** 그룹 설정(그룹 나가기) */
     @Serializable
     data object GroupSettingRoute : MyPageGraph
+
+    /** 이용약관·개인정보처리방침·문의 지원 페이지(인앱 WebView) */
+    @Serializable
+    data object SupportRoute : MyPageGraph
 }
 
 @Serializable

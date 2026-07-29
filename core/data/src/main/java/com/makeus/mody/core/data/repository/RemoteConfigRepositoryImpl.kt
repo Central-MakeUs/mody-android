@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.model.RemoteNotice
 import com.makeus.mody.core.domain.model.SplashGate
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import org.json.JSONObject
+import java.net.URI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,8 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
                 KEY_MIN_SUPPORTED_VERSION to "",
                 KEY_APP_STORE_URL to "",
                 KEY_NOTICE to "",
+                KEY_PRIVACY_POLICY_URL to DEFAULT_PRIVACY_POLICY_URL,
+                KEY_TERMS_OF_SERVICE_URL to DEFAULT_TERMS_OF_SERVICE_URL,
             ),
         )
     }
@@ -57,6 +60,31 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
             _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
             _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
+    }
+
+    // 약관 URL 은 플래그와 달리 fetch 전에도 기본값(setDefaultsAsync)이 즉시 반환되므로
+    // refresh 없이 바로 사용 가능. 콘솔에 값이 있으면 그 값이, 없으면 GitHub Pages 기본값이 나온다.
+    override fun privacyPolicyUrl(): String =
+        sanitizeLegalUrl(remoteConfig.getString(KEY_PRIVACY_POLICY_URL), DEFAULT_PRIVACY_POLICY_URL)
+
+    override fun termsOfServiceUrl(): String =
+        sanitizeLegalUrl(remoteConfig.getString(KEY_TERMS_OF_SERVICE_URL), DEFAULT_TERMS_OF_SERVICE_URL)
+
+    /**
+     * 원격 설정 URL 방어. 콘솔 값이 변조/오설정돼도 JS 활성 WebView 에 임의 페이지가
+     * 로드되지 않도록, HTTPS 이면서 약관 호스트 허용목록에 든 값만 사용하고 나머지는 기본값으로 폴백.
+     */
+    private fun sanitizeLegalUrl(raw: String, default: String): String {
+        if (raw.isBlank()) return default
+        return runCatching {
+            val uri = URI(raw)
+            val host = uri.host?.lowercase()
+            if (uri.scheme.equals("https", ignoreCase = true) && host in LEGAL_URL_ALLOWED_HOSTS) {
+                raw
+            } else {
+                default
+            }
+        }.getOrDefault(default)
     }
 
     // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.
@@ -99,6 +127,17 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
         const val KEY_APP_STORE_URL = "app_store_url"
         const val KEY_NOTICE = "notice_flag"
+
+        /** 약관 상세 웹 URL. 콘솔 미설정 시 아래 기본값(GitHub Pages) 사용. */
+        const val KEY_PRIVACY_POLICY_URL = "privacy_policy_url"
+        const val KEY_TERMS_OF_SERVICE_URL = "terms_of_service_url"
+
+        // 조직 GitHub Pages 게시본. 문구 수정은 mody-legal repo HTML 만 고치면 되고 앱 재배포 불필요.
+        const val DEFAULT_PRIVACY_POLICY_URL = "https://central-makeus.github.io/mody-legal/privacy.html"
+        const val DEFAULT_TERMS_OF_SERVICE_URL = "https://central-makeus.github.io/mody-legal/terms.html"
+
+        // 약관 URL 로 허용하는 호스트. RC 값이 이 밖이면 기본값으로 폴백.
+        val LEGAL_URL_ALLOWED_HOSTS = setOf("central-makeus.github.io")
 
         // 개발 단계: 매 실행 즉시 fetch 로 플래그 토글 확인 용이. 배포 시 3600 등으로 상향 권장.
         const val MIN_FETCH_INTERVAL = 0L

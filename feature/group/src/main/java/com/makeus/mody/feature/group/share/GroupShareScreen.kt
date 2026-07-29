@@ -58,7 +58,7 @@ fun GroupShareScreen(viewModel: GroupViewModel) {
             onClick = {
                 // 카카오 공유는 Context 필요한 플랫폼 side-effect → clipboard 처럼 Screen 에서 처리.
                 state.inviteCode?.let { code ->
-                    KakaoInviteSharer.share(context, code) {
+                    KakaoInviteSharer.share(context, code, state.groupName) {
                         Toast.makeText(context, "공유에 실패했어요.", Toast.LENGTH_SHORT).show()
                     }
                 }

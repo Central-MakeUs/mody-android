@@ -23,11 +23,14 @@ object KakaoInviteSharer {
     // 도메인은 카카오 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 등록 필요.
     private const val INVITE_BASE_URL = "https://dev-mody.store/invite"
 
-    // TODO(group): 초대 카드 대표 이미지(2:1). 현재는 카카오 공식 샘플로 테스트.
+    // 초대 카드 대표 이미지(2:1). GCS 공개 객체 — 카카오가 스크랩하려면 공개 읽기여야 함.
+    // (버킷: mody-images. storage.cloud.google.com 이 아닌 공개 직링크 storage.googleapis.com 사용)
     private const val SHARE_IMAGE_URL =
-        "https://mud-kage.kakao.com/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png"
+        "https://storage.googleapis.com/mody-images/profiles/" +
+            "%E1%84%86%E1%85%A9%E1%84%83%E1%85%B5%20%E1%84%8F%E1%85%A1%E1%84%90%E1%85%A9%E1%86%A8%20" +
+            "%E1%84%80%E1%85%A9%E1%86%BC%E1%84%8B%E1%85%B2%20%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5.png"
 
-    fun share(context: Context, code: String, onError: (Throwable) -> Unit) {
+    fun share(context: Context, code: String, groupName: String, onError: (Throwable) -> Unit) {
         val inviteUrl = "$INVITE_BASE_URL?code=${Uri.encode(code)}"
         // executionParams: 수신자 카카오톡이 설치 여부를 판단해
         // 설치 → kakao{키}://kakaolink?code=XXX 로 앱 즉시 실행 / 미설치 → 마켓 이동.
@@ -39,15 +42,21 @@ object KakaoInviteSharer {
             androidExecutionParams = executionParams,
             iosExecutionParams = executionParams,
         )
+        // 그룹명 미확보 시(공유 진입 경로에 따라 빈 값일 수 있음) 자연스러운 문구로 폴백.
+        val inviteLine = if (groupName.isNotBlank()) {
+            "$groupName 그룹에서 함께하고 싶어요!"
+        } else {
+            "그룹에서 함께하고 싶어요!"
+        }
         val template = FeedTemplate(
             content = Content(
-                title = "모디에 초대되었어요!",
-                description = "초대 코드: $code\n함께 건강한 다이어트 습관을 만들어요.",
+                title = "그룹 코드 : $code",
+                description = "$inviteLine\n그룹 참여하기에서 코드를 입력해보세요.",
                 imageUrl = SHARE_IMAGE_URL,
                 link = link,
             ),
             buttons = listOf(
-                Button(title = "앱에서 열기", link = link),
+                Button(title = "모디로 이동하기", link = link),
             ),
         )
 

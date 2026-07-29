@@ -51,21 +51,21 @@ private val BasePermissionItems = listOf(
     PermissionItem(ModyIcons.Image, "사진", "갤러리에서 식단·운동 사진을 바로 불러오기"),
 )
 
-/** 건강 정보(걸음 수 챌린지)는 Phase 2 기능 — 플래그가 열렸을 때만 표기/요청. */
+/** 건강 정보(걸음 수 챌린지)는 Phase 2 기능 — 플래그가 열렸을 때만 표기. */
 private val HealthPermissionItem = PermissionItem(ModyIcons.Exercise, "건강 정보", "걸음 수 챌린지")
 
-/** "확인" 시 실제로 요청할 런타임 권한. 전부 선택(거부해도 진행). */
-private fun requestedPermissions(includeHealth: Boolean): Array<String> = buildList {
+/**
+ * "확인" 시 실제로 요청할 런타임 권한. 전부 선택(거부해도 진행).
+ *
+ * 사진은 Photo Picker(PickVisualMedia)라 권한 불요, 걸음 수(ACTIVITY_RECOGNITION)는
+ * Phase 2 미구현이라 Manifest 에서 제거됨 → 여기서도 요청 안 함(미선언 권한 요청 방지).
+ * Phase 2 배포 시 Manifest 재선언과 함께 걸음 수 권한 요청을 되살린다.
+ */
+private fun requestedPermissions(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         add(Manifest.permission.POST_NOTIFICATIONS)
-        add(Manifest.permission.READ_MEDIA_IMAGES)
-    } else {
-        add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
     add(Manifest.permission.CAMERA)
-    if (includeHealth && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        add(Manifest.permission.ACTIVITY_RECOGNITION)
-    }
 }.toTypedArray()
 
 @Composable
@@ -77,10 +77,9 @@ fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     ) { viewModel.onIntent(PermissionIntent.Continue) }
 
     PermissionContent(
+        // 건강 정보 항목은 Phase 2 플래그가 열렸을 때만 노출.
         showHealth = state.phaseTwoFeaturesEnabled,
-        onConfirm = {
-            permissionLauncher.launch(requestedPermissions(includeHealth = state.phaseTwoFeaturesEnabled))
-        },
+        onConfirm = { permissionLauncher.launch(requestedPermissions()) },
     )
 }
 

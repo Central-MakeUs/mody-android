@@ -8,13 +8,12 @@
 
     <!-- 온보딩 권한 요청 화면에서 일괄 요청(전부 선택). 카메라는 record 모듈에도 선언됨(병합). -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 사진: Android 13+ 미디어 이미지, 그 이하 외부저장소 읽기 -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- 건강 정보: 걸음 수 챌린지 -->
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!--
+      사진 선택은 전부 Photo Picker(PickVisualMedia) → 저장소/미디어 권한 불필요.
+      걸음 수(ACTIVITY_RECOGNITION)는 Phase 2 미구현 → 실제 구현 시 재선언.
+      미사용 권한은 스토어 정책 리젝 리스크라 제거함.
+    -->
+
 
     <!-- 카메라 권한이 있어도 카메라 없는 기기(일부 태블릿/ChromeOS) 설치 허용 -->
     <uses-feature

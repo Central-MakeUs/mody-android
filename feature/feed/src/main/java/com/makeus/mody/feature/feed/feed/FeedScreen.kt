@@ -39,6 +39,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBottomSheet
+import com.makeus.mody.core.designsystem.component.ModyDialog
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -118,6 +120,7 @@ private fun FeedContent(
                 FeedList(
                     state = state,
                     onCardClick = { id -> onIntent(FeedIntent.FeedCardClicked(id)) },
+                    onReportClick = { id -> onIntent(FeedIntent.ReportClicked(id)) },
                     onLoadMore = { onIntent(FeedIntent.LoadMoreFeeds) },
                     modifier = Modifier.weight(1f),
                 )
@@ -141,6 +144,34 @@ private fun FeedContent(
             onDismiss = { onIntent(FeedIntent.AddGroupDialogDismissed) },
         )
     }
+
+    if (state.reportTargetRecordId != null) {
+        ModyDialog(
+            title = "게시물을 신고하시겠어요?",
+            message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
+            confirmText = "신고하기",
+            dismissText = "취소",
+            // 접수 중 중복 탭 방지
+            confirmEnabled = !state.isReporting,
+            onConfirm = { onIntent(FeedIntent.ReportConfirmed) },
+            onDismissRequest = { onIntent(FeedIntent.ReportDialogDismissed) },
+        )
+    }
+
+    if (state.showReportComplete) {
+        ModyDialog(
+            title = "신고가 완료되었어요",
+            message = "검토 및 처리는 최대 7일까지 걸릴 수 있어요.",
+            confirmText = "확인",
+            onConfirm = { onIntent(FeedIntent.ReportCompleteConfirmed) },
+            onDismissRequest = { onIntent(FeedIntent.ReportCompleteConfirmed) },
+        )
+    }
+
+    ModyErrorDialog(
+        message = state.reportError,
+        onDismiss = { onIntent(FeedIntent.ReportErrorShown) },
+    )
 }
 
 /** 그룹 추가 방식 선택 다이얼로그: 참여하기 / 생성하기 (다크 버튼 2개). */
@@ -209,6 +240,7 @@ private fun GroupAddOption(
 private fun FeedList(
     state: FeedState,
     onCardClick: (Long) -> Unit,
+    onReportClick: (Long) -> Unit,
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -235,6 +267,7 @@ private fun FeedList(
             FeedCard(
                 card = card,
                 onClick = { onCardClick(card.id) },
+                onReportClick = { onReportClick(card.id) },
             )
         }
         if (state.isLoadingMore) {

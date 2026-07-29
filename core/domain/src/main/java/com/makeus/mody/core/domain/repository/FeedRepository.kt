@@ -37,4 +37,7 @@ interface FeedRepository {
 
     /** 기록에 댓글 작성 후, 생성된 댓글 id. */
     suspend fun postComment(groupId: Long, recordId: Long, content: String): Long
+
+    /** 기록(게시물) 신고. 접수만 하고 삭제 등 처리는 서버 검토 후 진행. */
+    suspend fun reportRecord(groupId: Long, recordId: Long)
 }

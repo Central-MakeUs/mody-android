@@ -45,6 +45,8 @@ object ModyIcons {
     @DrawableRes val Left = R.drawable.ic_left
     @DrawableRes val Logo = R.drawable.ic_logo
     @DrawableRes val LogoWordmark = R.drawable.ic_logo_wordmark
+    /** 가로 점 3개(더보기) — 피드 카드 신고 메뉴 등. */
+    @DrawableRes val Meatball = R.drawable.ic_meatball
     @DrawableRes val Medal = R.drawable.ic_medal
     @DrawableRes val Mypage = R.drawable.ic_mypage
     @DrawableRes val Party = R.drawable.ic_party

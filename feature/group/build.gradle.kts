@@ -16,7 +16,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions { jvmTarget = "11" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    // 그룹 초대 App Link 도메인. debug=dev, release=prod. 앱 buildType 에 맞춰 변형 선택됨.
+    buildTypes {
+        debug {
+            buildConfigField("String", "INVITE_BASE_URL", "\"https://dev-mody.store/invite\"")
+        }
+        release {
+            buildConfigField("String", "INVITE_BASE_URL", "\"https://prod-mody.shop/invite\"")
+        }
+    }
 }
 
 dependencies {

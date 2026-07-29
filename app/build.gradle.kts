@@ -56,12 +56,15 @@ android {
             applicationIdSuffix = ".dev"
             buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyDev\"")
             manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyDev
+            // 그룹 초대 App Links host. feature:group INVITE_BASE_URL 과 도메인 일치 필수.
+            manifestPlaceholders["inviteHost"] = "dev-mody.store"
         }
         release {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyProd\"")
             manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyProd
+            manifestPlaceholders["inviteHost"] = "prod-mody.shop"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

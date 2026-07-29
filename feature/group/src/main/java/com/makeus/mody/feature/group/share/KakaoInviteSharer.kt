@@ -3,6 +3,7 @@ package com.makeus.mody.feature.group.share
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.makeus.mody.feature.group.BuildConfig
 import com.kakao.sdk.share.ShareClient
 import com.kakao.sdk.share.WebSharerClient
 import com.kakao.sdk.template.model.Button
@@ -20,8 +21,10 @@ import com.kakao.sdk.template.model.Link
 object KakaoInviteSharer {
 
     // 초대 App Link. iOS(Universal Link)와 동일 포맷: /invite?code=XXX.
+    // buildType 별 도메인(debug=dev, release=prod)은 BuildConfig 로 주입.
+    // App Links host(presentation manifest)와 반드시 같은 도메인이어야 앱이 링크로 열린다.
     // 도메인은 카카오 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 등록 필요.
-    private const val INVITE_BASE_URL = "https://dev-mody.store/invite"
+    private val INVITE_BASE_URL = BuildConfig.INVITE_BASE_URL
 
     // 초대 카드 대표 이미지(2:1). GCS 공개 객체 — 카카오가 스크랩하려면 공개 읽기여야 함.
     // (버킷: mody-images. storage.cloud.google.com 이 아닌 공개 직링크 storage.googleapis.com 사용)

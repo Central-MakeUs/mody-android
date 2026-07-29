@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +45,7 @@ import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyPhotoSourceSheet
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
@@ -64,7 +66,26 @@ private val SaveBlue = Color(0xFF6E7CFF)
 fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    ProfileEditContent(state = state, onIntent = viewModel::onIntent)
+    Box(modifier = Modifier.fillMaxSize()) {
+        ProfileEditContent(state = state, onIntent = viewModel::onIntent)
+
+        // 저장(이미지 업로드 포함) 중 — 딤 오버레이 + 스피너로 진행 표시 + 조작 차단.
+        if (state.isSaving) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ModyTheme.colors.black.copy(alpha = 0.2f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                ModyLoadingIndicator()
+            }
+        }
+    }
 
     // 실패(조회/저장/탈퇴) → 공용 에러 다이얼로그. 확인 시 상태 소비.
     ModyErrorDialog(

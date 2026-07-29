@@ -29,6 +29,12 @@ interface SessionRepository {
     /** 마지막 로그인 소셜 타입. 로그인 이력 없으면 null. */
     suspend fun getLastLoginType(): SocialLoginType?
 
+    /** 피드에서 마지막으로 보던 그룹 저장(앱 재진입 시 복원용). */
+    suspend fun saveLastGroupId(groupId: Long)
+
+    /** 피드에서 마지막으로 보던 그룹 id. 이력 없으면 null. */
+    suspend fun getLastGroupId(): Long?
+
     /** 로그아웃 등 세션 초기화(토큰 + 상태 제거). */
     suspend fun clear()
 }

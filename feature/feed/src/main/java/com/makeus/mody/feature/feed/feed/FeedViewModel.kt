@@ -53,7 +53,7 @@ class FeedViewModel @Inject constructor(
     /** 주간 스트립에 표시 중인 주의 일요일. */
     private var weekStart: LocalDate = sundayOf(selectedDate)
 
-    /** 현재 보고 있는 그룹. TODO(feed): 마지막 선택 그룹 기억. */
+    /** 현재 보고 있는 그룹. 선택 시마다 세션에 저장해 재진입 때 복원. */
     private var currentGroupId: Long? = null
 
     /** 내가 속한 전체 그룹 (선택 시트용). */
@@ -153,8 +153,8 @@ class FeedViewModel @Inject constructor(
 
     /**
      * 내 그룹 조회 → 현재 그룹 결정.
-     * 그룹홈 알림 딥링크로 대기 중인 groupId 가 내 그룹에 있으면 그 그룹을, 없으면 첫 그룹을 선택.
-     * TODO(feed): 마지막 선택 그룹 기억.
+     * 우선순위: 그룹홈 알림 딥링크 대기 groupId > 마지막 선택 그룹(세션 저장) > 첫 그룹.
+     * (탈퇴/이동으로 더는 내 그룹이 아닌 저장값은 무시.)
      */
     private fun loadMyGroup() = viewModelScope.launch {
         runCatching { groupRepository.getMyGroups() }
@@ -179,12 +179,15 @@ class FeedViewModel @Inject constructor(
                 myGroups = groups
                 val pendingGroupId = pendingGroupSelectionHolder.pendingGroupId.value
                     ?.takeIf { id -> groups.any { it.groupId == id } }
-                val group = pendingGroupId
+                val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
+                    ?.takeIf { id -> groups.any { it.groupId == id } }
+                val group = (pendingGroupId ?: lastGroupId)
                     ?.let { id -> groups.first { it.groupId == id } }
                     ?: groups.firstOrNull()
                     ?: return@onSuccess
                 if (pendingGroupId != null) pendingGroupSelectionHolder.consume()
                 currentGroupId = group.groupId
+                saveLastGroup(group.groupId)
                 setState { copy(groupName = group.name, groups = buildGroupUis()) }
                 loadCalendar()
                 loadFeeds(selectedDate)
@@ -210,6 +213,7 @@ class FeedViewModel @Inject constructor(
         setState { copy(isGroupSheetVisible = false) }
         if (groupId == currentGroupId) return
         currentGroupId = groupId
+        saveLastGroup(groupId)
         recordDates = emptyMap()
         setState {
             copy(
@@ -221,6 +225,11 @@ class FeedViewModel @Inject constructor(
         }
         loadCalendar()
         loadFeeds(selectedDate)
+    }
+
+    /** 마지막 선택 그룹 영속화. 실패해도 화면 동작엔 영향 없음(다음 진입에 복원만 안 될 뿐). */
+    private fun saveLastGroup(groupId: Long) = viewModelScope.launch {
+        runCatching { sessionRepository.saveLastGroupId(groupId) }
     }
 
     private fun buildGroupUis(): List<GroupUi> =

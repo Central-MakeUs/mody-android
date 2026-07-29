@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -97,9 +98,9 @@ private fun MyPageContent(
             SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
         }
 
-        // 스토어 정책 필수: 앱 내 약관/개인정보처리방침 접근 경로.
-        SettingsRow("이용약관") { onIntent(MyPageIntent.TermsOfServiceClicked) }
-        SettingsRow("개인정보처리방침") { onIntent(MyPageIntent.PrivacyPolicyClicked) }
+        // 스토어 정책 필수: 이용약관·개인정보처리방침·문의를 모은 지원 페이지로 이동.
+        val uriHandler = LocalUriHandler.current
+        SettingsRow("이용약관") { uriHandler.openUri(SUPPORT_URL) }
     }
 
     if (state.showWeightSheet) {
@@ -254,6 +255,9 @@ private fun WeightArrow() {
         modifier = Modifier.size(24.dp),
     )
 }
+
+/** 이용약관·개인정보처리방침·문의를 모은 지원 페이지(외부 브라우저). */
+private const val SUPPORT_URL = "https://mody-support.vercel.app/index.html"
 
 /** 56.0 → "56", 56.5 → "56.5". */
 private fun formatKg(kg: Double): String =

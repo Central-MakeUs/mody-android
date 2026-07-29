@@ -8,8 +8,6 @@ import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
-import com.makeus.mody.core.navigation.OnboardingGraph
-import com.makeus.mody.core.navigation.TermsType
 import com.makeus.mody.feature.mypage.contract.MyPageIntent
 import com.makeus.mody.feature.mypage.contract.MyPageState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,17 +48,6 @@ class MyPageViewModel @Inject constructor(
 
             is MyPageIntent.GroupSettingClicked ->
                 navigationHelper.navigate(NavigationEvent.To(MyPageGraph.GroupSettingRoute))
-
-            // 약관 전문은 온보딩의 WebView 화면(OnboardingGraph.TermsDetailRoute)을 재사용.
-            is MyPageIntent.TermsOfServiceClicked ->
-                navigationHelper.navigate(
-                    NavigationEvent.To(OnboardingGraph.TermsDetailRoute(TermsType.Service)),
-                )
-
-            is MyPageIntent.PrivacyPolicyClicked ->
-                navigationHelper.navigate(
-                    NavigationEvent.To(OnboardingGraph.TermsDetailRoute(TermsType.Privacy)),
-                )
 
             is MyPageIntent.WeightRecordClicked -> setState { copy(showWeightSheet = true) }
             is MyPageIntent.WeightRecordDismissed -> setState { copy(showWeightSheet = false) }

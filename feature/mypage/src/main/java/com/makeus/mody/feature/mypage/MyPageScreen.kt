@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -96,6 +97,9 @@ private fun MyPageContent(
         if (state.phaseTwoFeaturesEnabled) {
             SettingsRow("건강 데이터 연동 설정") { onIntent(MyPageIntent.HealthDataSettingClicked) }
         }
+        // 이용약관·개인정보처리방침 페이지(외부 브라우저). Play 정책상 앱 내 접근 경로 필수.
+        val uriHandler = LocalUriHandler.current
+        SettingsRow("약관 확인") { uriHandler.openUri(LEGAL_URL) }
     }
 
     if (state.showWeightSheet) {
@@ -250,6 +254,9 @@ private fun WeightArrow() {
         modifier = Modifier.size(24.dp),
     )
 }
+
+/** 약관·정책 호스팅 페이지(mody-legal). 이용약관/개인정보처리방침/계정삭제 안내 목차. */
+private const val LEGAL_URL = "https://doyun-1999.github.io/mody-legal/"
 
 /** 56.0 → "56", 56.5 → "56.5". */
 private fun formatKg(kg: Double): String =

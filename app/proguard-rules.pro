@@ -20,6 +20,12 @@
 -if @kotlinx.serialization.Serializable class **
 -keep class <1> { *; }
 
+# --- Compose type-safe Navigation ---
+# Route 인자로 쓰는 enum(GroupEntrySource, TermsType 등)은 @Serializable 이 안 붙어 있어
+# 위 규칙에서 누락된다. 네비게이션은 런타임에 이 클래스를 FQN(serialName)으로 조회하므로
+# 난독화되면 "Cannot find class ... GroupEntrySource" 로 앱이 죽는다. navigation 패키지 통째 보존.
+-keep class com.makeus.mody.core.navigation.** { *; }
+
 # --- Kakao SDK (공식 가이드 규칙) ---
 -keep class com.kakao.sdk.**.model.* { <fields>; }
 -keep class * extends com.google.gson.TypeAdapter

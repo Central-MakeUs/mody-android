@@ -38,12 +38,16 @@ android {
 
     buildFeatures { buildConfig = true }
 
+    // 서명값도 env(CI) → local.properties(로컬) 순으로 조회. 둘 다 gitignore 라 키/비번 커밋 안 됨.
+    fun signingProp(key: String, default: String = ""): String =
+        System.getenv(key) ?: localProperties.getProperty(key, default)
+
     signingConfigs {
         create("release") {
-            storeFile = file(System.getenv("SIGNING_STORE_FILE") ?: "keystore.jks")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: ""
+            storeFile = file(signingProp("SIGNING_STORE_FILE", "keystore.jks"))
+            storePassword = signingProp("SIGNING_STORE_PASSWORD")
+            keyAlias = signingProp("SIGNING_KEY_ALIAS")
+            keyPassword = signingProp("SIGNING_KEY_PASSWORD")
         }
     }
 

@@ -15,10 +15,19 @@ import com.makeus.mody.feature.onboarding.alarm.AlarmScreen
 import com.makeus.mody.feature.onboarding.birth.BirthScreen
 import com.makeus.mody.feature.onboarding.nickname.NicknameScreen
 import com.makeus.mody.feature.onboarding.permission.PermissionScreen
+import com.makeus.mody.feature.onboarding.terms.TermsScreen
+import com.makeus.mody.feature.onboarding.terms.detail.TermsDetailScreen
 import com.makeus.mody.feature.onboarding.weight.WeightScreen
 
 fun NavGraphBuilder.onboardingNavGraph(navController: NavHostController) {
-    navigation<OnboardingGraphBaseRoute>(startDestination = OnboardingGraph.NicknameRoute) {
+    navigation<OnboardingGraphBaseRoute>(startDestination = OnboardingGraph.TermsRoute) {
+        // 로그인 직후 첫 스텝: 필수 약관 동의. 입력값 누적과 무관 → 자체 hiltViewModel.
+        composable<OnboardingGraph.TermsRoute> {
+            TermsScreen()
+        }
+        composable<OnboardingGraph.TermsDetailRoute> {
+            TermsDetailScreen()
+        }
         composable<OnboardingGraph.NicknameRoute> { entry ->
             NicknameScreen(entry.sharedViewModel(navController))
         }

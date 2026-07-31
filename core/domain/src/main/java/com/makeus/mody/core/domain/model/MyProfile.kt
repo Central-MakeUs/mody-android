@@ -2,6 +2,7 @@ package com.makeus.mody.core.domain.model
 
 /** 마이페이지 상단 프로필. */
 data class MyProfile(
+    val memberId: Long,
     val nickname: String,
     val profileImageUrl: String?,
     /** 모디와 함께한 일수. */

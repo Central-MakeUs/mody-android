@@ -7,6 +7,8 @@ import java.time.LocalDate
 /** 피드 카드 표시 모델. TODO(feed): API 연동 시 도메인 모델 매핑으로 교체. */
 data class FeedCardUi(
     val id: Long,
+    /** 작성자 memberId. 내 게시물(신고 미노출) 판별용. */
+    val memberId: Long = 0,
     val authorName: String,
     val dayCount: Int,
     // 식사: "식사 시간"/"13:00", "메뉴"/"계란 3알, 사과 2조각"
@@ -62,6 +64,8 @@ data class FeedState(
     val isAddGroupDialogVisible: Boolean = false,
     // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
     val phaseTwoFeaturesEnabled: Boolean = false,
+    // 내 memberId(/mypage/me). 로딩 전(null)에는 신고 메뉴 미노출 — 내 글에 잠깐 떴다 사라지는 것 방지.
+    val myMemberId: Long? = null,
     // 신고 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 접수 중 → 완료/실패 다이얼로그
     val reportTargetRecordId: Long? = null,
     val isReporting: Boolean = false,

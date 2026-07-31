@@ -25,7 +25,7 @@ fun SupportScreen(viewModel: SupportViewModel = hiltViewModel()) {
     ModyScreenScaffold(
         topBar = {
             ModyBackTopBar(
-                title = "이용약관",
+                title = "문의 및 약관확인",
                 onBackClick = { viewModel.onIntent(SupportIntent.BackClicked) },
             )
         },

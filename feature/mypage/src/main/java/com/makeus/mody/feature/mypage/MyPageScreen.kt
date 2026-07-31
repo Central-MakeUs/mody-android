@@ -98,7 +98,7 @@ private fun MyPageContent(
         }
 
         // 스토어 정책 필수: 이용약관·개인정보처리방침·문의를 모은 지원 페이지(인앱 WebView).
-        SettingsRow("이용약관") { onIntent(MyPageIntent.SupportClicked) }
+        SettingsRow("문의 및 약관확인") { onIntent(MyPageIntent.SupportClicked) }
     }
 
     if (state.showWeightSheet) {

@@ -267,7 +267,9 @@ private fun FeedList(
             FeedCard(
                 card = card,
                 onClick = { onCardClick(card.id) },
-                onReportClick = { onReportClick(card.id) },
+                // 내 게시물엔 신고 미노출. myMemberId 로딩 전(null)에도 숨김 — 떴다 사라지는 깜빡임 방지.
+                onReportClick = { onReportClick(card.id) }
+                    .takeIf { state.myMemberId != null && card.memberId != state.myMemberId },
             )
         }
         if (state.isLoadingMore) {

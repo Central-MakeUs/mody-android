@@ -30,6 +30,7 @@ class MyPageRepositoryImpl @Inject constructor(
     override suspend fun getProfile(): MyProfile {
         val me = myPageApi.getMe().unwrapResult()
         return MyProfile(
+            memberId = me.memberId,
             nickname = me.nickname,
             profileImageUrl = me.profileImageUrl,
             daysTogether = me.daysTogether,

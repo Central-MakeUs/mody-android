@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
@@ -35,6 +36,7 @@ class FeedViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
     private val sessionRepository: SessionRepository,
+    private val myPageRepository: MyPageRepository,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
@@ -77,7 +79,14 @@ class FeedViewModel @Inject constructor(
             )
         }
         loadMyGroup()
+        loadMyMemberId()
         observePendingGroupSelection()
+    }
+
+    /** 내 memberId 조회 — 내 게시물엔 신고 메뉴를 숨기기 위한 판별값. 실패 시 null 유지(신고 메뉴 전체 미노출). */
+    private fun loadMyMemberId() = viewModelScope.launch {
+        runCatching { myPageRepository.getProfile() }
+            .onSuccess { setState { copy(myMemberId = it.memberId) } }
     }
 
     /**

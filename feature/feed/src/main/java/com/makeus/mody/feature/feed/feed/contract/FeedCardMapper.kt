@@ -10,6 +10,7 @@ private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm"
 fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
     RecordType.MEAL -> FeedCardUi(
         id = recordId,
+        memberId = memberId,
         authorName = nickname,
         dayCount = streakDays,
         primaryLabel = "식사 시간",
@@ -22,6 +23,7 @@ fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
     )
     else -> FeedCardUi(
         id = recordId,
+        memberId = memberId,
         authorName = nickname,
         dayCount = streakDays,
         primaryLabel = "운동 시간",

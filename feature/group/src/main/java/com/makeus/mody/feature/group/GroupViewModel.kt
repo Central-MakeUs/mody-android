@@ -3,6 +3,7 @@ package com.makeus.mody.feature.group
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.model.error.ModyErrorCode
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
@@ -90,9 +91,17 @@ class GroupViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // HTTP 예외의 서버 message(존재하지 않는 코드/인원 초과 등)를 그대로 노출.
-            // 그 외(네트워크 등)는 기술 메시지가 새지 않게 폴백 문구.
-            val message = (e as? HttpResponseException)?.msg ?: "그룹 참여에 실패했어요."
+            // 서버 에러코드(GROUP3xx)별 기획 문구 분기. 미분기 코드는 서버 message 노출,
+            // 네트워크 등 비 HTTP 예외는 기술 메시지가 새지 않게 폴백 문구.
+            val http = e as? HttpResponseException
+            val message = when (http?.errorCode) {
+                ModyErrorCode.GROUP302 -> "존재하지 않는 코드입니다."
+                ModyErrorCode.GROUP304 -> "참여할 수 있는 그룹 개수를 초과했어요."
+                ModyErrorCode.GROUP305 -> "이미 참여 중인 그룹이에요."
+                ModyErrorCode.GROUP307 -> "그룹 인원이 가득 찼어요."
+                null -> "그룹 참여에 실패했어요."
+                else -> http.msg ?: "그룹 참여에 실패했어요."
+            }
             setState { copy(isLoading = false, joinError = message) }
         }
     }

@@ -49,6 +49,16 @@ enum class ModyErrorCode(val msg: String) {
     EXPIRED_ACCESS_TOKEN("토큰이 만료되었습니다."),
     INVALID_ACCESS_TOKEN("유효하지 않은 토큰입니다."),
     INTERNAL_SERVER_ERROR("서버 오류입니다."),
+
+    // 그룹 (서버 GROUP3xx). enum 이름 = 서버 code 문자열이라 create() 로 바로 매칭된다.
+    GROUP301("그룹 입력값이 올바르지 않습니다."),
+    GROUP302("그룹을 찾을 수 없습니다."),
+    GROUP303("그룹 코드 생성에 실패했습니다."),
+    GROUP304("참여 가능한 그룹 수를 초과했습니다."),
+    GROUP305("이미 참여 중인 그룹입니다."),
+    GROUP306("그룹 참여 정보가 없습니다."),
+    GROUP307("그룹 최대 인원을 초과했습니다."),
+
     UNKNOWN("알 수 없는 오류입니다."),
     ;
 

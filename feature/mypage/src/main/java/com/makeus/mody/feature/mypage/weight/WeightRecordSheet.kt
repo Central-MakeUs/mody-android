@@ -36,8 +36,8 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/** 체중 휠 범위(서버 허용 20~300, 정수 단위). */
-private val WEIGHTS = (20..300).toList()
+/** 체중 휠 범위 20~150kg (정책, 정수 단위). */
+private val WEIGHTS = (20..150).toList()
 private val DISPLAY_FMT = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 /** yyyy.MM.dd 형식(2자리 월/일) 강제. */
 private val DATE_REGEX = Regex("""\d{4}\.\d{2}\.\d{2}""")

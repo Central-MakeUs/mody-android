@@ -28,7 +28,8 @@ import com.makeus.mody.core.designsystem.component.WheelPicker
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import kotlin.math.abs
 
-private val WEIGHTS = (30..200).toList()
+/** 현재/목표 체중 허용 범위 20~150kg (정책). */
+private val WEIGHTS = (20..150).toList()
 
 @Composable
 fun WeightScreen(viewModel: OnboardingViewModel) {

@@ -2,6 +2,11 @@ package com.makeus.mody.feature.challenge.challenge
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.NudgeTarget
+import com.makeus.mody.core.domain.model.StepChallengeStatus
+import com.makeus.mody.core.domain.model.StepRanking
+import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
@@ -36,6 +41,10 @@ class ChallengeViewModel @Inject constructor(
             is ChallengeIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is ChallengeIntent.NudgeClicked -> nudge(intent.memberId)
+            is ChallengeIntent.StepRefreshClicked -> refreshStep()
+            // TODO(challenge): 걸음 수 챌린지 변경(walk/choose)·주간 챌린지 상세 화면 연결 (후속 PR).
+            is ChallengeIntent.ChangeStepChallengeClicked -> Unit
+            is ChallengeIntent.WeeklyChallengeClicked -> Unit
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
         }
     }
@@ -50,20 +59,58 @@ class ChallengeViewModel @Inject constructor(
             return@launch
         }
         // async 를 launch 자식으로 두고 던지면 부모로 전파(크래시) → runCatching 흡수 + supervisorScope.
-        val (summary, buddies) = supervisorScope {
+        data class Loaded(
+            val summary: ChallengeSummary?,
+            val buddies: List<NudgeTarget>?,
+            val step: StepChallengeStatus?,
+            val rankings: List<StepRanking>?,
+            val weekly: List<WeeklyChallenge>?,
+        )
+        val loaded = supervisorScope {
             val summaryDeferred = async {
                 runCatching { challengeRepository.getSummary(groupId) }.getOrNull()
             }
             val buddiesDeferred = async {
                 runCatching { challengeRepository.getNudgeTargets(groupId) }.getOrNull()
             }
-            summaryDeferred.await() to buddiesDeferred.await()
+            val stepDeferred = async {
+                runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
+            }
+            val rankingsDeferred = async {
+                runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+            }
+            val weeklyDeferred = async {
+                runCatching { challengeRepository.getWeeklyChallenges(groupId) }.getOrNull()
+            }
+            Loaded(
+                summary = summaryDeferred.await(),
+                buddies = buddiesDeferred.await(),
+                step = stepDeferred.await(),
+                rankings = rankingsDeferred.await(),
+                weekly = weeklyDeferred.await(),
+            )
         }
         setState {
             copy(
                 isLoading = false,
-                summary = summary ?: this.summary,
-                buddies = buddies ?: this.buddies,
+                summary = loaded.summary ?: this.summary,
+                buddies = loaded.buddies ?: this.buddies,
+                stepChallenge = loaded.step ?: this.stepChallenge,
+                stepRankings = loaded.rankings ?: this.stepRankings,
+                weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
+            )
+        }
+    }
+
+    /** 걸음 수 새로고침 — 현황 + 순위만 재조회. */
+    private fun refreshStep() = viewModelScope.launch {
+        val groupId = currentGroupId ?: return@launch
+        val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
+        val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+        setState {
+            copy(
+                stepChallenge = step ?: stepChallenge,
+                stepRankings = rankings ?: stepRankings,
             )
         }
     }

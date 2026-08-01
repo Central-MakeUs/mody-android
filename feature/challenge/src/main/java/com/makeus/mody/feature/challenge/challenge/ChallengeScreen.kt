@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.challenge.challenge.component.ChallengeTabContent
 import com.makeus.mody.feature.challenge.challenge.component.StreakTabContent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
@@ -72,7 +73,15 @@ private fun ChallengeContent(
                     nudgingMemberIds = state.nudgingMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
                 )
-                ChallengeSubTab.CHALLENGE -> ChallengeTabPlaceholder()
+                ChallengeSubTab.CHALLENGE -> ChallengeTabContent(
+                    isLoading = state.isLoading,
+                    stepChallenge = state.stepChallenge,
+                    stepRankings = state.stepRankings,
+                    weeklyChallenges = state.weeklyChallenges,
+                    onStepRefreshClick = { onIntent(ChallengeIntent.StepRefreshClicked) },
+                    onChangeStepChallengeClick = { onIntent(ChallengeIntent.ChangeStepChallengeClicked) },
+                    onWeeklyChallengeClick = { onIntent(ChallengeIntent.WeeklyChallengeClicked(it)) },
+                )
             }
         }
     }
@@ -126,18 +135,6 @@ private fun SubTabRow(
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(ModyTheme.colors.gray01),
-        )
-    }
-}
-
-// TODO(challenge): 챌린지 탭 — 그룹 필수(걸음 수 게이지·기여도 순위) + 그룹 선택(주간 챌린지) 구현.
-@Composable
-private fun ChallengeTabPlaceholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = "챌린지",
-            style = ModyTheme.typography.b6,
-            color = ModyTheme.colors.gray06,
         )
     }
 }

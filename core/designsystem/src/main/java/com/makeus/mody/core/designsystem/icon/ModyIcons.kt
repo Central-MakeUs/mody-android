@@ -49,6 +49,8 @@ object ModyIcons {
     @DrawableRes val Meatball = R.drawable.ic_meatball
     @DrawableRes val Medal = R.drawable.ic_medal
     @DrawableRes val Mypage = R.drawable.ic_mypage
+    /** 콕 찌르기(손가락). */
+    @DrawableRes val Nudge = R.drawable.ic_nudge
     @DrawableRes val Party = R.drawable.ic_party
     @DrawableRes val Plus = R.drawable.ic_plus
     @DrawableRes val Plus1 = R.drawable.ic_plus_1

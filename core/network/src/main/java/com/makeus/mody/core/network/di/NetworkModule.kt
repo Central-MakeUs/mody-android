@@ -3,6 +3,7 @@ package com.makeus.mody.core.network.di
 import android.util.Log
 import com.makeus.mody.core.network.BuildConfig
 import com.makeus.mody.core.network.api.AuthApi
+import com.makeus.mody.core.network.api.ChallengeApi
 import com.makeus.mody.core.network.api.FeedApi
 import com.makeus.mody.core.network.api.GroupApi
 import com.makeus.mody.core.network.api.ModyApi
@@ -103,6 +104,11 @@ object NetworkModule {
     @Singleton
     fun provideFeedApi(retrofit: Retrofit): FeedApi =
         retrofit.create(FeedApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideChallengeApi(retrofit: Retrofit): ChallengeApi =
+        retrofit.create(ChallengeApi::class.java)
 
     @Provides
     @Singleton

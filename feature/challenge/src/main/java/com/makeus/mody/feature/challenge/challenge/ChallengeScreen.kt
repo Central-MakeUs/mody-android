@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -21,8 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Text
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.challenge.challenge.component.StreakTabContent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
@@ -31,7 +34,14 @@ import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
 @Composable
 fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 탭 진입/복귀 시 재조회(기록 작성 후 돌아오면 버디 상태 반영). VM은 유지되므로 재조회 필요.
+    LaunchedEffect(Unit) { viewModel.onIntent(ChallengeIntent.ScreenEntered) }
     ChallengeContent(state = state, onIntent = viewModel::onIntent)
+
+    ModyErrorDialog(
+        message = state.error,
+        onDismiss = { viewModel.onIntent(ChallengeIntent.ErrorShown) },
+    )
 }
 
 /** 상태를 받아 렌더만 하는 stateless 화면. 프리뷰/테스트는 여기에 직접 상태를 넣는다. */
@@ -55,7 +65,13 @@ private fun ChallengeContent(
         // weight(1f): 탭 콘텐츠는 남은 높이만 차지 — fillMaxSize 콘텐츠가 하단 바 뒤로 밀리지 않게.
         Box(modifier = Modifier.weight(1f)) {
             when (state.selectedSubTab) {
-                ChallengeSubTab.STREAK -> StreakTabPlaceholder()
+                ChallengeSubTab.STREAK -> StreakTabContent(
+                    isLoading = state.isLoading,
+                    summary = state.summary,
+                    buddies = state.buddies,
+                    nudgingMemberIds = state.nudgingMemberIds,
+                    onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
+                )
                 ChallengeSubTab.CHALLENGE -> ChallengeTabPlaceholder()
             }
         }
@@ -110,18 +126,6 @@ private fun SubTabRow(
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(ModyTheme.colors.gray01),
-        )
-    }
-}
-
-// TODO(challenge): 연속 기록 탭 — 그룹 통계(N일째/D+N/운동시간/챌린지 개수) + 버디 신기록(콕 찌르기) 구현.
-@Composable
-private fun StreakTabPlaceholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = "연속 기록",
-            style = ModyTheme.typography.b6,
-            color = ModyTheme.colors.gray06,
         )
     }
 }

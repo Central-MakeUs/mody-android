@@ -3,6 +3,9 @@ package com.makeus.mody.core.network.api
 import com.makeus.mody.core.network.model.ApiResponse
 import com.makeus.mody.core.network.model.challenge.ChallengeSummaryResponse
 import com.makeus.mody.core.network.model.challenge.NudgeTargetListResponse
+import com.makeus.mody.core.network.model.challenge.StepChallengeStatusResponse
+import com.makeus.mody.core.network.model.challenge.StepRankingListResponse
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeListResponse
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -27,4 +30,22 @@ interface ChallengeApi {
         @Path("groupId") groupId: Long,
         @Path("memberId") memberId: Long,
     ): ApiResponse<Unit>
+
+    /** 진행 중인 그룹 필수(걸음 수) 챌린지 현황. */
+    @GET("api/v1/groups/{groupId}/challenges/step/current")
+    suspend fun getStepChallenge(
+        @Path("groupId") groupId: Long,
+    ): ApiResponse<StepChallengeStatusResponse>
+
+    /** 걸음 수 기여도 순위. */
+    @GET("api/v1/groups/{groupId}/challenges/step/rankings")
+    suspend fun getStepRankings(
+        @Path("groupId") groupId: Long,
+    ): ApiResponse<StepRankingListResponse>
+
+    /** 이번주 그룹 선택(주간) 챌린지 목록. */
+    @GET("api/v1/groups/{groupId}/challenges/weekly")
+    suspend fun getWeeklyChallenges(
+        @Path("groupId") groupId: Long,
+    ): ApiResponse<WeeklyChallengeListResponse>
 }

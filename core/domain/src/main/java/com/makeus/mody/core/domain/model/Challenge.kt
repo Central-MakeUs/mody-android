@@ -19,3 +19,35 @@ data class NudgeTarget(
     val profileImageUrl: String?,
     val recordedToday: Boolean,
 )
+
+/** 그룹 필수(걸음 수) 챌린지 현황. */
+data class StepChallengeStatus(
+    val groupChallengeId: Long,
+    val title: String,
+    val targetStepCount: Int,
+    val currentStepCount: Int,
+) {
+    /** 달성률(0~100). 목표 0이면 0. */
+    val progressPercent: Int
+        get() = if (targetStepCount <= 0) 0
+        else (currentStepCount * 100 / targetStepCount).coerceIn(0, 100)
+}
+
+/** 걸음 수 기여도 순위 한 줄. */
+data class StepRanking(
+    val rank: Int,
+    val memberId: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+    val stepCount: Int,
+)
+
+/** 그룹 선택(주간) 챌린지 한 줄. */
+data class WeeklyChallenge(
+    val groupChallengeId: Long,
+    val title: String,
+    /** 마감 요일 — 서버 enum 문자열(MONDAY~SUNDAY). D-day 계산은 표시 계층에서. */
+    val deadlineDayOfWeek: String,
+    val participantCount: Int,
+    val randomParticipantNickname: String?,
+)

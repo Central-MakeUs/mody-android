@@ -26,6 +26,8 @@ object ModyIcons {
     @DrawableRes val Comment = R.drawable.ic_comment
     @DrawableRes val Cook = R.drawable.ic_cook
     @DrawableRes val CookFill = R.drawable.ic_cook_fill
+    /** 1등 왕관(옐로). */
+    @DrawableRes val Crown = R.drawable.ic_crown
     @DrawableRes val Down = R.drawable.ic_down
     @DrawableRes val Edit = R.drawable.ic_edit
     @DrawableRes val Exchange = R.drawable.ic_exchange
@@ -58,6 +60,8 @@ object ModyIcons {
     @DrawableRes val Profile = R.drawable.ic_profile
     @DrawableRes val Profile1 = R.drawable.ic_profile_1
     @DrawableRes val Record = R.drawable.ic_record
+    /** 새로고침(원형 화살표). */
+    @DrawableRes val Reset = R.drawable.ic_reset
     @DrawableRes val Right = R.drawable.ic_right
     @DrawableRes val Send = R.drawable.ic_send
     @DrawableRes val SendFilled = R.drawable.ic_send_filled

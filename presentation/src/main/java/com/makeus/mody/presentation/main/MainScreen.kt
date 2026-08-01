@@ -1,23 +1,19 @@
 package com.makeus.mody.presentation.main
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import com.makeus.mody.feature.challenge.challenge.ChallengeScreen
 import com.makeus.mody.feature.feed.feed.FeedScreen
 import com.makeus.mody.feature.feed.feed.FeedViewModel
 import com.makeus.mody.feature.feed.feed.component.FeedWriteFab
@@ -41,7 +37,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     MainTab.FEED -> FeedScreen(viewModel = feedViewModel)
-                    MainTab.CHALLENGE -> ChallengeTabPlaceholder()
+                    MainTab.CHALLENGE -> ChallengeScreen()
                     MainTab.MY -> MyPageScreen()
                 }
             }
@@ -65,18 +61,6 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                 fabBottomPadding = 12.dp + MainBottomBarContentHeight,
             )
         }
-    }
-}
-
-// TODO(challenge): 챌린지 화면 구현 시 교체.
-@Composable
-private fun ChallengeTabPlaceholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = "챌린지",
-            style = ModyTheme.typography.b6,
-            color = ModyTheme.colors.gray06,
-        )
     }
 }
 

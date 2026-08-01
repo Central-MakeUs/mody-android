@@ -1,7 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,11 +8,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,9 +52,12 @@ private fun ChallengeContent(
             onSelect = { onIntent(ChallengeIntent.SubTabSelected(it)) },
         )
 
-        when (state.selectedSubTab) {
-            ChallengeSubTab.STREAK -> StreakTabPlaceholder()
-            ChallengeSubTab.CHALLENGE -> ChallengeTabPlaceholder()
+        // weight(1f): 탭 콘텐츠는 남은 높이만 차지 — fillMaxSize 콘텐츠가 하단 바 뒤로 밀리지 않게.
+        Box(modifier = Modifier.weight(1f)) {
+            when (state.selectedSubTab) {
+                ChallengeSubTab.STREAK -> StreakTabPlaceholder()
+                ChallengeSubTab.CHALLENGE -> ChallengeTabPlaceholder()
+            }
         }
     }
 }
@@ -64,15 +69,18 @@ private fun SubTabRow(
     onSelect: (ChallengeSubTab) -> Unit,
 ) {
     Column {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        // selectableGroup + Role.Tab: 접근성 서비스에 상호배타 탭 그룹으로 노출.
+        Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
             ChallengeSubTab.entries.forEach { tab ->
                 val isSelected = tab == selected
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable(
+                        .selectable(
+                            selected = isSelected,
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            role = Role.Tab,
                         ) { onSelect(tab) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

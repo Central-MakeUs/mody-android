@@ -25,9 +25,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "INVITE_BASE_URL", "\"https://dev-mody.store/invite\"")
+            // 카카오 콘솔 메시지 템플릿 (모디 DEV)
+            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135810L")
         }
         release {
             buildConfigField("String", "INVITE_BASE_URL", "\"https://prod-mody.shop/invite\"")
+            // 카카오 콘솔 메시지 템플릿 (모디 PROD)
+            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135811L")
         }
     }
 }

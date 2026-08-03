@@ -13,6 +13,9 @@ local.properties
 
 # Build outputs
 release/
+# 단, release 는 빌드 산출물 폴더명이자 변형별 소스셋 이름이기도 하다 — 소스는 추적한다.
+!*/src/release/
+!*/*/src/release/
 *.apk
 *.aab
 

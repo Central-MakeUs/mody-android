@@ -257,7 +257,7 @@ private fun StepGauge(percent: Int) {
                 Image(
                     painter = painterResource(R.drawable.img_challenge_walker),
                     contentDescription = null,
-                    modifier = Modifier.size(width = 53.dp, height = 69.dp),
+                    modifier = Modifier.size(width = 65.dp, height = 82.dp),
                 )
             }
         }

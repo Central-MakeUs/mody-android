@@ -53,10 +53,17 @@ class ChallengeViewModel @Inject constructor(
     private fun load() = viewModelScope.launch {
         // 첫 로드만 스켈레톤, 탭 복귀 재조회는 조용히 갱신(깜빡임 방지).
         setState { copy(isLoading = summary == null) }
+        val previousGroupId = currentGroupId
         val groupId = resolveGroupId()
         if (groupId == null) {
             setState { copy(isLoading = false) }
             return@launch
+        }
+        currentGroupId = groupId
+        // 피드에서 그룹을 바꾸고 넘어온 경우. 아래 병합이 `?: this.summary` 로 이전 값을
+        // 유지하므로, 여기서 비우지 않으면 새 그룹 조회가 실패한 항목에 옛 그룹 기록이 남는다.
+        if (previousGroupId != null && previousGroupId != groupId) {
+            setState { ChallengeState(selectedSubTab = selectedSubTab, isLoading = true) }
         }
         // async 를 launch 자식으로 두고 던지면 부모로 전파(크래시) → runCatching 흡수 + supervisorScope.
         data class Loaded(
@@ -115,13 +122,19 @@ class ChallengeViewModel @Inject constructor(
         }
     }
 
-    /** 마지막 선택 그룹(세션) > 첫 그룹. 피드의 그룹 결정 규칙과 동일. */
+    /**
+     * 마지막 선택 그룹(세션) > 첫 그룹. 피드의 그룹 결정 규칙과 동일.
+     *
+     * 캐시해두고 재사용하지 않는다. 피드에서 그룹을 바꾸면 세션의 마지막 그룹만 갱신되고
+     * (FeedViewModel.selectGroup) 이 ViewModel 은 탭 전환에도 살아있으므로, 캐시를 쓰면
+     * 앱을 재시작할 때까지 이전 그룹 데이터를 계속 보여주게 된다.
+     * 조회 실패 시에만 직전 그룹을 유지한다.
+     */
     private suspend fun resolveGroupId(): Long? {
-        currentGroupId?.let { return it }
-        val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return null
+        val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return currentGroupId
         val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
             ?.takeIf { id -> groups.any { it.groupId == id } }
-        return (lastGroupId ?: groups.firstOrNull()?.groupId).also { currentGroupId = it }
+        return lastGroupId ?: groups.firstOrNull()?.groupId
     }
 
     private fun nudge(memberId: Long) = viewModelScope.launch {

@@ -67,16 +67,23 @@ fun StreakTabContent(
     }
 }
 
-/** "N일째 전원 연속 기록 완료!" + 축하 캐릭터 + 통계 3열. */
+/**
+ * "N일째 전원 연속 기록 완료!" + 축하 캐릭터 + 통계 3열.
+ *
+ * 요약이 없으면(조회 실패/로딩 전) 섹션을 통째로 숨긴다. 0 으로 채워 그리면
+ * "0일째 전원 연속 기록 완료!" 가 축하 캐릭터와 함께 떠서 데이터가 있는 것처럼 보인다.
+ * 기여도 순위·주간 챌린지 섹션과 동일한 규칙.
+ */
 @Composable
 private fun StreakHeader(summary: ChallengeSummary?) {
+    if (summary == null) return
     Column(modifier = Modifier.padding(horizontal = 24.dp)) {
         Spacer(modifier = Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "${summary?.allMemberRecordedDays ?: 0}",
+                        text = "${summary.allMemberRecordedDays}",
                         style = ModyTheme.typography.h1.copy(fontSize = 36.sp, lineHeight = 50.4.sp),
                         color = ModyTheme.colors.gray09,
                     )
@@ -108,7 +115,7 @@ private fun StreakHeader(summary: ChallengeSummary?) {
             StatColumn(
                 caption = "모디 그룹과",
                 label = "함께한지",
-                value = { StatValue(number = "D+${summary?.daysTogether ?: 0}") },
+                value = { StatValue(number = "D+${summary.daysTogether}") },
             )
             StatDivider()
             StatColumn(
@@ -116,7 +123,7 @@ private fun StreakHeader(summary: ChallengeSummary?) {
                 label = "운동시간",
                 value = {
                     StatValue(
-                        number = "${(summary?.monthlyExerciseMinutes ?: 0) / 60}",
+                        number = "${summary.monthlyExerciseMinutes / 60}",
                         unit = "시간",
                     )
                 },
@@ -127,7 +134,7 @@ private fun StreakHeader(summary: ChallengeSummary?) {
                 label = "챌린지 개수",
                 value = {
                     StatValue(
-                        number = "${summary?.monthlyCompletedChallengeCount ?: 0}",
+                        number = "${summary.monthlyCompletedChallengeCount}",
                         unit = "개",
                     )
                 },

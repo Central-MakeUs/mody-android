@@ -116,6 +116,7 @@ class ChallengeViewModel @Inject constructor(
                 isLoading = false,
                 summary = loaded.summary ?: this.summary,
                 buddies = loaded.buddies ?: this.buddies,
+                buddiesLoaded = buddiesLoaded || loaded.buddies != null,
                 nudgedMemberIds = nudged,
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,

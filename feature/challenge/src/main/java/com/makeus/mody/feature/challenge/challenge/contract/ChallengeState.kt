@@ -20,6 +20,13 @@ data class ChallengeState(
     val summary: ChallengeSummary? = null,
     /** 버디 신기록 도전 목록. */
     val buddies: List<NudgeTarget> = emptyList(),
+    /**
+     * 버디 목록 조회가 한 번이라도 성공했는지.
+     *
+     * 조회 실패도 빈 목록으로 보이기 때문에, "혼자인 그룹" 빈 화면은 성공 응답이
+     * 실제로 비었을 때만 띄운다. 네트워크 오류로 빈 화면이 뜨는 것을 막는다.
+     */
+    val buddiesLoaded: Boolean = false,
     /** 콕 찌르기 전송 중인 memberId — 중복 탭 방지. */
     val nudgingMemberIds: Set<Long> = emptySet(),
     /**

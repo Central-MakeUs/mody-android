@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,12 +47,19 @@ fun StreakTabContent(
     isLoading: Boolean,
     summary: ChallengeSummary?,
     buddies: List<NudgeTarget>,
+    buddiesLoaded: Boolean,
     nudgingMemberIds: Set<Long>,
     nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     if (isLoading) {
         ModyLoadingScreen()
+        return
+    }
+    // 나 말고 함께하는 멤버가 없으면 연속 기록 자체가 성립하지 않는다.
+    // 조회 실패도 빈 목록이라 성공 응답이 실제로 비었을 때만 빈 화면으로 간다.
+    if (buddiesLoaded && buddies.isEmpty()) {
+        SoloGroupEmpty()
         return
     }
     Column(
@@ -70,6 +78,38 @@ fun StreakTabContent(
 }
 
 /**
+ * 나 혼자인 그룹 — 연속 기록이 성립하지 않을 때의 빈 화면.
+ *
+ * TODO(challenge): 시안 반영 필요.
+ *  Figma node-id 180-563 (모디 MODY, file eUXrUuSsupAVdKb5xIatWW).
+ *  일러스트·문구·CTA(그룹 초대 유도로 추정)가 확정되면 이 자리를 교체한다.
+ *  지금은 조건 분기만 먼저 넣고 최소 문구로 둔다.
+ */
+@Composable
+private fun SoloGroupEmpty() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "아직 함께하는 버디가 없어요",
+            style = ModyTheme.typography.b2,
+            color = ModyTheme.colors.gray09,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "그룹에 버디를 초대하면\n연속 기록을 함께 쌓을 수 있어요.",
+            style = ModyTheme.typography.c2,
+            color = ModyTheme.colors.gray06,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
  * "N일째 전원 연속 기록 완료!" + 축하 캐릭터 + 통계 3열.
  *
  * 요약이 없으면(조회 실패/로딩 전) 섹션을 통째로 숨긴다. 0 으로 채워 그리면
@@ -83,16 +123,20 @@ private fun StreakHeader(summary: ChallengeSummary?) {
         Spacer(modifier = Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
+                // 글자 아래 여백으로 붙어 글자만 위로 뜨기 때문. 베이스라인으로 맞춘다.
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = "${summary.allMemberRecordedDays}",
                         style = ModyTheme.typography.h1.copy(fontSize = 36.sp, lineHeight = 50.4.sp),
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         text = "일째",
                         style = ModyTheme.typography.h1,
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                 }
                 Text(
@@ -102,9 +146,10 @@ private fun StreakHeader(summary: ChallengeSummary?) {
                 )
             }
             Image(
-                painter = painterResource(R.drawable.img_challenge_celebrate),
+                painter = painterResource(R.drawable.img_streak),
                 contentDescription = null,
-                modifier = Modifier.size(width = 96.dp, height = 90.dp),
+                // 에셋 원본 비율(118:91). 이전 96x90 을 그대로 쓰면 가로가 눌린다.
+                modifier = Modifier.size(width = 118.dp, height = 91.dp),
             )
         }
 
@@ -364,8 +409,25 @@ private fun StreakTabContentPreview() {
                 NudgeTarget(2, "동준", null, recordedToday = false),
                 NudgeTarget(3, "도윤", null, recordedToday = false),
             ),
+            buddiesLoaded = true,
             nudgingMemberIds = emptySet(),
             nudgedMemberIds = setOf(3L),
+            onNudgeClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "혼자인 그룹")
+@Composable
+private fun StreakTabContentSoloPreview() {
+    ModyTheme {
+        StreakTabContent(
+            isLoading = false,
+            summary = null,
+            buddies = emptyList(),
+            buddiesLoaded = true,
+            nudgingMemberIds = emptySet(),
+            nudgedMemberIds = emptySet(),
             onNudgeClick = {},
         )
     }

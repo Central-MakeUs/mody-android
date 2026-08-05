@@ -123,16 +123,20 @@ private fun StreakHeader(summary: ChallengeSummary?) {
         Spacer(modifier = Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
+                // 글자 아래 여백으로 붙어 글자만 위로 뜨기 때문. 베이스라인으로 맞춘다.
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = "${summary.allMemberRecordedDays}",
                         style = ModyTheme.typography.h1.copy(fontSize = 36.sp, lineHeight = 50.4.sp),
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         text = "일째",
                         style = ModyTheme.typography.h1,
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                 }
                 Text(

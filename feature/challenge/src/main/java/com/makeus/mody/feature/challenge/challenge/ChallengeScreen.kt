@@ -109,6 +109,7 @@ private fun ChallengeContent(
                     isLoading = state.isLoading,
                     summary = state.summary,
                     buddies = state.buddies,
+                    buddiesLoaded = state.buddiesLoaded,
                     nudgingMemberIds = state.nudgingMemberIds,
                     nudgedMemberIds = state.nudgedMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },

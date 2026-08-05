@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.di
 
 import com.makeus.mody.core.data.repository.AuthRepositoryImpl
 import com.makeus.mody.core.data.repository.ChallengeRepositoryImpl
+import com.makeus.mody.core.data.repository.HealthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
 import com.makeus.mody.core.data.repository.ImageUploadRepositoryImpl
@@ -15,6 +16,7 @@ import com.makeus.mody.core.data.repository.SessionRepositoryImpl
 import com.makeus.mody.core.data.repository.TokenManagerImpl
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.ChallengeRepository
+import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
@@ -71,6 +73,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindChallengeRepository(impl: ChallengeRepositoryImpl): ChallengeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHealthRepository(impl: HealthRepositoryImpl): HealthRepository
 
     @Binds
     @Singleton

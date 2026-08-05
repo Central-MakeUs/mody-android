@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -13,13 +14,16 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Text
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
@@ -37,6 +41,30 @@ fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // 탭 진입/복귀 시 재조회(기록 작성 후 돌아오면 버디 상태 반영). VM은 유지되므로 재조회 필요.
     LaunchedEffect(Unit) { viewModel.onIntent(ChallengeIntent.ScreenEntered) }
+
+    // Health Connect 권한 요청. 허용 집합을 그대로 돌려주므로 요청한 권한이 전부 포함됐는지로 판정.
+    // 요청 집합은 화면 로컬에 따로 붙든다 — 런처 콜백은 항상 최신 값을 읽으므로,
+    // 런처를 띄운 직후 비우는 state 를 그대로 참조하면 결과가 늘 '거부'로 판정된다.
+    var pendingHealthPermissions by remember { mutableStateOf<Set<String>?>(null) }
+    val healthPermissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract(),
+    ) { grantedPermissions ->
+        val requested = pendingHealthPermissions
+        pendingHealthPermissions = null
+        viewModel.onIntent(
+            ChallengeIntent.HealthPermissionResult(
+                granted = requested != null && grantedPermissions.containsAll(requested),
+            ),
+        )
+    }
+    LaunchedEffect(state.healthPermissionRequest) {
+        val permissions = state.healthPermissionRequest
+        if (permissions.isNullOrEmpty()) return@LaunchedEffect
+        pendingHealthPermissions = permissions
+        healthPermissionLauncher.launch(permissions)
+        viewModel.onIntent(ChallengeIntent.HealthPermissionRequestLaunched)
+    }
+
     ChallengeContent(state = state, onIntent = viewModel::onIntent)
 
     ModyErrorDialog(

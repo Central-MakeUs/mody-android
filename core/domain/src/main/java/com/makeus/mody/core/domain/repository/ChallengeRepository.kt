@@ -4,6 +4,7 @@ import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
+import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 
 /** 챌린지 탭 — 그룹 요약 통계, 버디 신기록(콕 찌르기). */
@@ -25,4 +26,14 @@ interface ChallengeRepository {
 
     /** 이번주 그룹 선택(주간) 챌린지 목록. */
     suspend fun getWeeklyChallenges(groupId: Long): List<WeeklyChallenge>
+
+    /**
+     * 오늘 걸음 수를 서버에 반영(upsert). 같은 날짜로 다시 보내면 덮어쓴다.
+     * @param recordedOn 기록 날짜(yyyy-MM-dd)
+     */
+    suspend fun upsertStepRecord(
+        groupId: Long,
+        recordedOn: String,
+        stepCount: Int,
+    ): StepRecordResult
 }

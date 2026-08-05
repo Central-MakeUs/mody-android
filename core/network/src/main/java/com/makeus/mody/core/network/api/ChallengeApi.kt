@@ -5,9 +5,13 @@ import com.makeus.mody.core.network.model.challenge.ChallengeSummaryResponse
 import com.makeus.mody.core.network.model.challenge.NudgeTargetListResponse
 import com.makeus.mody.core.network.model.challenge.StepChallengeStatusResponse
 import com.makeus.mody.core.network.model.challenge.StepRankingListResponse
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertResponse
 import com.makeus.mody.core.network.model.challenge.WeeklyChallengeListResponse
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ChallengeApi {
@@ -36,6 +40,13 @@ interface ChallengeApi {
     suspend fun getStepChallenge(
         @Path("groupId") groupId: Long,
     ): ApiResponse<StepChallengeStatusResponse>
+
+    /** 오늘 걸음 수 반영(같은 날짜 재전송 시 덮어쓰기). */
+    @PUT("api/v1/groups/{groupId}/challenges/step/records")
+    suspend fun upsertStepRecord(
+        @Path("groupId") groupId: Long,
+        @Body request: StepRecordUpsertRequest,
+    ): ApiResponse<StepRecordUpsertResponse>
 
     /** 걸음 수 기여도 순위. */
     @GET("api/v1/groups/{groupId}/challenges/step/rankings")

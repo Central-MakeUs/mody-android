@@ -35,6 +35,12 @@ interface SessionRepository {
     /** 피드에서 마지막으로 보던 그룹 id. 이력 없으면 null. */
     suspend fun getLastGroupId(): Long?
 
+    /** 건강 데이터 권한을 이미 한 번 요청했는지 기록(챌린지 탭 재진입마다 팝업 방지). */
+    suspend fun saveHealthPermissionAsked()
+
+    /** 건강 데이터 권한을 요청한 이력이 있는지. */
+    suspend fun getHealthPermissionAsked(): Boolean
+
     /** 로그아웃 등 세션 초기화(토큰 + 상태 제거). */
     suspend fun clear()
 }

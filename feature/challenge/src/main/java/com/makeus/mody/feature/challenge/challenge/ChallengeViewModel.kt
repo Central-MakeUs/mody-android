@@ -9,7 +9,10 @@ import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
+import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.HealthRepository
+import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -17,6 +20,8 @@ import com.makeus.mody.core.navigation.NotificationGraph
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -28,6 +33,8 @@ class ChallengeViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
+    private val healthRepository: HealthRepository,
+    private val onboardingRepository: OnboardingRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
@@ -42,6 +49,9 @@ class ChallengeViewModel @Inject constructor(
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is ChallengeIntent.NudgeClicked -> nudge(intent.memberId)
             is ChallengeIntent.StepRefreshClicked -> refreshStep()
+            is ChallengeIntent.HealthPermissionRequestLaunched ->
+                setState { copy(healthPermissionRequest = null) }
+            is ChallengeIntent.HealthPermissionResult -> onHealthPermissionResult(intent.granted)
             // TODO(challenge): 걸음 수 챌린지 변경(walk/choose)·주간 챌린지 상세 화면 연결 (후속 PR).
             is ChallengeIntent.ChangeStepChallengeClicked -> Unit
             is ChallengeIntent.WeeklyChallengeClicked -> Unit
@@ -107,11 +117,15 @@ class ChallengeViewModel @Inject constructor(
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
             )
         }
+        // 탭 진입(= 앱 실행 후 첫 진입 포함)마다 오늘 걸음 수를 서버에 반영.
+        syncSteps(groupId, askPermission = false)
     }
 
-    /** 걸음 수 새로고침 — 현황 + 순위만 재조회. */
+    /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
     private fun refreshStep() = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
+        // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
+        syncSteps(groupId, askPermission = true)
         val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
         val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
         setState {
@@ -120,6 +134,71 @@ class ChallengeViewModel @Inject constructor(
                 stepRankings = rankings ?: stepRankings,
             )
         }
+    }
+
+    /**
+     * 오늘 걸음 수를 읽어 서버에 반영한다.
+     *
+     * 권한이 없을 때: [askPermission] 이 true 면 무조건, false 면 아직 물어본 적 없을 때만
+     * 시스템 권한 요청을 띄운다(탭 재진입마다 팝업이 뜨는 것 방지).
+     */
+    private suspend fun syncSteps(groupId: Long, askPermission: Boolean) {
+        if (healthRepository.availability() != HealthAvailability.AVAILABLE) return
+        if (runCatching { healthRepository.hasStepPermission() }.getOrDefault(false)) {
+            uploadTodaySteps(groupId)
+            return
+        }
+        val alreadyAsked = runCatching { sessionRepository.getHealthPermissionAsked() }
+            .getOrDefault(false)
+        if (!askPermission && alreadyAsked) return
+        runCatching { sessionRepository.saveHealthPermissionAsked() }
+        setState { copy(healthPermissionRequest = healthRepository.stepPermissions) }
+    }
+
+    /** 권한 요청 결과 — 서버에 연동 여부를 남기고, 허용됐으면 바로 동기화. */
+    private fun onHealthPermissionResult(granted: Boolean) = viewModelScope.launch {
+        setState { copy(healthPermissionRequest = null) }
+        // 연동 여부 기록 실패는 사용자 흐름을 막을 이유가 없어 조용히 넘긴다.
+        runCatching { onboardingRepository.reportHealthConnection(granted) }
+        if (!granted) return@launch
+        val groupId = currentGroupId ?: return@launch
+        uploadTodaySteps(groupId)
+        val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
+        val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+        setState {
+            copy(
+                stepChallenge = step ?: stepChallenge,
+                stepRankings = rankings ?: stepRankings,
+            )
+        }
+    }
+
+    /**
+     * 건강 데이터의 오늘 걸음 수를 서버에 upsert 하고, 응답의 그룹 누적값을 즉시 반영한다.
+     * 진행 중인 걸음 수 챌린지가 없으면 서버가 실패를 주므로 조용히 넘긴다.
+     */
+    private suspend fun uploadTodaySteps(groupId: Long) {
+        setState { copy(isSyncingSteps = true) }
+        val steps = runCatching { healthRepository.readTodayStepCount() }.getOrNull()
+        if (steps != null) {
+            runCatching {
+                challengeRepository.upsertStepRecord(
+                    groupId = groupId,
+                    recordedOn = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                    stepCount = steps,
+                )
+            }.onSuccess { result ->
+                setState {
+                    copy(
+                        stepChallenge = stepChallenge?.copy(
+                            currentStepCount = result.currentStepCount,
+                            targetStepCount = result.targetStepCount,
+                        ),
+                    )
+                }
+            }
+        }
+        setState { copy(isSyncingSteps = false) }
     }
 
     /**

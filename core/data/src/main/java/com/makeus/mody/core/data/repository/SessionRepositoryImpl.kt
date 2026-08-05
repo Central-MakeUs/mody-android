@@ -37,6 +37,7 @@ class SessionRepositoryImpl @Inject constructor(
         val MAIN_ACCESSIBLE = booleanPreferencesKey("main_accessible")
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
         val LAST_GROUP_ID = longPreferencesKey("last_group_id")
+        val HEALTH_PERMISSION_ASKED = booleanPreferencesKey("health_permission_asked")
     }
 
     private val safePreferences: Flow<Preferences>
@@ -85,6 +86,13 @@ class SessionRepositoryImpl @Inject constructor(
 
     override suspend fun getLastGroupId(): Long? =
         safePreferences.map { it[Keys.LAST_GROUP_ID] }.first()
+
+    override suspend fun saveHealthPermissionAsked() {
+        dataStore.edit { it[Keys.HEALTH_PERMISSION_ASKED] = true }
+    }
+
+    override suspend fun getHealthPermissionAsked(): Boolean =
+        safePreferences.map { it[Keys.HEALTH_PERMISSION_ASKED] ?: false }.first()
 
     override suspend fun clear() {
         tokenManager.clear()

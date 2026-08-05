@@ -15,6 +15,7 @@ import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
+import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import com.makeus.mody.core.navigation.RecordGraph
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
@@ -35,6 +36,7 @@ class FeedViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
+    private val pendingStreakTabHolder: PendingStreakTabHolder,
     private val sessionRepository: SessionRepository,
     private val myPageRepository: MyPageRepository,
     remoteConfigRepository: RemoteConfigRepository,
@@ -134,8 +136,8 @@ class FeedViewModel @Inject constructor(
 
             is FeedIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
-            // TODO(feed): 콕찌르기 연결
-            is FeedIntent.PokeClicked -> Unit
+            // 챌린지 탭(연속 기록)으로. 탭 전환은 MainScreenViewModel, 서브탭은 ChallengeViewModel 이 처리.
+            is FeedIntent.PokeClicked -> pendingStreakTabHolder.set()
             is FeedIntent.FeedCardClicked -> {
                 val groupId = currentGroupId ?: return
                 navigationHelper.navigate(

@@ -7,12 +7,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +53,28 @@ import java.util.Locale
 
 /** 달성 걸음수 강조 컬러(시안 지정 — 팔레트 외 값). */
 private val StepYellow = Color(0xFFF3D42F)
+
+/** 게이지 좌우 여백 — 섹션 패딩(24) 안쪽으로 더 들어가는 값. 시안 left 54 기준. */
+private val GaugeInset = 30.dp
+
+/** 호 윗변 ~ %/캐릭터 묶음 윗변 간격. 시안: 호 322 → % 358. */
+private val GaugeContentTop = 36.dp
+
+/** 캐릭터 크기(시안 64.63 x 81.87). */
+private val WalkerWidth = 65.dp
+private val WalkerHeight = 82.dp
+
+/**
+ * 게이지 영역 높이 = 위 여백 + %(28sp 줄높이 39.2) + 캐릭터.
+ * 반원 높이(146.5)보다 커서 캐릭터가 호 밑변 아래로 내려오고, 그만큼 아래 요소가 밀린다.
+ */
+private val GaugeHeight = GaugeContentTop + 40.dp + WalkerHeight
+
+/** 호 밑변 ~ 0/100 라벨 윗변 간격. */
+private val GaugeLabelGap = 5.dp
+
+/** "100" 은 호 오른쪽 끝(347)보다 더 나간다(시안 우측 끝 353). */
+private val GaugeMaxLabelOffset = 6.dp
 
 /**
  * 챌린지 탭: 그룹 필수(걸음 수 게이지 + 기여도 순위) + 그룹 선택(주간 챌린지 목록).
@@ -208,20 +232,25 @@ private fun StepChallengeSection(
 /** 반원 게이지 + 중앙 %/걷는 캐릭터 + 0/100 라벨. */
 @Composable
 private fun StepGauge(percent: Int) {
-    val trackColor = ModyTheme.colors.gray01
+    // 시안 실측: 트랙 #E4E4E4(gray02), 진행 #FFE24A(primary100), 선 두께 12.
+    val trackColor = ModyTheme.colors.gray02
     val progressColor = ModyTheme.colors.primary100
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
+        // 시안(402dp 프레임): 원 지름 292.95, 좌 54 / 우 55 → 섹션 패딩 24 안쪽으로 30 더 들어간다.
+        // 높이는 반원(146.5)이 아니라 캐릭터 밑변까지 잡는다 — 그래야 아래 요소와 겹치지 않는다.
+        // 호는 아래 Canvas 가 항상 Box 윗변에 붙여 그리므로 높이를 키워도 위치가 안 밀린다.
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .height(150.dp),
-            contentAlignment = Alignment.BottomCenter,
+                .padding(horizontal = GaugeInset)
+                .height(GaugeHeight),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 24.dp.toPx()
-                val diameter = minOf(size.width, size.height * 2f) - stroke
-                val topLeft = Offset((size.width - diameter) / 2f, size.height * 2f - diameter - stroke / 2f)
+                val stroke = 12.dp.toPx()
+                // 바깥 지름 = 폭. 중심선 원을 stroke/2 만큼 안쪽으로 넣어 윗변을 Box 상단에 맞춘다.
+                val diameter = size.width - stroke
+                val topLeft = Offset(stroke / 2f, stroke / 2f)
                 val arcSize = Size(diameter, diameter)
                 drawArc(
                     color = trackColor,
@@ -242,33 +271,43 @@ private fun StepGauge(percent: Int) {
                     style = Stroke(width = stroke, cap = StrokeCap.Round),
                 )
             }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // %+캐릭터 묶음은 호 윗변에서 36 아래에서 시작한다(시안: 호 322 → % 358).
+            // 둘 사이 간격은 0 — %(28 Bold) 줄 높이 39.2 에 캐릭터가 바로 붙고,
+            // 그 결과 캐릭터 밑변이 호 밑변보다 약 10 내려온다.
+            Column(
+                modifier = Modifier.offset(y = GaugeContentTop),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = buildAnnotatedString {
                         withStyle(ModyTheme.typography.h1.toSpanStyle()) { append("$percent") }
-                        withStyle(
-                            ModyTheme.typography.b1.toSpanStyle().copy(fontSize = 22.sp),
-                        ) { append("%") }
+                        withStyle(ModyTheme.typography.b1.toSpanStyle()) { append("%") }
                     },
                     style = ModyTheme.typography.h1,
                     color = ModyTheme.colors.gray10,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 Image(
                     painter = painterResource(R.drawable.img_challenge_walker),
                     contentDescription = null,
-                    modifier = Modifier.size(width = 65.dp, height = 82.dp),
+                    modifier = Modifier.size(width = WalkerWidth, height = WalkerHeight),
                 )
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 28.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(text = "0", style = ModyTheme.typography.c2, color = ModyTheme.colors.gray06)
-            Text(text = "100", style = ModyTheme.typography.c2, color = ModyTheme.colors.gray06)
+            // 0/100 은 호 밑변에 붙는다. 바깥 지름 = Box 폭이므로 호 밑변 y = 폭/2.
+            // Box 밖에 두면 캐릭터 높이(158)만큼 아래로 밀려 호와 멀어진다.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = maxWidth / 2 + GaugeLabelGap),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "0", style = ModyTheme.typography.c2, color = ModyTheme.colors.gray06)
+                Text(
+                    text = "100",
+                    style = ModyTheme.typography.c2,
+                    color = ModyTheme.colors.gray06,
+                    modifier = Modifier.offset(x = GaugeMaxLabelOffset),
+                )
+            }
         }
     }
 }

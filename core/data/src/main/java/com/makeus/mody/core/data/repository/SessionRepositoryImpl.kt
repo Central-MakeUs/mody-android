@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.makeus.mody.core.data.cache.NotificationSettingsCache
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
@@ -38,6 +39,11 @@ class SessionRepositoryImpl @Inject constructor(
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
         val LAST_GROUP_ID = longPreferencesKey("last_group_id")
         val HEALTH_PERMISSION_ASKED = booleanPreferencesKey("health_permission_asked")
+
+        // 콕 찌르기 기록은 날짜 + "groupId:memberId" 집합으로 둔다. 날짜가 바뀌면
+        // 집합을 통째로 버리므로 따로 정리하는 로직이 필요 없다.
+        val NUDGED_DATE = stringPreferencesKey("nudged_date")
+        val NUDGED_MEMBERS = stringSetPreferencesKey("nudged_members")
     }
 
     private val safePreferences: Flow<Preferences>
@@ -87,6 +93,32 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun getLastGroupId(): Long? =
         safePreferences.map { it[Keys.LAST_GROUP_ID] }.first()
 
+    override suspend fun saveNudgedMember(groupId: Long, memberId: Long, today: String) {
+        dataStore.edit { prefs ->
+            // 날짜가 넘어갔으면 이전 기록은 버리고 오늘 것부터 새로 쌓는다.
+            val kept = if (prefs[Keys.NUDGED_DATE] == today) {
+                prefs[Keys.NUDGED_MEMBERS].orEmpty()
+            } else {
+                emptySet()
+            }
+            prefs[Keys.NUDGED_DATE] = today
+            prefs[Keys.NUDGED_MEMBERS] = kept + nudgeKey(groupId, memberId)
+        }
+    }
+
+    override suspend fun getNudgedMembers(groupId: Long, today: String): Set<Long> =
+        safePreferences.map { prefs ->
+            if (prefs[Keys.NUDGED_DATE] != today) return@map emptySet()
+            val prefix = "$groupId:"
+            prefs[Keys.NUDGED_MEMBERS].orEmpty()
+                .mapNotNull { entry ->
+                    entry.removePrefix(prefix).takeIf { it != entry }?.toLongOrNull()
+                }
+                .toSet()
+        }.first()
+
+    private fun nudgeKey(groupId: Long, memberId: Long): String = "$groupId:$memberId"
+
     override suspend fun saveHealthPermissionAsked() {
         dataStore.edit { it[Keys.HEALTH_PERMISSION_ASKED] = true }
     }
@@ -102,6 +134,9 @@ class SessionRepositoryImpl @Inject constructor(
             it.remove(Keys.MAIN_ACCESSIBLE)
             it.remove(Keys.LAST_LOGIN_TYPE)
             it.remove(Keys.LAST_GROUP_ID)
+            // 계정 전환 시 이전 사용자의 콕 찌르기 이력이 남지 않게 함께 제거.
+            it.remove(Keys.NUDGED_DATE)
+            it.remove(Keys.NUDGED_MEMBERS)
         }
         // 계정 전환 시 이전 사용자의 알림 설정 캐시가 노출되지 않게 함께 제거
         // (로그아웃/탈퇴/세션만료 모두 이 clear 를 지나므로 여기서 일괄 처리).

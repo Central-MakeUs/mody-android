@@ -48,9 +48,12 @@ class ChallengeRepositoryImpl @Inject constructor(
             .ifEmpty { ChallengeFallback.nudgeTargets }
 
     override suspend fun nudge(groupId: Long, memberId: Long) {
-        // 더미 멤버에게는 실제 푸시를 보낼 수 없으므로 debug 폴백 중엔 성공 처리만 한다.
         apiCatching { challengeApi.nudge(groupId, memberId).unwrapResult() }
-            .getOrElse { e -> if (!ChallengeFallback.ENABLED) throw e }
+            .getOrElse { e ->
+                // 더미 멤버는 서버에 없어 항상 실패하므로 폴백 데이터일 때만 성공 처리한다.
+                // 실제 멤버 대상 실패까지 삼키면 디버그에서 원인을 찾을 수 없다.
+                if (ChallengeFallback.nudgeTargets.none { it.memberId == memberId }) throw e
+            }
     }
 
     override suspend fun getStepChallenge(groupId: Long): StepChallengeStatus =

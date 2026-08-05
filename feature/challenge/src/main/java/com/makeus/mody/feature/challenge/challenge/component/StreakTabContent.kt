@@ -47,6 +47,7 @@ fun StreakTabContent(
     summary: ChallengeSummary?,
     buddies: List<NudgeTarget>,
     nudgingMemberIds: Set<Long>,
+    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     if (isLoading) {
@@ -62,6 +63,7 @@ fun StreakTabContent(
         BuddySection(
             buddies = buddies,
             nudgingMemberIds = nudgingMemberIds,
+            nudgedMemberIds = nudgedMemberIds,
             onNudgeClick = onNudgeClick,
         )
     }
@@ -198,6 +200,7 @@ private fun StatDivider() {
 private fun BuddySection(
     buddies: List<NudgeTarget>,
     nudgingMemberIds: Set<Long>,
+    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     Column(
@@ -234,6 +237,7 @@ private fun BuddySection(
                     BuddyRow(
                         buddy = buddy,
                         isNudging = buddy.memberId in nudgingMemberIds,
+                        isNudged = buddy.memberId in nudgedMemberIds,
                         onNudgeClick = { onNudgeClick(buddy.memberId) },
                     )
                 }
@@ -246,6 +250,7 @@ private fun BuddySection(
 private fun BuddyRow(
     buddy: NudgeTarget,
     isNudging: Boolean,
+    isNudged: Boolean,
     onNudgeClick: () -> Unit,
 ) {
     Row(
@@ -268,10 +273,11 @@ private fun BuddyRow(
                 color = ModyTheme.colors.gray06,
             )
         }
-        if (buddy.recordedToday) {
-            RecordedBadge()
-        } else {
-            NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
+        when {
+            buddy.recordedToday -> RecordedBadge()
+            // 서버가 하루 1회로 막으므로 이미 보낸 뒤에는 다시 누를 수 없게 한다.
+            isNudged -> NudgedBadge()
+            else -> NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
         }
     }
 }
@@ -291,6 +297,25 @@ private fun RecordedBadge() {
             text = "기록 완료",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.white,
+        )
+    }
+}
+
+/** 오늘 이미 콕 찌른 상태(비활성). 하루 1회 제한이라 다시 누를 수 없다. */
+@Composable
+private fun NudgedBadge() {
+    Box(
+        modifier = Modifier
+            .width(88.dp)
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(ModyTheme.colors.gray02),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "찔렀어요",
+            style = ModyTheme.typography.c1,
+            color = ModyTheme.colors.gray06,
         )
     }
 }
@@ -337,9 +362,10 @@ private fun StreakTabContentPreview() {
             buddies = listOf(
                 NudgeTarget(1, "예은", null, recordedToday = true),
                 NudgeTarget(2, "동준", null, recordedToday = false),
-                NudgeTarget(3, "도윤", null, recordedToday = true),
+                NudgeTarget(3, "도윤", null, recordedToday = false),
             ),
             nudgingMemberIds = emptySet(),
+            nudgedMemberIds = setOf(3L),
             onNudgeClick = {},
         )
     }

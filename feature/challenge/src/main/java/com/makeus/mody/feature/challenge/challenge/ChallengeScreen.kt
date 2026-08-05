@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -65,6 +67,15 @@ fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
         viewModel.onIntent(ChallengeIntent.HealthPermissionRequestLaunched)
     }
 
+    // 콕 찌르기 성공 안내. 다른 화면(알림 설정 등)과 같은 Toast 방식.
+    val context = LocalContext.current
+    LaunchedEffect(state.toastMessage) {
+        state.toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.onIntent(ChallengeIntent.ToastShown)
+        }
+    }
+
     ChallengeContent(state = state, onIntent = viewModel::onIntent)
 
     ModyErrorDialog(
@@ -99,6 +110,7 @@ private fun ChallengeContent(
                     summary = state.summary,
                     buddies = state.buddies,
                     nudgingMemberIds = state.nudgingMemberIds,
+                    nudgedMemberIds = state.nudgedMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
                 )
                 ChallengeSubTab.CHALLENGE -> ChallengeTabContent(

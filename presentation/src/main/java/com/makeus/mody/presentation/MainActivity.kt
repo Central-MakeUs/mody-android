@@ -196,12 +196,17 @@ class MainActivity : ComponentActivity() {
 
     /**
      * 초대 코드 추출 후 보관. 두 경로를 처리한다:
-     *  - App Link: https://dev-mody.store/invite?code=XXX
+     *  - App Link: https://{inviteHost}/invite?code=XXX (debug=dev-mody.store, release=prod-mody.shop)
      *  - 카카오톡 공유 executionParams: kakao{네이티브키}://kakaolink?code=XXX
+     *
+     * host 는 검사하지 않는다. manifest intent-filter 의 ${inviteHost} 가 buildType 별로
+     * 치환되며 매칭되지 않는 링크는 애초에 전달되지 않으므로, 코드에서 도메인을 다시 고정하면
+     * placeholder 와 어긋나 초대 코드를 놓친다.
      */
     private fun handleInviteDeepLink(intent: Intent?) {
         val data = intent?.data ?: return
-        val isInviteLink = data.host == INVITE_HOST
+        val isInviteLink =
+            data.scheme == INVITE_SCHEME && data.path.orEmpty().startsWith(INVITE_PATH_PREFIX)
         val isKakaoLink =
             data.scheme.orEmpty().startsWith(KAKAO_SCHEME_PREFIX) && data.host == KAKAO_LINK_HOST
         if (!isInviteLink && !isKakaoLink) return
@@ -210,7 +215,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        const val INVITE_HOST = "dev-mody.store"
+        const val INVITE_SCHEME = "https"
+
+        /** manifest intent-filter 의 android:pathPrefix 와 동일하게 유지할 것. */
+        const val INVITE_PATH_PREFIX = "/invite"
         const val KAKAO_SCHEME_PREFIX = "kakao"
         const val KAKAO_LINK_HOST = "kakaolink"
     }

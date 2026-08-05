@@ -55,6 +55,7 @@ class ChallengeViewModel @Inject constructor(
             // TODO(challenge): 걸음 수 챌린지 변경(walk/choose)·주간 챌린지 상세 화면 연결 (후속 PR).
             is ChallengeIntent.ChangeStepChallengeClicked -> Unit
             is ChallengeIntent.WeeklyChallengeClicked -> Unit
+            is ChallengeIntent.ToastShown -> setState { copy(toastMessage = null) }
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
         }
     }
@@ -107,11 +108,15 @@ class ChallengeViewModel @Inject constructor(
                 weekly = weeklyDeferred.await(),
             )
         }
+        // 오늘 이미 찌른 멤버 복원. 날짜가 넘어갔으면 저장소가 빈 집합을 준다.
+        val nudged = runCatching { sessionRepository.getNudgedMembers(groupId, today()) }
+            .getOrDefault(emptySet())
         setState {
             copy(
                 isLoading = false,
                 summary = loaded.summary ?: this.summary,
                 buddies = loaded.buddies ?: this.buddies,
+                nudgedMemberIds = nudged,
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
@@ -184,7 +189,7 @@ class ChallengeViewModel @Inject constructor(
             runCatching {
                 challengeRepository.upsertStepRecord(
                     groupId = groupId,
-                    recordedOn = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                    recordedOn = today(),
                     stepCount = steps,
                 )
             }.onSuccess { result ->
@@ -209,6 +214,9 @@ class ChallengeViewModel @Inject constructor(
      * 앱을 재시작할 때까지 이전 그룹 데이터를 계속 보여주게 된다.
      * 조회 실패 시에만 직전 그룹을 유지한다.
      */
+    /** 서버 날짜 포맷(yyyy-MM-dd). 걸음 수 기록·콕 찌르기 기록이 함께 쓴다. */
+    private fun today(): String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+
     private suspend fun resolveGroupId(): Long? {
         val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return currentGroupId
         val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
@@ -219,10 +227,22 @@ class ChallengeViewModel @Inject constructor(
     private fun nudge(memberId: Long) = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
         if (memberId in currentState.nudgingMemberIds) return@launch
+        if (memberId in currentState.nudgedMemberIds) return@launch
         setState { copy(nudgingMemberIds = nudgingMemberIds + memberId) }
         try {
             challengeRepository.nudge(groupId, memberId)
-            setState { copy(nudgingMemberIds = nudgingMemberIds - memberId) }
+            // 성공 기록은 기기에 남긴다. 서버가 하루 1회 제한을 걸지만 이미 찔렀는지를
+            // 응답으로 주지 않아, 이게 없으면 재진입 시 버튼이 다시 눌리는 것처럼 보인다.
+            runCatching { sessionRepository.saveNudgedMember(groupId, memberId, today()) }
+            val nickname = currentState.buddies.firstOrNull { it.memberId == memberId }?.nickname
+            setState {
+                copy(
+                    nudgingMemberIds = nudgingMemberIds - memberId,
+                    nudgedMemberIds = nudgedMemberIds + memberId,
+                    toastMessage = nickname?.let { "${it}님에게 알림을 보냈어요" }
+                        ?: "알림을 보냈어요",
+                )
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

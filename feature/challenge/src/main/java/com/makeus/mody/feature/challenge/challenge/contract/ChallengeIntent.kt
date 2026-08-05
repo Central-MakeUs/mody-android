@@ -30,6 +30,9 @@ sealed class ChallengeIntent : UiIntent {
     /** 권한 요청 런처를 띄운 뒤 일회성 트리거 해제. */
     data object HealthPermissionRequestLaunched : ChallengeIntent()
 
+    /** 토스트 표시 완료 → 일회성 문구 해제. */
+    data object ToastShown : ChallengeIntent()
+
     /** 에러 다이얼로그 확인. */
     data object ErrorShown : ChallengeIntent()
 }

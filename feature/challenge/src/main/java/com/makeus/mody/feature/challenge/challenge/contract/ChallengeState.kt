@@ -22,6 +22,13 @@ data class ChallengeState(
     val buddies: List<NudgeTarget> = emptyList(),
     /** 콕 찌르기 전송 중인 memberId — 중복 탭 방지. */
     val nudgingMemberIds: Set<Long> = emptySet(),
+    /**
+     * 오늘 이미 콕 찌른 memberId. 서버가 하루 1회 제한을 걸지만 "이미 찔렀는지"를
+     * 응답으로 주지 않아 기기에 남긴 기록으로 버튼 상태를 복원한다.
+     */
+    val nudgedMemberIds: Set<Long> = emptySet(),
+    /** 일회성 안내 문구(토스트). 표시 후 [ChallengeIntent.ToastShown] 으로 비운다. */
+    val toastMessage: String? = null,
     /** 그룹 필수(걸음 수) 챌린지 현황. null 이면 진행 중 챌린지 없음/로딩 전. */
     val stepChallenge: StepChallengeStatus? = null,
     /** 걸음 수 기여도 순위. */

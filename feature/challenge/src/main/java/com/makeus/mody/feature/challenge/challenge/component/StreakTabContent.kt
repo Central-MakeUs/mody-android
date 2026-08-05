@@ -146,9 +146,10 @@ private fun StreakHeader(summary: ChallengeSummary?) {
                 )
             }
             Image(
-                painter = painterResource(R.drawable.img_challenge_celebrate),
+                painter = painterResource(R.drawable.img_streak),
                 contentDescription = null,
-                modifier = Modifier.size(width = 96.dp, height = 90.dp),
+                // 에셋 원본 비율(118:91). 이전 96x90 을 그대로 쓰면 가로가 눌린다.
+                modifier = Modifier.size(width = 118.dp, height = 91.dp),
             )
         }
 

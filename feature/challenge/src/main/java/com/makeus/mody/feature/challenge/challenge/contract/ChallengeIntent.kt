@@ -24,6 +24,12 @@ sealed class ChallengeIntent : UiIntent {
     /** 주간 챌린지 항목 → 상세. */
     data class WeeklyChallengeClicked(val groupChallengeId: Long) : ChallengeIntent()
 
+    /** 건강 데이터 권한 요청 결과. */
+    data class HealthPermissionResult(val granted: Boolean) : ChallengeIntent()
+
+    /** 권한 요청 런처를 띄운 뒤 일회성 트리거 해제. */
+    data object HealthPermissionRequestLaunched : ChallengeIntent()
+
     /** 에러 다이얼로그 확인. */
     data object ErrorShown : ChallengeIntent()
 }

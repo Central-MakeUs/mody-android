@@ -4,9 +4,11 @@ import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
+import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.network.api.ChallengeApi
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -89,6 +91,24 @@ class ChallengeRepositoryImpl @Inject constructor(
             }
         }.getOrElse { e -> ChallengeFallback.weeklyChallenges.ifEmpty { throw e } }
             .ifEmpty { ChallengeFallback.weeklyChallenges }
+
+    // 걸음 수 업로드는 폴백 대상이 아니다 — 실패를 감추면 동기화됐다고 오인한다.
+    override suspend fun upsertStepRecord(
+        groupId: Long,
+        recordedOn: String,
+        stepCount: Int,
+    ): StepRecordResult {
+        val r = challengeApi.upsertStepRecord(
+            groupId = groupId,
+            request = StepRecordUpsertRequest(recordedOn = recordedOn, stepCount = stepCount),
+        ).unwrapResult()
+        return StepRecordResult(
+            groupChallengeId = r.groupChallengeId,
+            currentStepCount = r.currentStepCount,
+            targetStepCount = r.targetStepCount,
+            completed = r.completed,
+        )
+    }
 }
 
 /** [runCatching] 과 같지만 코루틴 취소는 삼키지 않고 그대로 전파한다. */

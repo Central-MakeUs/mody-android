@@ -44,7 +44,28 @@
                     android:scheme="kakao${KAKAO_NATIVE_KEY}"
                     android:host="kakaolink" />
             </intent-filter>
+
+            <!--
+              Health Connect 권한 사용 근거 화면(Android 13 이하). 선언이 없으면 일부 기기에서
+              권한 요청 자체가 거절된다.
+              TODO(health): 현재는 앱만 열린다 — 개인정보처리방침/사용 목적 화면으로 연결 필요.
+            -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
         </activity>
+
+        <!-- Android 14+ 에서 같은 역할을 하는 진입점. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
     </application>
 
 </manifest>

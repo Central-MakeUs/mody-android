@@ -5,6 +5,7 @@ import com.makeus.mody.core.domain.model.OnboardingProfile
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.OnboardingApi
+import com.makeus.mody.core.network.model.onboarding.HealthConnectionRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,5 +24,9 @@ class OnboardingRepositoryImpl @Inject constructor(
                 personalInfoCompleted = response.personalInfoCompleted,
             ),
         )
+    }
+
+    override suspend fun reportHealthConnection(connected: Boolean) {
+        onboardingApi.updateHealthConnection(HealthConnectionRequest(connected)).unwrapResult()
     }
 }

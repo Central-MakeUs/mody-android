@@ -21,3 +21,14 @@ data class OnboardingProfileResponse(
     val weightRecordId: Long = 0,
     val personalInfoCompleted: Boolean = false,
 )
+
+/** PUT /api/v1/onboarding/health-connection — 건강 데이터 연동 여부. */
+@Serializable
+data class HealthConnectionRequest(
+    val connected: Boolean,
+)
+
+@Serializable
+data class HealthConnectionResponse(
+    val connected: Boolean = false,
+)

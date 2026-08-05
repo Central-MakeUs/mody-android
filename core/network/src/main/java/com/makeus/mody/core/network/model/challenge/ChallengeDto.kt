@@ -34,6 +34,25 @@ data class StepChallengeStatusResponse(
     val currentStepCount: Int = 0,
 )
 
+/** PUT /api/v1/groups/{groupId}/challenges/step/records — 하루치 걸음 수 upsert. */
+@Serializable
+data class StepRecordUpsertRequest(
+    /** yyyy-MM-dd */
+    val recordedOn: String,
+    val stepCount: Int,
+)
+
+@Serializable
+data class StepRecordUpsertResponse(
+    val groupChallengeId: Long = 0,
+    val recordedOn: String = "",
+    val stepCount: Int = 0,
+    /** 그룹 누적(서버 재계산). */
+    val currentStepCount: Int = 0,
+    val targetStepCount: Int = 0,
+    val completed: Boolean = false,
+)
+
 /** GET /api/v1/groups/{groupId}/challenges/step/rankings — 기여도 순위. */
 @Serializable
 data class StepRankingListResponse(

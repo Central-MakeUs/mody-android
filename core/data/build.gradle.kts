@@ -29,6 +29,9 @@ dependencies {
     // 이미지 스트리밍 업로드용 RequestBody 구성 (PresignedUploader 에 전달)
     implementation(libs.okhttp)
 
+    // Health Connect (걸음 수 읽기)
+    implementation(libs.androidx.health.connect)
+
     // Firebase Remote Config (기능 플래그: 챌린지 탭 노출 제어)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.config)

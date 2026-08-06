@@ -37,4 +37,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
+
+    // Health Connect 권한 요청 계약(PermissionController)만 사용. 데이터 접근은 :core:data 담당.
+    implementation(libs.androidx.health.connect)
 }

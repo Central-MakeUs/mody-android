@@ -27,6 +27,12 @@ data class NotificationListResponse(
     val hasNext: Boolean = false,
 )
 
+/** GET /api/v1/notifications/unread-exists 응답. 상단바 알림 뱃지 표시용. */
+@Serializable
+data class UnreadExistsResponse(
+    val hasUnread: Boolean = false,
+)
+
 /**
  * 인박스 알림 한 건.
  * @param type 서버 enum(GROUP_JOINED, COMMENT_CREATED 등). 화면 아이콘/이동 매핑 키.

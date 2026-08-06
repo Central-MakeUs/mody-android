@@ -9,6 +9,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.makeus.mody.R
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
 import com.makeus.mody.core.domain.notification.PushTokenSynchronizer
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.presentation.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -25,6 +26,8 @@ class ModyFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var pushTokenSynchronizer: PushTokenSynchronizer
 
+    @Inject lateinit var unreadNotificationStore: UnreadNotificationStore
+
     override fun onNewToken(token: String) {
         // 토큰 갱신 → 현재 토큰 재동기화. sync 가 로그인 여부 판정 + 자체 스코프로 fire-and-forget.
         // (서비스에 별도 스코프를 두면 서비스 파괴 시 미취소 코루틴이 남아 sync 로 위임한다.)
@@ -38,6 +41,9 @@ class ModyFirebaseMessagingService : FirebaseMessagingService() {
 
         // 표시할 제목/본문이 전혀 없으면 무음(data-only) 메시지 → 스퓨리어스 빈 알림 방지.
         if (title == null && body == null) return
+        // 인박스에도 같은 알림이 쌓이므로 상단바 뱃지를 즉시 켠다(앱이 떠 있을 때 반응).
+        // 앱이 죽어 있으면 프로세스와 함께 사라지지만, 다음 화면 진입 시 서버 재조회로 복원된다.
+        unreadNotificationStore.markUnread()
         showNotification(title ?: DEFAULT_TITLE, body.orEmpty(), data)
     }
 

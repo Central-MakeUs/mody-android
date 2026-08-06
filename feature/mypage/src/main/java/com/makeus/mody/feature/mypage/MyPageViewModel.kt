@@ -2,6 +2,8 @@ package com.makeus.mody.feature.mypage
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
+import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.MyPageGraph
@@ -20,12 +22,20 @@ import javax.inject.Inject
 @HiltViewModel
 class MyPageViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
+    private val healthRepository: HealthRepository,
     private val navigationHelper: NavigationHelper,
+    private val unreadNotificationStore: UnreadNotificationStore,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<MyPageState, MyPageIntent>(MyPageState()) {
 
     init {
         load()
+        // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
+        viewModelScope.launch {
+            unreadNotificationStore.hasUnread.collect { hasUnread ->
+                setState { copy(hasUnreadNotification = hasUnread) }
+            }
+        }
         // Phase 2 기능 플래그 — Phase 1 에선 건강 데이터 연동 설정 메뉴 숨김.
         viewModelScope.launch {
             remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
@@ -36,7 +46,11 @@ class MyPageViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: MyPageIntent) {
         when (intent) {
-            is MyPageIntent.Refresh -> load()
+            is MyPageIntent.Refresh -> {
+                load()
+                // 알림함을 보고 돌아온 경우가 있어 진입마다 뱃지도 재조회.
+                viewModelScope.launch { unreadNotificationStore.refresh() }
+            }
             is MyPageIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
 
@@ -57,8 +71,12 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)
             is MyPageIntent.WeightErrorShown -> setState { copy(weightError = null) }
 
-            // TODO(mypage): 서브 화면 구현 후 라우팅 연결.
-            is MyPageIntent.HealthDataSettingClicked -> Unit
+            // 연동 상태는 Health Connect(시스템)가 소유하므로 앱 내 화면 없이 그쪽으로 넘긴다.
+            // 기기 상태(설치/업데이트 필요)에 따라 목적지가 달라 화면이 인텐트를 만든다.
+            is MyPageIntent.HealthDataSettingClicked ->
+                setState { copy(healthSettingsRequest = healthRepository.availability()) }
+
+            is MyPageIntent.HealthSettingsLaunched -> setState { copy(healthSettingsRequest = null) }
         }
     }
 

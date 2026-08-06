@@ -1,5 +1,7 @@
 package com.makeus.mody.feature.challenge.challenge
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -13,13 +15,17 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Text
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
@@ -37,6 +43,39 @@ fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // 탭 진입/복귀 시 재조회(기록 작성 후 돌아오면 버디 상태 반영). VM은 유지되므로 재조회 필요.
     LaunchedEffect(Unit) { viewModel.onIntent(ChallengeIntent.ScreenEntered) }
+
+    // Health Connect 권한 요청. 허용 집합을 그대로 돌려주므로 요청한 권한이 전부 포함됐는지로 판정.
+    // 요청 집합은 화면 로컬에 따로 붙든다 — 런처 콜백은 항상 최신 값을 읽으므로,
+    // 런처를 띄운 직후 비우는 state 를 그대로 참조하면 결과가 늘 '거부'로 판정된다.
+    var pendingHealthPermissions by remember { mutableStateOf<Set<String>?>(null) }
+    val healthPermissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract(),
+    ) { grantedPermissions ->
+        val requested = pendingHealthPermissions
+        pendingHealthPermissions = null
+        viewModel.onIntent(
+            ChallengeIntent.HealthPermissionResult(
+                granted = requested != null && grantedPermissions.containsAll(requested),
+            ),
+        )
+    }
+    LaunchedEffect(state.healthPermissionRequest) {
+        val permissions = state.healthPermissionRequest
+        if (permissions.isNullOrEmpty()) return@LaunchedEffect
+        pendingHealthPermissions = permissions
+        healthPermissionLauncher.launch(permissions)
+        viewModel.onIntent(ChallengeIntent.HealthPermissionRequestLaunched)
+    }
+
+    // 콕 찌르기 성공 안내. 다른 화면(알림 설정 등)과 같은 Toast 방식.
+    val context = LocalContext.current
+    LaunchedEffect(state.toastMessage) {
+        state.toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.onIntent(ChallengeIntent.ToastShown)
+        }
+    }
+
     ChallengeContent(state = state, onIntent = viewModel::onIntent)
 
     ModyErrorDialog(
@@ -56,7 +95,10 @@ private fun ChallengeContent(
             .fillMaxSize()
             .background(ModyTheme.colors.white),
     ) {
-        ModyLogoTopBar(onAlarmClick = { onIntent(ChallengeIntent.AlarmClicked) })
+        ModyLogoTopBar(
+            onAlarmClick = { onIntent(ChallengeIntent.AlarmClicked) },
+            hasUnreadNotification = state.hasUnreadNotification,
+        )
 
         SubTabRow(
             selected = state.selectedSubTab,
@@ -70,7 +112,9 @@ private fun ChallengeContent(
                     isLoading = state.isLoading,
                     summary = state.summary,
                     buddies = state.buddies,
+                    buddiesLoaded = state.buddiesLoaded,
                     nudgingMemberIds = state.nudgingMemberIds,
+                    nudgedMemberIds = state.nudgedMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
                 )
                 ChallengeSubTab.CHALLENGE -> ChallengeTabContent(

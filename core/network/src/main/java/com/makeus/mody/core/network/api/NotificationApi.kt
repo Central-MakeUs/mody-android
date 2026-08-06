@@ -4,6 +4,7 @@ import com.makeus.mody.core.network.model.ApiResponse
 import com.makeus.mody.core.network.model.notification.NotificationListResponse
 import com.makeus.mody.core.network.model.notification.PushTokenDisableRequest
 import com.makeus.mody.core.network.model.notification.PushTokenRegisterRequest
+import com.makeus.mody.core.network.model.notification.UnreadExistsResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
@@ -20,6 +21,10 @@ interface NotificationApi {
         @Query("cursor") cursor: Long? = null,
         @Query("size") size: Int? = null,
     ): ApiResponse<NotificationListResponse>
+
+    /** 안 읽은 알림 존재 여부. 상단바 알림 아이콘 뱃지 표시에만 쓴다(개수는 없음). */
+    @GET("api/v1/notifications/unread-exists")
+    suspend fun hasUnreadNotifications(): ApiResponse<UnreadExistsResponse>
 
     /** 알림 단건 읽음 처리. */
     @PATCH("api/v1/notifications/{notificationId}/read")

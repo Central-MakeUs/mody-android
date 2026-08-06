@@ -3,11 +3,19 @@ package com.makeus.mody.core.network.api
 import com.makeus.mody.core.network.model.ApiResponse
 import com.makeus.mody.core.network.model.challenge.ChallengeSummaryResponse
 import com.makeus.mody.core.network.model.challenge.NudgeTargetListResponse
+import com.makeus.mody.core.network.model.challenge.StepChallengeChangeRequest
+import com.makeus.mody.core.network.model.challenge.StepChallengeChangeResponse
+import com.makeus.mody.core.network.model.challenge.StepChallengeOptionListResponse
 import com.makeus.mody.core.network.model.challenge.StepChallengeStatusResponse
 import com.makeus.mody.core.network.model.challenge.StepRankingListResponse
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertResponse
 import com.makeus.mody.core.network.model.challenge.WeeklyChallengeListResponse
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ChallengeApi {
@@ -36,6 +44,26 @@ interface ChallengeApi {
     suspend fun getStepChallenge(
         @Path("groupId") groupId: Long,
     ): ApiResponse<StepChallengeStatusResponse>
+
+    /** 오늘 걸음 수 반영(같은 날짜 재전송 시 덮어쓰기). */
+    @PUT("api/v1/groups/{groupId}/challenges/step/records")
+    suspend fun upsertStepRecord(
+        @Path("groupId") groupId: Long,
+        @Body request: StepRecordUpsertRequest,
+    ): ApiResponse<StepRecordUpsertResponse>
+
+    /** 선택 가능한 걸음 수 챌린지 목록(챌린지 변경 화면). */
+    @GET("api/v1/groups/{groupId}/challenges/step/options")
+    suspend fun getStepChallengeOptions(
+        @Path("groupId") groupId: Long,
+    ): ApiResponse<StepChallengeOptionListResponse>
+
+    /** 진행 중인 걸음 수 챌린지 교체. 기존 걸음 기록은 서버에서 초기화된다. */
+    @PATCH("api/v1/groups/{groupId}/challenges/step/current")
+    suspend fun changeStepChallenge(
+        @Path("groupId") groupId: Long,
+        @Body request: StepChallengeChangeRequest,
+    ): ApiResponse<StepChallengeChangeResponse>
 
     /** 걸음 수 기여도 순위. */
     @GET("api/v1/groups/{groupId}/challenges/step/rankings")

@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
@@ -15,6 +16,7 @@ import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
+import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import com.makeus.mody.core.navigation.RecordGraph
 import com.makeus.mody.feature.feed.feed.contract.FeedIntent
 import com.makeus.mody.feature.feed.feed.contract.FeedState
@@ -35,8 +37,10 @@ class FeedViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
+    private val pendingStreakTabHolder: PendingStreakTabHolder,
     private val sessionRepository: SessionRepository,
     private val myPageRepository: MyPageRepository,
+    private val unreadNotificationStore: UnreadNotificationStore,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
@@ -45,6 +49,12 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
+        // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
+        viewModelScope.launch {
+            unreadNotificationStore.hasUnread.collect { hasUnread ->
+                setState { copy(hasUnreadNotification = hasUnread) }
             }
         }
     }
@@ -106,7 +116,11 @@ class FeedViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: FeedIntent) {
         when (intent) {
-            is FeedIntent.ScreenResumed -> refresh()
+            is FeedIntent.ScreenResumed -> {
+                refresh()
+                // 알림함을 보고 돌아온 경우가 있어 재개마다 뱃지도 재조회.
+                viewModelScope.launch { unreadNotificationStore.refresh() }
+            }
             is FeedIntent.PrevWeekClicked -> moveWeek(-1)
             is FeedIntent.NextWeekClicked -> moveWeek(1)
             is FeedIntent.DaySelected -> selectDay(intent.date)
@@ -134,8 +148,8 @@ class FeedViewModel @Inject constructor(
 
             is FeedIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
-            // TODO(feed): 콕찌르기 연결
-            is FeedIntent.PokeClicked -> Unit
+            // 챌린지 탭(연속 기록)으로. 탭 전환은 MainScreenViewModel, 서브탭은 ChallengeViewModel 이 처리.
+            is FeedIntent.PokeClicked -> pendingStreakTabHolder.set()
             is FeedIntent.FeedCardClicked -> {
                 val groupId = currentGroupId ?: return
                 navigationHelper.navigate(

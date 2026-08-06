@@ -2,11 +2,16 @@ package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.NudgeTarget
+import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
+import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.network.api.ChallengeApi
+import com.makeus.mody.core.network.model.challenge.StepChallengeChangeRequest
+import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,9 +51,12 @@ class ChallengeRepositoryImpl @Inject constructor(
             .ifEmpty { ChallengeFallback.nudgeTargets }
 
     override suspend fun nudge(groupId: Long, memberId: Long) {
-        // 더미 멤버에게는 실제 푸시를 보낼 수 없으므로 debug 폴백 중엔 성공 처리만 한다.
         apiCatching { challengeApi.nudge(groupId, memberId).unwrapResult() }
-            .getOrElse { e -> if (!ChallengeFallback.ENABLED) throw e }
+            .getOrElse { e ->
+                // 더미 멤버는 서버에 없어 항상 실패하므로 폴백 데이터일 때만 성공 처리한다.
+                // 실제 멤버 대상 실패까지 삼키면 디버그에서 원인을 찾을 수 없다.
+                if (ChallengeFallback.nudgeTargets.none { it.memberId == memberId }) throw e
+            }
     }
 
     override suspend fun getStepChallenge(groupId: Long): StepChallengeStatus =
@@ -59,8 +67,43 @@ class ChallengeRepositoryImpl @Inject constructor(
                 title = s.title,
                 targetStepCount = s.targetStepCount,
                 currentStepCount = s.currentStepCount,
+                fetchFromAt = s.fetchFromAt.toServerInstantOrNull(),
             )
         }.getOrElse { e -> ChallengeFallback.stepChallenge ?: throw e }
+
+    override suspend fun getStepChallengeOptions(groupId: Long): List<StepChallengeOption> =
+        apiCatching {
+            challengeApi.getStepChallengeOptions(groupId).unwrapResult().options.map {
+                StepChallengeOption(
+                    challengeId = it.challengeId,
+                    title = it.title,
+                    departure = it.departure,
+                    destination = it.destination,
+                    distanceKm = it.distanceKm,
+                    targetStepCount = it.targetStepCount,
+                    selected = it.selected,
+                )
+            }
+        }.getOrElse { e -> ChallengeFallback.stepChallengeOptions.ifEmpty { throw e } }
+            .ifEmpty { ChallengeFallback.stepChallengeOptions }
+
+    // 챌린지 교체는 폴백 대상이 아니다 — 실패를 감추면 바뀐 줄 알고 화면을 닫게 된다.
+    override suspend fun changeStepChallenge(
+        groupId: Long,
+        challengeId: Long,
+    ): StepChallengeStatus {
+        val r = challengeApi.changeStepChallenge(
+            groupId = groupId,
+            request = StepChallengeChangeRequest(challengeId = challengeId),
+        ).unwrapResult()
+        return StepChallengeStatus(
+            groupChallengeId = r.groupChallengeId,
+            title = r.title,
+            targetStepCount = r.targetStepCount,
+            currentStepCount = r.currentStepCount,
+            fetchFromAt = r.fetchFromAt.toServerInstantOrNull(),
+        )
+    }
 
     override suspend fun getStepRankings(groupId: Long): List<StepRanking> =
         apiCatching {
@@ -85,10 +128,35 @@ class ChallengeRepositoryImpl @Inject constructor(
                     deadlineDayOfWeek = it.deadlineDayOfWeek,
                     participantCount = it.participantCount,
                     randomParticipantNickname = it.randomParticipantNickname,
+                    participants = it.participants.map { p ->
+                        WeeklyChallengeParticipant(
+                            memberId = p.memberId,
+                            nickname = p.nickname,
+                            profileImageUrl = p.profileImageUrl,
+                        )
+                    },
                 )
             }
         }.getOrElse { e -> ChallengeFallback.weeklyChallenges.ifEmpty { throw e } }
             .ifEmpty { ChallengeFallback.weeklyChallenges }
+
+    // 걸음 수 업로드는 폴백 대상이 아니다 — 실패를 감추면 동기화됐다고 오인한다.
+    override suspend fun upsertStepRecord(
+        groupId: Long,
+        recordedOn: String,
+        stepCount: Int,
+    ): StepRecordResult {
+        val r = challengeApi.upsertStepRecord(
+            groupId = groupId,
+            request = StepRecordUpsertRequest(recordedOn = recordedOn, stepCount = stepCount),
+        ).unwrapResult()
+        return StepRecordResult(
+            groupChallengeId = r.groupChallengeId,
+            currentStepCount = r.currentStepCount,
+            targetStepCount = r.targetStepCount,
+            completed = r.completed,
+        )
+    }
 }
 
 /** [runCatching] 과 같지만 코루틴 취소는 삼키지 않고 그대로 전파한다. */

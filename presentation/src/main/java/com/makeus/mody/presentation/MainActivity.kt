@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,9 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    // setContent 안의 hiltViewModel() 과 같은 인스턴스(둘 다 Activity 의 ViewModelStore 사용).
+    private val mainViewModel: MainViewModel by viewModels()
+
     @Inject lateinit var navigationHelper: NavigationHelper
     @Inject lateinit var inviteCodeHolder: InviteCodeHolder
     @Inject lateinit var notificationDeepLinkHolder: NotificationDeepLinkHolder
@@ -56,6 +60,13 @@ class MainActivity : ComponentActivity() {
                 Configuration.UI_MODE_NIGHT_NO
         }
         super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
+
+    // 앱 진입마다 오늘 걸음 수를 서버에 반영. onCreate 가 아니라 onStart 여야
+    // 백그라운드에 두고 걷다가 돌아온 경우도 잡힌다.
+    override fun onStart() {
+        super.onStart()
+        mainViewModel.onAppEntered()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

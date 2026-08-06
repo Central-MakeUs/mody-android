@@ -8,15 +8,25 @@ import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.ChallengeRepository
+import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.HealthRepository
+import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
+import com.makeus.mody.core.domain.usecase.SyncTodayStepsUseCase
+import com.makeus.mody.core.navigation.ChallengeGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
+import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
+import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -28,23 +38,54 @@ class ChallengeViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
+    private val healthRepository: HealthRepository,
+    private val onboardingRepository: OnboardingRepository,
     private val navigationHelper: NavigationHelper,
+    private val pendingStreakTabHolder: PendingStreakTabHolder,
+    private val unreadNotificationStore: UnreadNotificationStore,
+    private val syncTodaySteps: SyncTodayStepsUseCase,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
     /** 현재 보고 있는 그룹. 피드와 동일 규칙(마지막 선택 그룹 > 첫 그룹)으로 결정. */
     private var currentGroupId: Long? = null
 
+    init {
+        // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
+        viewModelScope.launch {
+            unreadNotificationStore.hasUnread.collect { hasUnread ->
+                setState { copy(hasUnreadNotification = hasUnread) }
+            }
+        }
+    }
+
     override suspend fun processIntent(intent: ChallengeIntent) {
         when (intent) {
-            is ChallengeIntent.ScreenEntered -> load()
+            is ChallengeIntent.ScreenEntered -> {
+                // 피드 "콕 찌르기 하러 가기" 로 넘어온 경우. ViewModel 은 탭 전환에도 살아남아
+                // 직전에 보던 서브탭이 남으므로, 요청이 있으면 연속 기록으로 되돌린다.
+                if (pendingStreakTabHolder.consume()) {
+                    setState { copy(selectedSubTab = ChallengeSubTab.STREAK) }
+                }
+                load()
+                // 알림함을 보고 돌아온 경우가 있어 진입마다 뱃지도 재조회.
+                viewModelScope.launch { unreadNotificationStore.refresh() }
+            }
             is ChallengeIntent.SubTabSelected -> setState { copy(selectedSubTab = intent.tab) }
             is ChallengeIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is ChallengeIntent.NudgeClicked -> nudge(intent.memberId)
             is ChallengeIntent.StepRefreshClicked -> refreshStep()
-            // TODO(challenge): 걸음 수 챌린지 변경(walk/choose)·주간 챌린지 상세 화면 연결 (후속 PR).
-            is ChallengeIntent.ChangeStepChallengeClicked -> Unit
+            is ChallengeIntent.HealthPermissionRequestLaunched ->
+                setState { copy(healthPermissionRequest = null) }
+            is ChallengeIntent.HealthPermissionResult -> onHealthPermissionResult(intent.granted)
+            is ChallengeIntent.ChangeStepChallengeClicked -> currentGroupId?.let { groupId ->
+                navigationHelper.navigate(
+                    NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
+                )
+            }
+            // TODO(challenge): 주간 챌린지 상세 화면 연결 (후속 PR).
             is ChallengeIntent.WeeklyChallengeClicked -> Unit
+            is ChallengeIntent.ToastShown -> setState { copy(toastMessage = null) }
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
         }
     }
@@ -63,7 +104,15 @@ class ChallengeViewModel @Inject constructor(
         // 피드에서 그룹을 바꾸고 넘어온 경우. 아래 병합이 `?: this.summary` 로 이전 값을
         // 유지하므로, 여기서 비우지 않으면 새 그룹 조회가 실패한 항목에 옛 그룹 기록이 남는다.
         if (previousGroupId != null && previousGroupId != groupId) {
-            setState { ChallengeState(selectedSubTab = selectedSubTab, isLoading = true) }
+            // 알림 뱃지는 그룹과 무관하므로 넘긴다. 초기값(false)으로 되돌리면 store 의 StateFlow 가
+            // 같은 값을 다시 내보내지 않아 뱃지가 켜질 때까지 사라진 채로 남는다.
+            setState {
+                ChallengeState(
+                    selectedSubTab = selectedSubTab,
+                    hasUnreadNotification = hasUnreadNotification,
+                    isLoading = true,
+                )
+            }
         }
         // async 를 launch 자식으로 두고 던지면 부모로 전파(크래시) → runCatching 흡수 + supervisorScope.
         data class Loaded(
@@ -97,19 +146,26 @@ class ChallengeViewModel @Inject constructor(
                 weekly = weeklyDeferred.await(),
             )
         }
+        // 오늘 이미 찌른 멤버 복원. 날짜가 넘어갔으면 저장소가 빈 집합을 준다.
+        val nudged = runCatching { sessionRepository.getNudgedMembers(groupId, today()) }
+            .getOrDefault(emptySet())
         setState {
             copy(
                 isLoading = false,
                 summary = loaded.summary ?: this.summary,
                 buddies = loaded.buddies ?: this.buddies,
+                buddiesLoaded = buddiesLoaded || loaded.buddies != null,
+                nudgedMemberIds = nudged,
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
             )
         }
+        // 탭 진입(= 앱 실행 후 첫 진입 포함)마다 오늘 걸음 수를 서버에 반영.
+        syncSteps(groupId, askPermission = false)
     }
 
-    /** 걸음 수 새로고침 — 현황 + 순위만 재조회. */
+    /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
     private fun refreshStep() = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
         val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
@@ -120,6 +176,79 @@ class ChallengeViewModel @Inject constructor(
                 stepRankings = rankings ?: stepRankings,
             )
         }
+        // 동기화가 마지막 — 순서를 바꾸면 조회 결과가 방금 반영한 실제 걸음 수를 덮어쓴다.
+        // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
+        syncSteps(groupId, askPermission = true)
+    }
+
+    /**
+     * 오늘 걸음 수를 읽어 서버에 반영한다.
+     *
+     * 권한이 없을 때: [askPermission] 이 true 면 무조건, false 면 아직 물어본 적 없을 때만
+     * 시스템 권한 요청을 띄운다(탭 재진입마다 팝업이 뜨는 것 방지).
+     */
+    private suspend fun syncSteps(groupId: Long, askPermission: Boolean) {
+        if (healthRepository.availability() != HealthAvailability.AVAILABLE) return
+        if (runCatching { healthRepository.hasStepPermission() }.getOrDefault(false)) {
+            uploadTodaySteps(groupId)
+            return
+        }
+        val alreadyAsked = runCatching { sessionRepository.getHealthPermissionAsked() }
+            .getOrDefault(false)
+        if (!askPermission && alreadyAsked) return
+        runCatching { sessionRepository.saveHealthPermissionAsked() }
+        setState { copy(healthPermissionRequest = healthRepository.stepPermissions) }
+    }
+
+    /** 권한 요청 결과 — 서버에 연동 여부를 남기고, 허용됐으면 바로 동기화. */
+    private fun onHealthPermissionResult(granted: Boolean) = viewModelScope.launch {
+        setState { copy(healthPermissionRequest = null) }
+        // 연동 여부 기록 실패는 사용자 흐름을 막을 이유가 없어 조용히 넘긴다.
+        runCatching { onboardingRepository.reportHealthConnection(granted) }
+        if (!granted) return@launch
+        val groupId = currentGroupId ?: return@launch
+        val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
+        val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+        setState {
+            copy(
+                stepChallenge = step ?: stepChallenge,
+                stepRankings = rankings ?: stepRankings,
+            )
+        }
+        // 조회 뒤에 올려야 방금 읽은 걸음 수가 조회 결과에 덮이지 않는다.
+        uploadTodaySteps(groupId)
+    }
+
+    /**
+     * 걸음 수를 서버에 반영하고 결과를 게이지에 즉시 옮긴다.
+     *
+     * 실제 동기화(카운트 시작 시각 반영·날짜별 백필)는 [syncTodaySteps] 가 한다.
+     * 업로드가 성공하면 서버 누적값이 정답이므로 그걸 쓰고, 실패하면(진행 중인 챌린지가
+     * 없을 때 서버가 실패를 준다) 방금 읽은 값이라도 보여준다.
+     */
+    private suspend fun uploadTodaySteps(groupId: Long) {
+        setState { copy(isSyncingSteps = true) }
+        // runCatching 은 취소까지 삼켜 ViewModel 정리 시 코루틴이 정상 종료로 보인다.
+        val result = try {
+            syncTodaySteps(groupId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        if (result != null) {
+            setState {
+                copy(
+                    stepChallenge = stepChallenge?.let { challenge ->
+                        challenge.copy(
+                            currentStepCount = result.currentStepCount ?: result.readStepCount,
+                            targetStepCount = result.targetStepCount ?: challenge.targetStepCount,
+                        )
+                    },
+                )
+            }
+        }
+        setState { copy(isSyncingSteps = false) }
     }
 
     /**
@@ -130,6 +259,9 @@ class ChallengeViewModel @Inject constructor(
      * 앱을 재시작할 때까지 이전 그룹 데이터를 계속 보여주게 된다.
      * 조회 실패 시에만 직전 그룹을 유지한다.
      */
+    /** 서버 날짜 포맷(yyyy-MM-dd). 걸음 수 기록·콕 찌르기 기록이 함께 쓴다. */
+    private fun today(): String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+
     private suspend fun resolveGroupId(): Long? {
         val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return currentGroupId
         val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
@@ -140,10 +272,22 @@ class ChallengeViewModel @Inject constructor(
     private fun nudge(memberId: Long) = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
         if (memberId in currentState.nudgingMemberIds) return@launch
+        if (memberId in currentState.nudgedMemberIds) return@launch
         setState { copy(nudgingMemberIds = nudgingMemberIds + memberId) }
         try {
             challengeRepository.nudge(groupId, memberId)
-            setState { copy(nudgingMemberIds = nudgingMemberIds - memberId) }
+            // 성공 기록은 기기에 남긴다. 서버가 하루 1회 제한을 걸지만 이미 찔렀는지를
+            // 응답으로 주지 않아, 이게 없으면 재진입 시 버튼이 다시 눌리는 것처럼 보인다.
+            runCatching { sessionRepository.saveNudgedMember(groupId, memberId, today()) }
+            val nickname = currentState.buddies.firstOrNull { it.memberId == memberId }?.nickname
+            setState {
+                copy(
+                    nudgingMemberIds = nudgingMemberIds - memberId,
+                    nudgedMemberIds = nudgedMemberIds + memberId,
+                    toastMessage = nickname?.let { "${it}님에게 알림을 보냈어요" }
+                        ?: "알림을 보냈어요",
+                )
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

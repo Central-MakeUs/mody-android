@@ -24,6 +24,9 @@ sealed class MyPageIntent : UiIntent {
     data object GroupSettingClicked : MyPageIntent()
     data object HealthDataSettingClicked : MyPageIntent()
 
+    /** 건강 데이터 연동 설정(Health Connect) 진입 요청 소비. */
+    data object HealthSettingsLaunched : MyPageIntent()
+
     /** 이용약관·개인정보처리방침·문의 지원 페이지(인앱 WebView). */
     data object SupportClicked : MyPageIntent()
 }

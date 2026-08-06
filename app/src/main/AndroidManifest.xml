@@ -10,9 +10,14 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!--
       사진 선택은 전부 Photo Picker(PickVisualMedia) → 저장소/미디어 권한 불필요.
-      걸음 수(ACTIVITY_RECOGNITION)는 Phase 2 미구현 → 실제 구현 시 재선언.
       미사용 권한은 스토어 정책 리젝 리스크라 제거함.
     -->
+
+    <!--
+      걸음 수는 Health Connect 로만 읽는다(기기 센서 ACTIVITY_RECOGNITION 미사용).
+      Play Console 에 건강 데이터 접근 선언 + 개인정보처리방침 제출 필요.
+    -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
 
 
     <!-- 카메라 권한이 있어도 카메라 없는 기기(일부 태블릿/ChromeOS) 설치 허용 -->
@@ -26,6 +31,8 @@
     <!-- Android 11+ 패키지 가시성: 카카오톡 설치 여부 확인(isKakaoTalkSharingAvailable) -->
     <queries>
         <package android:name="com.kakao.talk" />
+        <!-- Health Connect 제공자 앱(Android 13 이하). getSdkStatus 조회에 필요. -->
+        <package android:name="com.google.android.apps.healthdata" />
     </queries>
 
     <application

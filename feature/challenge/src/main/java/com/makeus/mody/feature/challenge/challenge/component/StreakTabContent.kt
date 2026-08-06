@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,11 +48,19 @@ fun StreakTabContent(
     isLoading: Boolean,
     summary: ChallengeSummary?,
     buddies: List<NudgeTarget>,
+    buddiesLoaded: Boolean,
     nudgingMemberIds: Set<Long>,
+    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     if (isLoading) {
         ModyLoadingScreen()
+        return
+    }
+    // 나 말고 함께하는 멤버가 없으면 연속 기록 자체가 성립하지 않는다.
+    // 조회 실패도 빈 목록이라 성공 응답이 실제로 비었을 때만 빈 화면으로 간다.
+    if (buddiesLoaded && buddies.isEmpty()) {
+        SoloGroupEmpty()
         return
     }
     Column(
@@ -62,7 +72,40 @@ fun StreakTabContent(
         BuddySection(
             buddies = buddies,
             nudgingMemberIds = nudgingMemberIds,
+            nudgedMemberIds = nudgedMemberIds,
             onNudgeClick = onNudgeClick,
+        )
+    }
+}
+
+/**
+ * 나 혼자인 그룹 — 연속 기록이 성립하지 않을 때의 빈 화면.
+ *
+ * TODO(challenge): 시안 반영 필요.
+ *  Figma node-id 180-563 (모디 MODY, file eUXrUuSsupAVdKb5xIatWW).
+ *  일러스트·문구·CTA(그룹 초대 유도로 추정)가 확정되면 이 자리를 교체한다.
+ *  지금은 조건 분기만 먼저 넣고 최소 문구로 둔다.
+ */
+@Composable
+private fun SoloGroupEmpty() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "아직 함께하는 버디가 없어요",
+            style = ModyTheme.typography.b2,
+            color = ModyTheme.colors.gray09,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "그룹에 버디를 초대하면\n연속 기록을 함께 쌓을 수 있어요.",
+            style = ModyTheme.typography.c2,
+            color = ModyTheme.colors.gray06,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -81,16 +124,20 @@ private fun StreakHeader(summary: ChallengeSummary?) {
         Spacer(modifier = Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
+                // 글자 아래 여백으로 붙어 글자만 위로 뜨기 때문. 베이스라인으로 맞춘다.
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = "${summary.allMemberRecordedDays}",
                         style = ModyTheme.typography.h1.copy(fontSize = 36.sp, lineHeight = 50.4.sp),
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         text = "일째",
                         style = ModyTheme.typography.h1,
                         color = ModyTheme.colors.gray09,
+                        modifier = Modifier.alignByBaseline(),
                     )
                 }
                 Text(
@@ -100,9 +147,10 @@ private fun StreakHeader(summary: ChallengeSummary?) {
                 )
             }
             Image(
-                painter = painterResource(R.drawable.img_challenge_celebrate),
+                painter = painterResource(R.drawable.img_streak),
                 contentDescription = null,
-                modifier = Modifier.size(width = 96.dp, height = 90.dp),
+                // 에셋 원본 비율(118:91). 이전 96x90 을 그대로 쓰면 가로가 눌린다.
+                modifier = Modifier.size(width = 118.dp, height = 91.dp),
             )
         }
 
@@ -198,6 +246,7 @@ private fun StatDivider() {
 private fun BuddySection(
     buddies: List<NudgeTarget>,
     nudgingMemberIds: Set<Long>,
+    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     Column(
@@ -234,6 +283,7 @@ private fun BuddySection(
                     BuddyRow(
                         buddy = buddy,
                         isNudging = buddy.memberId in nudgingMemberIds,
+                        isNudged = buddy.memberId in nudgedMemberIds,
                         onNudgeClick = { onNudgeClick(buddy.memberId) },
                     )
                 }
@@ -246,6 +296,7 @@ private fun BuddySection(
 private fun BuddyRow(
     buddy: NudgeTarget,
     isNudging: Boolean,
+    isNudged: Boolean,
     onNudgeClick: () -> Unit,
 ) {
     Row(
@@ -268,10 +319,11 @@ private fun BuddyRow(
                 color = ModyTheme.colors.gray06,
             )
         }
-        if (buddy.recordedToday) {
-            RecordedBadge()
-        } else {
-            NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
+        when {
+            buddy.recordedToday -> RecordedBadge()
+            // 서버가 하루 1회로 막으므로 이미 보낸 뒤에는 다시 누를 수 없게 한다.
+            isNudged -> NudgedBadge()
+            else -> NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
         }
     }
 }
@@ -291,6 +343,28 @@ private fun RecordedBadge() {
             text = "기록 완료",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.white,
+        )
+    }
+}
+
+/** 오늘 이미 콕 찌른 상태(비활성). 하루 1회 제한이라 다시 누를 수 없다. */
+@Composable
+private fun NudgedBadge() {
+    Box(
+        modifier = Modifier
+            // "기록 완료" 배지와 폭을 맞추되, 글자가 길어 88dp 를 넘으면 잘리지 않게 늘어난다.
+            .widthIn(min = 88.dp)
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(ModyTheme.colors.gray02)
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "이미 찔렀어요",
+            style = ModyTheme.typography.c1,
+            color = ModyTheme.colors.gray06,
+            maxLines = 1,
         )
     }
 }
@@ -337,9 +411,27 @@ private fun StreakTabContentPreview() {
             buddies = listOf(
                 NudgeTarget(1, "예은", null, recordedToday = true),
                 NudgeTarget(2, "동준", null, recordedToday = false),
-                NudgeTarget(3, "도윤", null, recordedToday = true),
+                NudgeTarget(3, "도윤", null, recordedToday = false),
             ),
+            buddiesLoaded = true,
             nudgingMemberIds = emptySet(),
+            nudgedMemberIds = setOf(3L),
+            onNudgeClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "혼자인 그룹")
+@Composable
+private fun StreakTabContentSoloPreview() {
+    ModyTheme {
+        StreakTabContent(
+            isLoading = false,
+            summary = null,
+            buddies = emptyList(),
+            buddiesLoaded = true,
+            nudgingMemberIds = emptySet(),
+            nudgedMemberIds = emptySet(),
             onNudgeClick = {},
         )
     }

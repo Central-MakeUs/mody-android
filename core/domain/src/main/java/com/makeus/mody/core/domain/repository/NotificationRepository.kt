@@ -7,6 +7,9 @@ interface NotificationRepository {
     /** 알림 목록. cursor=null 이면 첫 페이지. */
     suspend fun getNotifications(cursor: Long? = null, size: Int? = null): NotificationPage
 
+    /** 안 읽은 알림이 하나라도 있는지(상단바 뱃지용). */
+    suspend fun hasUnreadNotifications(): Boolean
+
     /** 알림 단건 읽음 처리. */
     suspend fun readNotification(notificationId: Long)
 }

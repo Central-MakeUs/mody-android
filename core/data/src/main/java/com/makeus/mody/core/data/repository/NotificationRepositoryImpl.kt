@@ -25,6 +25,9 @@ class NotificationRepositoryImpl @Inject constructor(
             .unwrapResult()
             .toNotificationPage()
 
+    override suspend fun hasUnreadNotifications(): Boolean =
+        notificationApi.hasUnreadNotifications().unwrapResult().hasUnread
+
     override suspend fun readNotification(notificationId: Long) {
         notificationApi.readNotification(notificationId).unwrapResult()
     }

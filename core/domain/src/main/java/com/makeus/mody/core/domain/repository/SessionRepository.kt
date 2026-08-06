@@ -35,6 +35,22 @@ interface SessionRepository {
     /** 피드에서 마지막으로 보던 그룹 id. 이력 없으면 null. */
     suspend fun getLastGroupId(): Long?
 
+    /**
+     * 오늘 콕 찌른 멤버 기록. 서버가 하루 1회 제한을 걸지만 "이미 찔렀는지"를
+     * 응답으로 주지 않아, 버튼 상태를 되살리려면 기기에 남겨야 한다.
+     * @param today yyyy-MM-dd. 저장된 날짜와 다르면 이전 기록은 버려진다.
+     */
+    suspend fun saveNudgedMember(groupId: Long, memberId: Long, today: String)
+
+    /** [today] 에 이 그룹에서 콕 찌른 멤버 id. 날짜가 바뀌었으면 빈 집합. */
+    suspend fun getNudgedMembers(groupId: Long, today: String): Set<Long>
+
+    /** 건강 데이터 권한을 이미 한 번 요청했는지 기록(챌린지 탭 재진입마다 팝업 방지). */
+    suspend fun saveHealthPermissionAsked()
+
+    /** 건강 데이터 권한을 요청한 이력이 있는지. */
+    suspend fun getHealthPermissionAsked(): Boolean
+
     /** 로그아웃 등 세션 초기화(토큰 + 상태 제거). */
     suspend fun clear()
 }

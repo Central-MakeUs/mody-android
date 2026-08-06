@@ -87,6 +87,7 @@ private fun FeedContent(
             // 상단 여백(시스템바 아래 12dp)은 ModyLogoTopBar(height 48 센터정렬)가 내장.
             ModyLogoTopBar(
                 onAlarmClick = { onIntent(FeedIntent.AlarmClicked) },
+                hasUnreadNotification = state.hasUnreadNotification,
             )
             GroupSelector(
                 groupName = state.groupName,

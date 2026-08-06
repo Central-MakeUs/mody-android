@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
@@ -39,6 +40,7 @@ class FeedViewModel @Inject constructor(
     private val pendingStreakTabHolder: PendingStreakTabHolder,
     private val sessionRepository: SessionRepository,
     private val myPageRepository: MyPageRepository,
+    private val unreadNotificationStore: UnreadNotificationStore,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
@@ -47,6 +49,12 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
+        // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
+        viewModelScope.launch {
+            unreadNotificationStore.hasUnread.collect { hasUnread ->
+                setState { copy(hasUnreadNotification = hasUnread) }
             }
         }
     }
@@ -108,7 +116,11 @@ class FeedViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: FeedIntent) {
         when (intent) {
-            is FeedIntent.ScreenResumed -> refresh()
+            is FeedIntent.ScreenResumed -> {
+                refresh()
+                // 알림함을 보고 돌아온 경우가 있어 재개마다 뱃지도 재조회.
+                viewModelScope.launch { unreadNotificationStore.refresh() }
+            }
             is FeedIntent.PrevWeekClicked -> moveWeek(-1)
             is FeedIntent.NextWeekClicked -> moveWeek(1)
             is FeedIntent.DaySelected -> selectDay(intent.date)

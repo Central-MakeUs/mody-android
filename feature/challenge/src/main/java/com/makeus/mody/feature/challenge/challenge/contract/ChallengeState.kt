@@ -16,6 +16,8 @@ enum class ChallengeSubTab(val label: String) {
 data class ChallengeState(
     val selectedSubTab: ChallengeSubTab = ChallengeSubTab.STREAK,
     val isLoading: Boolean = false,
+    /** 상단바 알림 아이콘 뱃지(안 읽은 알림 존재). */
+    val hasUnreadNotification: Boolean = false,
     /** 연속 기록 탭 상단 요약. null 이면 로딩 전/실패. */
     val summary: ChallengeSummary? = null,
     /** 버디 신기록 도전 목록. */

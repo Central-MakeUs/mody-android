@@ -95,7 +95,10 @@ private fun ChallengeContent(
             .fillMaxSize()
             .background(ModyTheme.colors.white),
     ) {
-        ModyLogoTopBar(onAlarmClick = { onIntent(ChallengeIntent.AlarmClicked) })
+        ModyLogoTopBar(
+            onAlarmClick = { onIntent(ChallengeIntent.AlarmClicked) },
+            hasUnreadNotification = state.hasUnreadNotification,
+        )
 
         SubTabRow(
             selected = state.selectedSubTab,

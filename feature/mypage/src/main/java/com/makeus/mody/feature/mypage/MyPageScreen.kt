@@ -124,7 +124,10 @@ private fun MyPageContent(
             .background(ModyTheme.colors.white)
             .verticalScroll(rememberScrollState()),
     ) {
-        ModyLogoTopBar(onAlarmClick = { onIntent(MyPageIntent.AlarmClicked) })
+        ModyLogoTopBar(
+            onAlarmClick = { onIntent(MyPageIntent.AlarmClicked) },
+            hasUnreadNotification = state.hasUnreadNotification,
+        )
 
         Spacer(modifier = Modifier.height(28.dp))
         ProfileRow(

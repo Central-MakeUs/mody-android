@@ -64,6 +64,8 @@ data class FeedState(
     val isAddGroupDialogVisible: Boolean = false,
     // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
     val phaseTwoFeaturesEnabled: Boolean = false,
+    // 상단바 알림 아이콘 뱃지(안 읽은 알림 존재).
+    val hasUnreadNotification: Boolean = false,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 신고 메뉴 미노출 — 내 글에 잠깐 떴다 사라지는 것 방지.
     val myMemberId: Long? = null,
     // 신고 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 접수 중 → 완료/실패 다이얼로그

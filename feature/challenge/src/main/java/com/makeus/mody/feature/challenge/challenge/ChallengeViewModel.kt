@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.GroupRepository
@@ -41,11 +42,21 @@ class ChallengeViewModel @Inject constructor(
     private val onboardingRepository: OnboardingRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingStreakTabHolder: PendingStreakTabHolder,
+    private val unreadNotificationStore: UnreadNotificationStore,
     private val syncTodaySteps: SyncTodayStepsUseCase,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
     /** 현재 보고 있는 그룹. 피드와 동일 규칙(마지막 선택 그룹 > 첫 그룹)으로 결정. */
     private var currentGroupId: Long? = null
+
+    init {
+        // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
+        viewModelScope.launch {
+            unreadNotificationStore.hasUnread.collect { hasUnread ->
+                setState { copy(hasUnreadNotification = hasUnread) }
+            }
+        }
+    }
 
     override suspend fun processIntent(intent: ChallengeIntent) {
         when (intent) {
@@ -56,6 +67,8 @@ class ChallengeViewModel @Inject constructor(
                     setState { copy(selectedSubTab = ChallengeSubTab.STREAK) }
                 }
                 load()
+                // 알림함을 보고 돌아온 경우가 있어 진입마다 뱃지도 재조회.
+                viewModelScope.launch { unreadNotificationStore.refresh() }
             }
             is ChallengeIntent.SubTabSelected -> setState { copy(selectedSubTab = intent.tab) }
             is ChallengeIntent.AlarmClicked ->

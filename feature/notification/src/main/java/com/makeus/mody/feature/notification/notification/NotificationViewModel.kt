@@ -6,6 +6,7 @@ import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.domain.model.Notification
 import com.makeus.mody.core.domain.model.NotificationType
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
+import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.NotificationRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -19,6 +20,9 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -26,6 +30,7 @@ class NotificationViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
+    private val unreadNotificationStore: UnreadNotificationStore,
 ) : BaseViewModel<NotificationState, NotificationIntent>(NotificationState()) {
 
     /** 다음 페이지 커서. null 이면 첫 페이지이거나 더 없음. */
@@ -94,10 +99,22 @@ class NotificationViewModel @Inject constructor(
     }
 
     private fun markUnreadAsRead(notifications: List<Notification>) {
-        notifications.filterNot { it.isRead }.forEach { notification ->
-            viewModelScope.launch {
-                runCatching { notificationRepository.readNotification(notification.notificationId) }
+        val unread = notifications.filterNot { it.isRead }
+        if (unread.isEmpty()) return
+        viewModelScope.launch {
+            // 실패는 건별로 흡수(하나 실패해도 나머지는 읽음 처리).
+            coroutineScope {
+                unread.map { notification ->
+                    async {
+                        runCatching {
+                            notificationRepository.readNotification(notification.notificationId)
+                        }
+                    }
+                }.awaitAll()
             }
+            // 상단바 뱃지 갱신. 아직 안 불러온 페이지에 미확인이 남아 있을 수 있어
+            // 무조건 끄지 않고 서버에 다시 묻는다.
+            unreadNotificationStore.refresh()
         }
     }
 }

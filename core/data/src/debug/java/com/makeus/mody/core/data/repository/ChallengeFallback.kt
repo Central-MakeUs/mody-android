@@ -36,11 +36,15 @@ internal object ChallengeFallback {
         NudgeTarget(memberId = 3, nickname = "도윤", profileImageUrl = null, recordedToday = true),
     )
 
+    /**
+     * 달성치는 0 — 건강 데이터에서 읽은 실제 걸음 수가 곧바로 덮어쓴다.
+     * 더미 달성치를 두면 게이지가 확 찼다가 실제 값으로 뚝 떨어지는 게 보인다.
+     */
     val stepChallenge: StepChallengeStatus? = StepChallengeStatus(
         groupChallengeId = 1,
         title = "수원까지 걸어가기 챌린지",
         targetStepCount = 45_000,
-        currentStepCount = 38_000,
+        currentStepCount = 0,
     )
 
     val stepRankings: List<StepRanking> = listOf(

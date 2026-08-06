@@ -17,8 +17,10 @@ import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
+import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
+import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -36,6 +38,7 @@ class ChallengeViewModel @Inject constructor(
     private val healthRepository: HealthRepository,
     private val onboardingRepository: OnboardingRepository,
     private val navigationHelper: NavigationHelper,
+    private val pendingStreakTabHolder: PendingStreakTabHolder,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
     /** 현재 보고 있는 그룹. 피드와 동일 규칙(마지막 선택 그룹 > 첫 그룹)으로 결정. */
@@ -43,7 +46,14 @@ class ChallengeViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: ChallengeIntent) {
         when (intent) {
-            is ChallengeIntent.ScreenEntered -> load()
+            is ChallengeIntent.ScreenEntered -> {
+                // 피드 "콕 찌르기 하러 가기" 로 넘어온 경우. ViewModel 은 탭 전환에도 살아남아
+                // 직전에 보던 서브탭이 남으므로, 요청이 있으면 연속 기록으로 되돌린다.
+                if (pendingStreakTabHolder.consume()) {
+                    setState { copy(selectedSubTab = ChallengeSubTab.STREAK) }
+                }
+                load()
+            }
             is ChallengeIntent.SubTabSelected -> setState { copy(selectedSubTab = intent.tab) }
             is ChallengeIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
@@ -130,8 +140,6 @@ class ChallengeViewModel @Inject constructor(
     /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
     private fun refreshStep() = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
-        // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
-        syncSteps(groupId, askPermission = true)
         val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
         val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
         setState {
@@ -140,6 +148,9 @@ class ChallengeViewModel @Inject constructor(
                 stepRankings = rankings ?: stepRankings,
             )
         }
+        // 동기화가 마지막 — 순서를 바꾸면 조회 결과가 방금 반영한 실제 걸음 수를 덮어쓴다.
+        // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
+        syncSteps(groupId, askPermission = true)
     }
 
     /**
@@ -168,7 +179,6 @@ class ChallengeViewModel @Inject constructor(
         runCatching { onboardingRepository.reportHealthConnection(granted) }
         if (!granted) return@launch
         val groupId = currentGroupId ?: return@launch
-        uploadTodaySteps(groupId)
         val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
         val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
         setState {
@@ -177,16 +187,22 @@ class ChallengeViewModel @Inject constructor(
                 stepRankings = rankings ?: stepRankings,
             )
         }
+        // 조회 뒤에 올려야 방금 읽은 걸음 수가 조회 결과에 덮이지 않는다.
+        uploadTodaySteps(groupId)
     }
 
     /**
      * 건강 데이터의 오늘 걸음 수를 서버에 upsert 하고, 응답의 그룹 누적값을 즉시 반영한다.
-     * 진행 중인 걸음 수 챌린지가 없으면 서버가 실패를 주므로 조용히 넘긴다.
+     *
+     * 서버 반영 전에 읽은 값을 먼저 화면에 올린다. 진행 중인 걸음 수 챌린지가 없으면
+     * 서버가 실패를 주는데, 그때도 게이지에는 실제로 걸은 수가 보여야 한다.
+     * 업로드가 성공하면 그룹 누적값이 정답이므로 서버 응답으로 덮어쓴다.
      */
     private suspend fun uploadTodaySteps(groupId: Long) {
         setState { copy(isSyncingSteps = true) }
         val steps = runCatching { healthRepository.readTodayStepCount() }.getOrNull()
         if (steps != null) {
+            setState { copy(stepChallenge = stepChallenge?.copy(currentStepCount = steps)) }
             runCatching {
                 challengeRepository.upsertStepRecord(
                     groupId = groupId,

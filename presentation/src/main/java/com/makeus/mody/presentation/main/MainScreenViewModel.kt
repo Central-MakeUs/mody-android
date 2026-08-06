@@ -11,6 +11,7 @@ import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
+import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,6 +28,7 @@ class MainScreenViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val remoteConfigRepository: RemoteConfigRepository,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
+    private val pendingStreakTabHolder: PendingStreakTabHolder,
 ) : ViewModel() {
 
     private companion object {
@@ -61,6 +63,20 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch {
             pendingGroupSelectionHolder.pendingGroupId.collect { groupId ->
                 if (groupId != null) _selectedTab.value = MainTab.FEED
+            }
+        }
+        // 피드 "콕 찌르기 하러 가기" → 챌린지 탭. 연속 기록 서브탭 전환은 ChallengeViewModel 이
+        // 화면 진입 시 consume 해서 처리하므로 여기선 비우지 않는다.
+        viewModelScope.launch {
+            pendingStreakTabHolder.pending.collect { pending ->
+                if (!pending) return@collect
+                // 챌린지 탭이 숨겨진 상태(Phase 1)면 갈 곳이 없다. 요청이 남아 다음 진입에
+                // 엉뚱하게 소비되지 않도록 여기서 버린다.
+                if (MainTab.CHALLENGE in visibleTabs.value) {
+                    _selectedTab.value = MainTab.CHALLENGE
+                } else {
+                    pendingStreakTabHolder.consume()
+                }
             }
         }
     }

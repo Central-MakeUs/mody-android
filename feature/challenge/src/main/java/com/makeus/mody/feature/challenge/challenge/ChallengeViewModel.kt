@@ -104,7 +104,15 @@ class ChallengeViewModel @Inject constructor(
         // 피드에서 그룹을 바꾸고 넘어온 경우. 아래 병합이 `?: this.summary` 로 이전 값을
         // 유지하므로, 여기서 비우지 않으면 새 그룹 조회가 실패한 항목에 옛 그룹 기록이 남는다.
         if (previousGroupId != null && previousGroupId != groupId) {
-            setState { ChallengeState(selectedSubTab = selectedSubTab, isLoading = true) }
+            // 알림 뱃지는 그룹과 무관하므로 넘긴다. 초기값(false)으로 되돌리면 store 의 StateFlow 가
+            // 같은 값을 다시 내보내지 않아 뱃지가 켜질 때까지 사라진 채로 남는다.
+            setState {
+                ChallengeState(
+                    selectedSubTab = selectedSubTab,
+                    hasUnreadNotification = hasUnreadNotification,
+                    isLoading = true,
+                )
+            }
         }
         // async 를 launch 자식으로 두고 던지면 부모로 전파(크래시) → runCatching 흡수 + supervisorScope.
         data class Loaded(
@@ -220,7 +228,14 @@ class ChallengeViewModel @Inject constructor(
      */
     private suspend fun uploadTodaySteps(groupId: Long) {
         setState { copy(isSyncingSteps = true) }
-        val result = runCatching { syncTodaySteps(groupId) }.getOrNull()
+        // runCatching 은 취소까지 삼켜 ViewModel 정리 시 코루틴이 정상 종료로 보인다.
+        val result = try {
+            syncTodaySteps(groupId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
         if (result != null) {
             setState {
                 copy(

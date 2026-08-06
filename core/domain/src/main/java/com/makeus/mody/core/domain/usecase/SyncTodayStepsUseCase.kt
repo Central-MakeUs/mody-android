@@ -77,8 +77,9 @@ class SyncTodayStepsUseCase @Inject constructor(
                     stepCount = steps,
                 )
             }.getOrNull()
-            readTotal += steps
+            // 서버가 받아준 날만 센다. 실패한 날까지 더하면 게이지가 서버에 없는 걸음 수를 보여준다.
             if (result != null) {
+                readTotal += steps
                 uploadedDays++
                 last = result
             }

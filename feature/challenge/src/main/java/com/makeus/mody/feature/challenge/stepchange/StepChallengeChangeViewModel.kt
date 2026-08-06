@@ -44,9 +44,21 @@ class StepChallengeChangeViewModel @Inject constructor(
 
     private fun load() = viewModelScope.launch {
         setState { copy(isLoading = true) }
-        val options = runCatching { challengeRepository.getStepChallengeOptions(groupId) }
-            .getOrNull()
-        setState { copy(isLoading = false, options = options ?: this.options) }
+        try {
+            val loaded = challengeRepository.getStepChallengeOptions(groupId)
+            setState { copy(isLoading = false, options = loaded) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // 조회 실패는 알린다 — 여기서 조용히 넘기면 목록이 비어 "선택지가 없는 화면"으로 보인다.
+            setState {
+                copy(
+                    isLoading = false,
+                    error = (e as? HttpResponseException)?.msg
+                        ?: "챌린지 목록을 불러오지 못했어요. 다시 시도해주세요.",
+                )
+            }
+        }
     }
 
     /** 교체 성공하면 챌린지 탭으로 돌아간다. 탭이 재진입 시 재조회하므로 결과는 자동 반영. */

@@ -22,6 +22,7 @@ import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.core.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -76,6 +77,9 @@ class MainViewModel @Inject constructor(
     /** 마지막 걸음 수 동기화 시각(부팅 기준). 0 이면 아직 안 함. */
     private var lastStepSyncAt = 0L
 
+    /** 진행 중인 걸음 수 동기화. 겹쳐 돌면 늦게 끝난 오래된 값이 최신 기록을 덮어쓴다. */
+    private var stepSyncJob: Job? = null
+
     private val _startRoute = MutableStateFlow<Route?>(null)
     val startRoute = _startRoute.asStateFlow()
 
@@ -91,10 +95,18 @@ class MainViewModel @Inject constructor(
     fun onAppEntered() {
         val now = SystemClock.elapsedRealtime()
         if (lastStepSyncAt != 0L && now - lastStepSyncAt < STEP_SYNC_MIN_INTERVAL_MS) return
+        // 최소 간격만으로는 부족하다 — 앞선 동기화가 느리면 두 번이 겹치고, 먼저 시작한 쪽이
+        // 늦게 끝나면서 같은 날짜에 더 적은 걸음 수를 덮어쓴다.
+        if (stepSyncJob?.isActive == true) return
         lastStepSyncAt = now
-        viewModelScope.launch {
-            runCatching { syncTodaySteps() }
-                .onFailure { Log.w(TAG, "앱 진입 걸음 수 동기화 실패", it) }
+        stepSyncJob = viewModelScope.launch {
+            try {
+                syncTodaySteps()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "앱 진입 걸음 수 동기화 실패", e)
+            }
         }
     }
 

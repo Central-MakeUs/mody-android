@@ -1,6 +1,7 @@
 package com.makeus.mody.presentation
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.domain.usecase.ResolveStartDestinationUseCase
+import com.makeus.mody.core.domain.usecase.SyncTodayStepsUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.makeus.mody.core.navigation.AuthGraphBaseRoute
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
@@ -53,6 +55,7 @@ sealed interface SplashGateState {
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val resolveStartDestination: ResolveStartDestinationUseCase,
+    private val syncTodaySteps: SyncTodayStepsUseCase,
     private val sessionExpiredNotifier: SessionExpiredNotifier,
     private val sessionRepository: SessionRepository,
     private val navigationHelper: NavigationHelper,
@@ -65,13 +68,35 @@ class MainViewModel @Inject constructor(
 
         // fetch 가 오래 걸려도 스플래시에 갇히지 않게 상한. 초과 시 캐시/기본값으로 평가(fail-open).
         const val REMOTE_CONFIG_TIMEOUT_MS = 5_000L
+
+        // onStart 는 잠깐 다른 앱에 갔다 와도 불린다. 연타 수준의 재진입까지 서버에 올리지 않도록.
+        const val STEP_SYNC_MIN_INTERVAL_MS = 60_000L
     }
+
+    /** 마지막 걸음 수 동기화 시각(부팅 기준). 0 이면 아직 안 함. */
+    private var lastStepSyncAt = 0L
 
     private val _startRoute = MutableStateFlow<Route?>(null)
     val startRoute = _startRoute.asStateFlow()
 
     private val _splashGate = MutableStateFlow<SplashGateState>(SplashGateState.Checking)
     val splashGate = _splashGate.asStateFlow()
+
+    /**
+     * 앱 진입(첫 실행 + 백그라운드 복귀)마다 오늘 걸음 수를 서버에 반영.
+     *
+     * 챌린지 탭에 들어가야만 올라가던 것을 메운다. 권한이 없으면 use case 가 조용히 건너뛰므로
+     * 여기서 팝업이 뜨는 일은 없다. 실패는 다음 진입에 다시 시도하면 되므로 로그만 남긴다.
+     */
+    fun onAppEntered() {
+        val now = SystemClock.elapsedRealtime()
+        if (lastStepSyncAt != 0L && now - lastStepSyncAt < STEP_SYNC_MIN_INTERVAL_MS) return
+        lastStepSyncAt = now
+        viewModelScope.launch {
+            runCatching { syncTodaySteps() }
+                .onFailure { Log.w(TAG, "앱 진입 걸음 수 동기화 실패", it) }
+        }
+    }
 
     /** 진행 가능 공지(skipPossible=true)에서 확인 → 게이트 통과. */
     fun confirmNotice() {

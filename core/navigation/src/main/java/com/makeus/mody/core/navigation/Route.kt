@@ -118,6 +118,19 @@ sealed interface FeedGraph : Route {
     ) : FeedGraph
 }
 
+/**
+ * 챌린지 관련 풀스크린 route. 챌린지 메인은 바텀탭(MainScreen) 안에 있고,
+ * 여기엔 탭 위로 push 되는 화면만 둔다.
+ */
+sealed interface ChallengeGraph : Route {
+    /**
+     * 그룹 필수(걸음 수) 챌린지 변경. 챌린지 탭의 "챌린지 변경" 에서 진입.
+     * @param groupId 어느 그룹의 챌린지를 바꿀지. 탭이 보고 있는 그룹을 그대로 넘긴다.
+     */
+    @Serializable
+    data class StepChallengeChangeRoute(val groupId: Long) : ChallengeGraph
+}
+
 @Serializable
 data object NotificationGraphBaseRoute : Route
 

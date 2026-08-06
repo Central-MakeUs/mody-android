@@ -45,17 +45,20 @@ class HealthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun readTodayStepCount(): Int {
-        val client = clientOrNull() ?: return 0
-        if (!hasStepPermission()) return 0
         val zone = ZoneId.systemDefault()
         val startOfDay = LocalDate.now(zone).atStartOfDay(zone).toInstant()
-        val now = Instant.now()
+        return readStepCount(from = startOfDay, to = Instant.now())
+    }
+
+    override suspend fun readStepCount(from: Instant, to: Instant): Int {
+        val client = clientOrNull() ?: return 0
+        if (!hasStepPermission()) return 0
         // 자정 직후 등으로 범위가 역전되면 집계 요청이 실패하므로 방어.
-        if (!now.isAfter(startOfDay)) return 0
+        if (!to.isAfter(from)) return 0
         val result: AggregationResult = client.aggregate(
             AggregateRequest(
                 metrics = setOf(StepsRecord.COUNT_TOTAL),
-                timeRangeFilter = TimeRangeFilter.between(startOfDay, now),
+                timeRangeFilter = TimeRangeFilter.between(from, to),
             ),
         )
         return result[StepsRecord.COUNT_TOTAL]?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt() ?: 0

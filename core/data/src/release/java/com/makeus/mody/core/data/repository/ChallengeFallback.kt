@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.NudgeTarget
+import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
@@ -23,6 +24,8 @@ internal object ChallengeFallback {
     val nudgeTargets: List<NudgeTarget> = emptyList()
 
     val stepChallenge: StepChallengeStatus? = null
+
+    val stepChallengeOptions: List<StepChallengeOption> = emptyList()
 
     val stepRankings: List<StepRanking> = emptyList()
 

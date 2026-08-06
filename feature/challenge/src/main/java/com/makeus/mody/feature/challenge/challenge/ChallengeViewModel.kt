@@ -14,6 +14,8 @@ import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
+import com.makeus.mody.core.domain.usecase.SyncTodayStepsUseCase
+import com.makeus.mody.core.navigation.ChallengeGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationGraph
@@ -39,6 +41,7 @@ class ChallengeViewModel @Inject constructor(
     private val onboardingRepository: OnboardingRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingStreakTabHolder: PendingStreakTabHolder,
+    private val syncTodaySteps: SyncTodayStepsUseCase,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
     /** 현재 보고 있는 그룹. 피드와 동일 규칙(마지막 선택 그룹 > 첫 그룹)으로 결정. */
@@ -62,8 +65,12 @@ class ChallengeViewModel @Inject constructor(
             is ChallengeIntent.HealthPermissionRequestLaunched ->
                 setState { copy(healthPermissionRequest = null) }
             is ChallengeIntent.HealthPermissionResult -> onHealthPermissionResult(intent.granted)
-            // TODO(challenge): 걸음 수 챌린지 변경(walk/choose)·주간 챌린지 상세 화면 연결 (후속 PR).
-            is ChallengeIntent.ChangeStepChallengeClicked -> Unit
+            is ChallengeIntent.ChangeStepChallengeClicked -> currentGroupId?.let { groupId ->
+                navigationHelper.navigate(
+                    NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
+                )
+            }
+            // TODO(challenge): 주간 챌린지 상세 화면 연결 (후속 PR).
             is ChallengeIntent.WeeklyChallengeClicked -> Unit
             is ChallengeIntent.ToastShown -> setState { copy(toastMessage = null) }
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
@@ -192,32 +199,25 @@ class ChallengeViewModel @Inject constructor(
     }
 
     /**
-     * 건강 데이터의 오늘 걸음 수를 서버에 upsert 하고, 응답의 그룹 누적값을 즉시 반영한다.
+     * 걸음 수를 서버에 반영하고 결과를 게이지에 즉시 옮긴다.
      *
-     * 서버 반영 전에 읽은 값을 먼저 화면에 올린다. 진행 중인 걸음 수 챌린지가 없으면
-     * 서버가 실패를 주는데, 그때도 게이지에는 실제로 걸은 수가 보여야 한다.
-     * 업로드가 성공하면 그룹 누적값이 정답이므로 서버 응답으로 덮어쓴다.
+     * 실제 동기화(카운트 시작 시각 반영·날짜별 백필)는 [syncTodaySteps] 가 한다.
+     * 업로드가 성공하면 서버 누적값이 정답이므로 그걸 쓰고, 실패하면(진행 중인 챌린지가
+     * 없을 때 서버가 실패를 준다) 방금 읽은 값이라도 보여준다.
      */
     private suspend fun uploadTodaySteps(groupId: Long) {
         setState { copy(isSyncingSteps = true) }
-        val steps = runCatching { healthRepository.readTodayStepCount() }.getOrNull()
-        if (steps != null) {
-            setState { copy(stepChallenge = stepChallenge?.copy(currentStepCount = steps)) }
-            runCatching {
-                challengeRepository.upsertStepRecord(
-                    groupId = groupId,
-                    recordedOn = today(),
-                    stepCount = steps,
+        val result = runCatching { syncTodaySteps(groupId) }.getOrNull()
+        if (result != null) {
+            setState {
+                copy(
+                    stepChallenge = stepChallenge?.let { challenge ->
+                        challenge.copy(
+                            currentStepCount = result.currentStepCount ?: result.readStepCount,
+                            targetStepCount = result.targetStepCount ?: challenge.targetStepCount,
+                        )
+                    },
                 )
-            }.onSuccess { result ->
-                setState {
-                    copy(
-                        stepChallenge = stepChallenge?.copy(
-                            currentStepCount = result.currentStepCount,
-                            targetStepCount = result.targetStepCount,
-                        ),
-                    )
-                }
             }
         }
         setState { copy(isSyncingSteps = false) }

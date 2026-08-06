@@ -2,12 +2,15 @@ package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.NudgeTarget
+import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.network.api.ChallengeApi
+import com.makeus.mody.core.network.model.challenge.StepChallengeChangeRequest
 import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -64,8 +67,43 @@ class ChallengeRepositoryImpl @Inject constructor(
                 title = s.title,
                 targetStepCount = s.targetStepCount,
                 currentStepCount = s.currentStepCount,
+                fetchFromAt = s.fetchFromAt.toServerInstantOrNull(),
             )
         }.getOrElse { e -> ChallengeFallback.stepChallenge ?: throw e }
+
+    override suspend fun getStepChallengeOptions(groupId: Long): List<StepChallengeOption> =
+        apiCatching {
+            challengeApi.getStepChallengeOptions(groupId).unwrapResult().options.map {
+                StepChallengeOption(
+                    challengeId = it.challengeId,
+                    title = it.title,
+                    departure = it.departure,
+                    destination = it.destination,
+                    distanceKm = it.distanceKm,
+                    targetStepCount = it.targetStepCount,
+                    selected = it.selected,
+                )
+            }
+        }.getOrElse { e -> ChallengeFallback.stepChallengeOptions.ifEmpty { throw e } }
+            .ifEmpty { ChallengeFallback.stepChallengeOptions }
+
+    // 챌린지 교체는 폴백 대상이 아니다 — 실패를 감추면 바뀐 줄 알고 화면을 닫게 된다.
+    override suspend fun changeStepChallenge(
+        groupId: Long,
+        challengeId: Long,
+    ): StepChallengeStatus {
+        val r = challengeApi.changeStepChallenge(
+            groupId = groupId,
+            request = StepChallengeChangeRequest(challengeId = challengeId),
+        ).unwrapResult()
+        return StepChallengeStatus(
+            groupChallengeId = r.groupChallengeId,
+            title = r.title,
+            targetStepCount = r.targetStepCount,
+            currentStepCount = r.currentStepCount,
+            fetchFromAt = r.fetchFromAt.toServerInstantOrNull(),
+        )
+    }
 
     override suspend fun getStepRankings(groupId: Long): List<StepRanking> =
         apiCatching {
@@ -90,6 +128,13 @@ class ChallengeRepositoryImpl @Inject constructor(
                     deadlineDayOfWeek = it.deadlineDayOfWeek,
                     participantCount = it.participantCount,
                     randomParticipantNickname = it.randomParticipantNickname,
+                    participants = it.participants.map { p ->
+                        WeeklyChallengeParticipant(
+                            memberId = p.memberId,
+                            nickname = p.nickname,
+                            profileImageUrl = p.profileImageUrl,
+                        )
+                    },
                 )
             }
         }.getOrElse { e -> ChallengeFallback.weeklyChallenges.ifEmpty { throw e } }

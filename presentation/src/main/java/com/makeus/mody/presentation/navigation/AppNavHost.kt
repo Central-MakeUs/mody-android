@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.feature.auth.navigation.authNavGraph
+import com.makeus.mody.feature.challenge.navigation.challengeNavGraph
 import com.makeus.mody.feature.feed.navigation.feedNavGraph
 import com.makeus.mody.feature.group.navigation.groupNavGraph
 import com.makeus.mody.feature.mypage.navigation.myPageNavGraph
@@ -34,6 +35,7 @@ fun AppNavHost(
         notificationNavGraph()
         myPageNavGraph()
         feedNavGraph()
+        challengeNavGraph()
         composable<MainRoute> { MainScreen() }
     }
 }

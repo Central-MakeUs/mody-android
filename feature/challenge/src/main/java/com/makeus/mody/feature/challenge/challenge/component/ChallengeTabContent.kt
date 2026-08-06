@@ -47,12 +47,20 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Locale
 
 /** 달성 걸음수 강조 컬러(시안 지정 — 팔레트 외 값). */
 private val StepYellow = Color(0xFFF3D42F)
+
+/** 주간 챌린지 카드에 얼굴을 보여줄 참여자 수. 넘치는 인원은 "+N". */
+private const val ParticipantAvatarMax = 3
+
+/** 시안 실측: 아바타 24, 겹침 6 (가로 피치 18). */
+private val ParticipantAvatarSize = 24.dp
+private val ParticipantAvatarOverlap = 6.dp
 
 /** 게이지 좌우 여백 — 섹션 패딩(24) 안쪽으로 더 들어가는 값. 시안 left 54 기준. */
 private val GaugeInset = 30.dp
@@ -508,11 +516,49 @@ private fun WeeklyChallengeRow(
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = participantLabel(challenge),
-            style = ModyTheme.typography.c2,
-            color = ModyTheme.colors.gray08,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (challenge.participants.isNotEmpty()) {
+                ParticipantAvatars(challenge = challenge)
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            Text(
+                text = participantLabel(challenge),
+                style = ModyTheme.typography.c2,
+                color = ModyTheme.colors.gray08,
+            )
+        }
+    }
+}
+
+/** 참여자 겹침 아바타 — 앞 [ParticipantAvatarMax]명만 그리고 나머지는 "+N". */
+@Composable
+private fun ParticipantAvatars(challenge: WeeklyChallenge) {
+    val shown = challenge.participants.take(ParticipantAvatarMax)
+    // 목록이 잘려 와도 총원은 participantCount 가 기준이다.
+    val hidden = challenge.participantCount - shown.size
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            // 음수 간격으로 겹친다. 뒤 항목이 위에 그려져 시안처럼 오른쪽이 앞으로 온다.
+            horizontalArrangement = Arrangement.spacedBy(-ParticipantAvatarOverlap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            shown.forEach { participant ->
+                ModyAvatar(
+                    imageUrl = participant.profileImageUrl,
+                    size = ParticipantAvatarSize,
+                    contentDescription = participant.nickname,
+                )
+            }
+        }
+        if (hidden > 0) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "+$hidden",
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.gray10,
+            )
+        }
     }
 }
 
@@ -556,6 +602,10 @@ private fun SectionChip(text: String) {
     }
 }
 
+private val previewParticipants = (1..5).map {
+    WeeklyChallengeParticipant(it.toLong(), "버디$it", null)
+}
+
 @Preview(showBackground = true, heightDp = 1400)
 @Composable
 private fun ChallengeTabContentPreview() {
@@ -576,8 +626,8 @@ private fun ChallengeTabContentPreview() {
                 StepRanking(5, 5, "민석", null, 4000),
             ),
             weeklyChallenges = listOf(
-                WeeklyChallenge(1, "이번주의 고해성사하기", "SUNDAY", 5, "버디1"),
-                WeeklyChallenge(2, "하루에 줄넘기 15분 하기", "FRIDAY", 5, "버디1"),
+                WeeklyChallenge(1, "이번주의 고해성사하기", "SUNDAY", 5, "버디1", previewParticipants),
+                WeeklyChallenge(2, "하루에 줄넘기 15분 하기", "FRIDAY", 5, "버디1", previewParticipants),
             ),
             onStepRefreshClick = {},
             onChangeStepChallengeClick = {},

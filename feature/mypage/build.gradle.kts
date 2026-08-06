@@ -33,4 +33,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
+    // 건강 데이터 연동 설정 진입 인텐트 액션 상수용(권한 요청은 :feature:challenge 담당).
+    implementation(libs.androidx.health.connect)
 }

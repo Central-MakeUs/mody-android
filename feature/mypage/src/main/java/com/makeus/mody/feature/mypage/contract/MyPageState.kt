@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.mypage.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.model.WeightSummary
 
 data class MyPageState(
@@ -17,4 +18,9 @@ data class MyPageState(
     val weightError: String? = null,
     /** Phase 2 기능 노출(Remote Config). Phase 1 에선 건강 데이터 연동 설정 메뉴 숨김. */
     val phaseTwoFeaturesEnabled: Boolean = false,
+    /**
+     * 건강 데이터 연동 설정 진입 요청(1회성, 실행 후 null).
+     * 기기의 Health Connect 상태에 따라 목적지가 갈려(설정 화면 vs 스토어 설치) 화면이 인텐트를 만든다.
+     */
+    val healthSettingsRequest: HealthAvailability? = null,
 ) : UiState

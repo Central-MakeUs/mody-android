@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -351,16 +352,19 @@ private fun RecordedBadge() {
 private fun NudgedBadge() {
     Box(
         modifier = Modifier
-            .width(88.dp)
+            // "기록 완료" 배지와 폭을 맞추되, 글자가 길어 88dp 를 넘으면 잘리지 않게 늘어난다.
+            .widthIn(min = 88.dp)
             .height(34.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(ModyTheme.colors.gray02),
+            .background(ModyTheme.colors.gray02)
+            .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "찔렀어요",
+            text = "이미 찔렀어요",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.gray06,
+            maxLines = 1,
         )
     }
 }

@@ -24,6 +24,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:navigation"))
     implementation(project(":core:domain"))
+    // 인증 사진 촬영 오버레이(CameraX)
+    implementation(project(":core:camera"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -37,9 +39,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
-
-    // 인증 사진 촬영 결과 파일을 카메라 앱에 넘기기 위한 FileProvider
-    implementation(libs.androidx.core.ktx)
 
     // Health Connect 권한 요청 계약(PermissionController)만 사용. 데이터 접근은 :core:data 담당.
     implementation(libs.androidx.health.connect)

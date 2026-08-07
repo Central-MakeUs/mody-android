@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.camera
+package com.makeus.mody.core.camera
 
 import android.Manifest
 import android.app.Activity
@@ -37,19 +37,27 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.CropRegion
 
+/** 기록 카드 비율(354:200). */
+const val RECORD_FRAME_RATIO = 200f / 354f
+
+/** 정사각(1:1). 주간 챌린지 인증 사진 격자. */
+const val SQUARE_FRAME_RATIO = 1f
+
 /**
- * 커스텀 촬영 오버레이(식사·운동 공용). 풀스크린으로 띄운다.
- * 촬영 → 조정(354:200 크롭) → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
+ * 커스텀 촬영 오버레이(앱 공용). 풀스크린으로 띄운다.
+ * 권한 → 촬영 → 조정 → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
  *
+ * @param frameRatio 조정 단계 크롭 프레임의 높이/너비. 쓰는 곳의 카드 비율을 넘긴다
+ *   ([RECORD_FRAME_RATIO], [SQUARE_FRAME_RATIO]).
  * @param onConfirm (원본 이미지 uri, 정규화 크롭 영역).
- * @param onPickGallery 갤러리 버튼 → 시스템 갤러리 열기(호출부의 런처).
+ * @param onPickGallery 갤러리 버튼 → 시스템 갤러리 열기(호출부의 런처). null 이면 버튼을 숨긴다.
  * @param onDismiss 닫기/취소.
  */
-@Suppress("unused")
 @Composable
-fun RecordCameraOverlay(
+fun ModyCameraOverlay(
+    frameRatio: Float,
     onConfirm: (uri: String, cropRegion: CropRegion) -> Unit,
-    onPickGallery: () -> Unit,
+    onPickGallery: (() -> Unit)?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -104,6 +112,7 @@ fun RecordCameraOverlay(
 
             else -> AdjustLayer(
                 image = captured!!,
+                frameRatio = frameRatio,
                 onRetake = { captured = null },
                 onConfirm = onConfirm,
                 onClose = onDismiss,

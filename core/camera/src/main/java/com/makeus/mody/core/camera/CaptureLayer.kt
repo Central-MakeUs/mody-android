@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.camera
+package com.makeus.mody.core.camera
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,11 +39,13 @@ import kotlinx.coroutines.launch
 /**
  * 촬영 단계 레이어: 풀스크린 프리뷰 + 우상단 닫기 + 하단(갤러리 / 셔터 / 전후면 전환).
  * 셔터 → 촬영·업라이트 정규화 후 [onCaptured] 로 결과 전달.
+ *
+ * @param onPickGallery null 이면 갤러리 버튼을 숨긴다. 자리는 비워 둬 셔터가 가운데에 남는다.
  */
 @Composable
 fun CaptureLayer(
     onCaptured: (UprightImage) -> Unit,
-    onPickGallery: () -> Unit,
+    onPickGallery: (() -> Unit)?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -82,21 +85,25 @@ fun CaptureLayer(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // 갤러리
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.25f))
-                    .clickable(onClick = onPickGallery),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(ModyIcons.Image),
-                    contentDescription = "갤러리에서 선택",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp),
-                )
+            // 갤러리. 안 쓰는 화면에선 빈 자리만 남겨 셔터가 가운데에 머물게 한다.
+            if (onPickGallery != null) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.25f))
+                        .clickable(onClick = onPickGallery),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(ModyIcons.Image),
+                        contentDescription = "갤러리에서 선택",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.size(44.dp))
             }
 
             // 셔터

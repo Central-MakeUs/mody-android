@@ -1,11 +1,7 @@
 package com.makeus.mody.feature.challenge.weeklydetail
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +32,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.makeus.mody.core.camera.ModyCameraOverlay
+import com.makeus.mody.core.camera.SQUARE_FRAME_RATIO
 import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
@@ -53,7 +47,6 @@ import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.WeeklyChallengeProof
-import com.makeus.mody.feature.challenge.util.createProofCaptureUri
 import com.makeus.mody.feature.challenge.util.dDayLabel
 import com.makeus.mody.feature.challenge.weeklydetail.contract.WeeklyChallengeDetailIntent
 import com.makeus.mody.feature.challenge.weeklydetail.contract.WeeklyChallengeDetailState
@@ -79,40 +72,20 @@ fun WeeklyChallengeDetailScreen(
     val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.onIntent(WeeklyChallengeDetailIntent.ScreenEntered) }
 
-    // 촬영 결과를 받을 캐시 파일 URI. 런처 콜백에서 다시 읽어야 해서 상태로 들고 있는다.
-    var captureUri by remember { mutableStateOf<Uri?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture(),
-    ) { saved ->
-        val uri = captureUri
-        if (saved && uri != null) {
-            viewModel.onIntent(WeeklyChallengeDetailIntent.PhotoPicked(uri.toString()))
-        }
-        captureUri = null
-    }
-    val launchCamera = {
-        val uri = createProofCaptureUri(context)
-        captureUri = uri
-        cameraLauncher.launch(uri)
-    }
-    // 앱이 CAMERA 권한을 선언하고 있으면 시스템 카메라 호출에도 허용이 필요하다.
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) launchCamera() }
+    WeeklyChallengeDetailContent(state = state, onIntent = viewModel::onIntent)
 
     // "인증하기" 는 바로 촬영으로 간다 — 인증 사진이라 그 자리에서 찍는 게 기본 흐름.
-    LaunchedEffect(state.isCaptureRequested) {
-        if (!state.isCaptureRequested) return@LaunchedEffect
-        viewModel.onIntent(WeeklyChallengeDetailIntent.CaptureLaunched)
-        val granted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA,
-        ) == PackageManager.PERMISSION_GRANTED
-        if (granted) launchCamera() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    // 갤러리는 막는다(onPickGallery = null): 아무 사진이나 고르면 인증이 성립하지 않는다.
+    if (state.isCameraVisible) {
+        ModyCameraOverlay(
+            frameRatio = SQUARE_FRAME_RATIO,
+            onConfirm = { uri, region ->
+                viewModel.onIntent(WeeklyChallengeDetailIntent.PhotoCaptured(uri, region))
+            },
+            onPickGallery = null,
+            onDismiss = { viewModel.onIntent(WeeklyChallengeDetailIntent.CameraDismissed) },
+        )
     }
-
-    WeeklyChallengeDetailContent(state = state, onIntent = viewModel::onIntent)
 
     // 콜라주가 준비되면 공유 시트로. URI 는 한 번만 쓰고 비운다.
     state.shareImageUri?.let { uri ->

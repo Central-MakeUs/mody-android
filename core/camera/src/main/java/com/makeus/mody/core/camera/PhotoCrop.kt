@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.camera
+package com.makeus.mody.core.camera
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -10,14 +10,14 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 
-/** 촬영/크롭 결과를 담는 캐시 파일. record_file_paths.xml 의 cache-path(record/camera)와 일치. */
+/** 촬영/크롭 결과를 담는 캐시 파일. camera_file_paths.xml 의 cache-path(camera)와 일치. */
 private fun cameraCacheFile(context: Context, name: String): File {
-    val dir = File(context.cacheDir, "record/camera").apply { mkdirs() }
+    val dir = File(context.cacheDir, "camera").apply { mkdirs() }
     return File(dir, name)
 }
 
 private fun fileUri(context: Context, file: File): Uri =
-    FileProvider.getUriForFile(context, "${context.packageName}.record.fileprovider", file)
+    FileProvider.getUriForFile(context, "${context.packageName}.camera.fileprovider", file)
 
 /** 정규화된(EXIF 회전 반영) 업라이트 이미지 정보. [uri] 는 표시용, [path] 는 크롭 디코딩용. */
 data class UprightImage(val uri: String, val path: String, val width: Int, val height: Int)

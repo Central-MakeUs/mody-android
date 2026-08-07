@@ -125,10 +125,12 @@ class MyPageViewModel @Inject constructor(
             profileDeferred.await() to weightDeferred.await()
         }
         // 실패한 값은 기존 상태 유지. 로딩만 해제.
+        // 프로필은 항목별로 `?:` 하지 않는다 — 기본 이미지로 바꾸면 profileImageUrl 이 null 로
+        // 내려오는데, `?: profileImageUrl` 이면 "조회 실패"와 구분이 안 돼 옛 이미지가 남는다.
         setState {
             copy(
                 nickname = p?.nickname ?: nickname,
-                profileImageUrl = p?.profileImageUrl ?: profileImageUrl,
+                profileImageUrl = if (p != null) p.profileImageUrl else profileImageUrl,
                 daysTogether = p?.daysTogether ?: daysTogether,
                 weight = w ?: weight,
                 isLoading = false,

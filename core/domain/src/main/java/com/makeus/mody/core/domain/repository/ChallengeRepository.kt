@@ -1,12 +1,15 @@
 package com.makeus.mody.core.domain.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeProof
+import com.makeus.mody.core.domain.model.WeeklyChallengeShare
 
 /** 챌린지 탭 — 그룹 요약 통계, 버디 신기록(콕 찌르기). */
 interface ChallengeRepository {
@@ -36,6 +39,30 @@ interface ChallengeRepository {
 
     /** 이번주 그룹 선택(주간) 챌린지 목록. */
     suspend fun getWeeklyChallenges(groupId: Long): List<WeeklyChallenge>
+
+    /** 주간 챌린지 인증 사진 목록. */
+    suspend fun getWeeklyChallengeProofs(
+        groupId: Long,
+        groupChallengeId: Long,
+    ): List<WeeklyChallengeProof>
+
+    /**
+     * 인증 사진 등록. 등록하면 그 챌린지에 참여한 것으로 잡힌다.
+     * @param imageKey presigned 업로드로 받은 키
+     * @param cropRegion 원본 대비 표시 영역(정규화 0~1). 크롭 안 했으면 null
+     */
+    suspend fun createWeeklyChallengeProof(
+        groupId: Long,
+        groupChallengeId: Long,
+        imageKey: String,
+        cropRegion: CropRegion?,
+    ): WeeklyChallengeProof
+
+    /** 공유용 콜라주 이미지 생성. 인증 사진이 없으면 서버가 실패를 준다. */
+    suspend fun shareWeeklyChallenge(
+        groupId: Long,
+        groupChallengeId: Long,
+    ): WeeklyChallengeShare
 
     /**
      * 오늘 걸음 수를 서버에 반영(upsert). 같은 날짜로 다시 보내면 덮어쓴다.

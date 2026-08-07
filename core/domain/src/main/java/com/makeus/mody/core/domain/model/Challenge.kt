@@ -63,6 +63,25 @@ data class StepRanking(
     val stepCount: Int,
 )
 
+/** 주간 챌린지 인증 사진 한 장. */
+data class WeeklyChallengeProof(
+    val proofId: Long,
+    val imageUrl: String,
+    /** 서버가 원본을 저장하고 표시 영역만 내려준다. null 이면 원본 전체. */
+    val cropRegion: CropRegion?,
+    val memberId: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+)
+
+/** 공유용 콜라주 이미지. 서버가 인증 사진들을 합쳐 한 장으로 만들어 준다. */
+data class WeeklyChallengeShare(
+    val imageUrl: String,
+    val cropRegion: CropRegion?,
+    val rows: Int,
+    val columns: Int,
+)
+
 /** 주간 챌린지 참여자 — 카드의 겹침 아바타에 쓴다. */
 data class WeeklyChallengeParticipant(
     val memberId: Long,

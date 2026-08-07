@@ -83,11 +83,33 @@ class ChallengeViewModel @Inject constructor(
                     NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
                 )
             }
-            // TODO(challenge): 주간 챌린지 상세 화면 연결 (후속 PR).
-            is ChallengeIntent.WeeklyChallengeClicked -> Unit
+            is ChallengeIntent.WeeklyChallengeClicked ->
+                navigateToWeeklyDetail(intent.groupChallengeId)
             is ChallengeIntent.ToastShown -> setState { copy(toastMessage = null) }
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
         }
+    }
+
+    /**
+     * 주간 챌린지 상세로 이동.
+     *
+     * 제목·마감 요일을 인자로 넘긴다. 상세 API 는 목록이 주지 않는 `challengeId` 를 요구해
+     * 호출할 수 없어, 목록이 이미 들고 있는 값을 그대로 전달한다.
+     */
+    private fun navigateToWeeklyDetail(groupChallengeId: Long) {
+        val groupId = currentGroupId ?: return
+        val challenge = currentState.weeklyChallenges
+            .firstOrNull { it.groupChallengeId == groupChallengeId } ?: return
+        navigationHelper.navigate(
+            NavigationEvent.To(
+                ChallengeGraph.WeeklyChallengeDetailRoute(
+                    groupId = groupId,
+                    groupChallengeId = groupChallengeId,
+                    title = challenge.title,
+                    deadlineDayOfWeek = challenge.deadlineDayOfWeek,
+                ),
+            ),
+        )
     }
 
     /** 그룹 결정 후 요약/버디 목록 병렬 조회. 부분 실패는 이전 값 유지(전체 에러로 막지 않음). */

@@ -5,6 +5,7 @@ import com.makeus.mody.core.data.repository.ChallengeRepositoryImpl
 import com.makeus.mody.core.data.repository.HealthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
+import com.makeus.mody.core.data.repository.ImageShareRepositoryImpl
 import com.makeus.mody.core.data.repository.ImageUploadRepositoryImpl
 import com.makeus.mody.core.data.repository.MyPageRepositoryImpl
 import com.makeus.mody.core.data.repository.NotificationRepositoryImpl
@@ -19,6 +20,7 @@ import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.domain.repository.ImageShareRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.NotificationRepository
@@ -97,4 +99,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindImageUploadRepository(impl: ImageUploadRepositoryImpl): ImageUploadRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindImageShareRepository(impl: ImageShareRepositoryImpl): ImageShareRepository
 }

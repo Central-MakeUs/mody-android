@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeProof
 import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
 
 /**
@@ -65,6 +66,12 @@ internal object ChallengeFallback {
         StepRanking(rank = 4, memberId = 4, nickname = "도윤", profileImageUrl = null, stepCount = 10_000),
         StepRanking(rank = 5, memberId = 5, nickname = "민석", profileImageUrl = null, stepCount = 4_000),
     )
+
+    /**
+     * 인증 사진은 더미를 두지 않는다. 이미지 URL 이 없어 어차피 빈 칸이 그려지고,
+     * "아직 인증한 버디가 없어요" 상태와 구분이 안 돼 오히려 화면 확인을 방해한다.
+     */
+    val weeklyProofs: List<WeeklyChallengeProof> = emptyList()
 
     /** 시안 그대로 5명 참여 — 앞 3명 아바타 + "+2" 가 나오는 상태. */
     private val weeklyParticipants: List<WeeklyChallengeParticipant> = (1..5).map {

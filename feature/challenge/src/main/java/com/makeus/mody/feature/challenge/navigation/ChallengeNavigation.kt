@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.makeus.mody.core.navigation.ChallengeGraph
 import com.makeus.mody.feature.challenge.stepchange.StepChallengeChangeScreen
+import com.makeus.mody.feature.challenge.weeklydetail.WeeklyChallengeDetailScreen
 
 /**
  * 챌린지 관련 풀스크린 route. 챌린지 메인은 바텀탭(MainScreen) 내부에 있고,
@@ -11,4 +12,5 @@ import com.makeus.mody.feature.challenge.stepchange.StepChallengeChangeScreen
  */
 fun NavGraphBuilder.challengeNavGraph() {
     composable<ChallengeGraph.StepChallengeChangeRoute> { StepChallengeChangeScreen() }
+    composable<ChallengeGraph.WeeklyChallengeDetailRoute> { WeeklyChallengeDetailScreen() }
 }

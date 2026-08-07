@@ -571,7 +571,6 @@ private fun participantLabel(challenge: WeeklyChallenge): String {
     }
 }
 
-
 private fun formatSteps(steps: Int): String = "%,d".format(steps)
 
 @Composable

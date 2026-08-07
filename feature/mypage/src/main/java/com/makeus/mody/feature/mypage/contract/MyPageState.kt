@@ -10,6 +10,13 @@ data class MyPageState(
     val daysTogether: Int = 0,
     val weight: WeightSummary? = null,
     val isLoading: Boolean = false,
+    /**
+     * 프로필 조회가 한 번이라도 성공했는지. 스켈레톤은 값이 아직 없는 첫 로드에만 띄운다
+     * — 복귀 재조회마다 띄우면 이미 보이던 이름/아바타가 깜빡인다.
+     */
+    val isProfileLoaded: Boolean = false,
+    /** 체중 요약 조회 성공 여부. 기록이 없어도 [weight] 가 null 일 수 있어 별도 플래그가 필요하다. */
+    val isWeightLoaded: Boolean = false,
     /** 체중 기록 바텀시트 표시 여부. */
     val showWeightSheet: Boolean = false,
     /** 체중 기록 저장 중. */

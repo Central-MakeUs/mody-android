@@ -54,10 +54,11 @@ class NotificationViewModel @Inject constructor(
     /** 알림 link 파싱 → 이동. 미지원/파싱 실패 링크는 무시. */
     private fun navigateByLink(link: String?) {
         when (val dest = NotificationLinkParser.parse(link)) {
-            // 기록 화면을 알림 목록 위에 push — 뒤로가기는 알림 목록으로(정상 플로우),
+            // 알림 목록을 스택에서 빼고 대상 화면으로 치환 — 항목을 눌러 이동한 뒤
+            // 뒤로가기를 하면 이미 확인한 목록이 아니라 Main 으로 돌아간다.
             // 작성 "완료"는 기록 VM 이 BackTo(MainRoute)로 피드까지 pop 한다.
             is NotificationDestination.Screen ->
-                navigationHelper.navigate(NavigationEvent.To(dest.route))
+                navigationHelper.navigate(NavigationEvent.Replace(dest.route))
             // 그룹홈은 별도 라우트가 없어 Feed 탭 + 그룹 전환으로. holder 에 groupId 보관 후
             // 알림 목록을 pop(Up)해 Main 으로 복귀 → MainScreenViewModel/FeedViewModel 이 반응.
             is NotificationDestination.GroupHome -> {

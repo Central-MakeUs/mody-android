@@ -88,6 +88,15 @@ class MainActivity : ComponentActivity() {
                             launchSingleTop = true
                         }
                         is NavigationEvent.Up -> navController.navigateUp()
+                        is NavigationEvent.Replace -> {
+                            // 이벤트를 낸 화면이 곧 현재 목적지다. 그 id 로 pop(inclusive) 하면서
+                            // 새 목적지를 push — 결과적으로 스택 최상단만 갈아끼운다.
+                            val currentId = navController.currentDestination?.id
+                            navController.navigate(event.route) {
+                                if (currentId != null) popUpTo(currentId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
                         is NavigationEvent.BackTo -> {
                             // 대상 라우트까지 pop(대상 유지). 스택에 없으면 Up 폴백.
                             val popped = navController.popBackStack(event.route, inclusive = false)

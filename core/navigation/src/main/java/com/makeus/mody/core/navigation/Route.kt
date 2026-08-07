@@ -129,6 +129,22 @@ sealed interface ChallengeGraph : Route {
      */
     @Serializable
     data class StepChallengeChangeRoute(val groupId: Long) : ChallengeGraph
+
+    /**
+     * 주간 챌린지 상세(인증 사진 그리드 + 공유). 챌린지 탭의 주간 챌린지 카드에서 진입.
+     *
+     * 제목/마감 요일을 인자로 받는다. 상세 API(`GET /weekly-challenges/{challengeId}`)는
+     * 목록이 주지 않는 `challengeId` 를 요구해 호출할 수 없어, 목록이 이미 가진 값을 넘긴다.
+     * TODO(challenge): 목록 응답에 challengeId 가 추가되면 상세 API 로 대체.
+     */
+    @Serializable
+    data class WeeklyChallengeDetailRoute(
+        val groupId: Long,
+        val groupChallengeId: Long,
+        val title: String,
+        /** 서버 enum 문자열(MONDAY~SUNDAY). D-day 표시용. */
+        val deadlineDayOfWeek: String,
+    ) : ChallengeGraph
 }
 
 @Serializable

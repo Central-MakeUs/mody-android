@@ -11,6 +11,10 @@ import com.makeus.mody.core.network.model.challenge.StepRankingListResponse
 import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
 import com.makeus.mody.core.network.model.challenge.StepRecordUpsertResponse
 import com.makeus.mody.core.network.model.challenge.WeeklyChallengeListResponse
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeProofCreateRequest
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeProofCreateResponse
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeProofListResponse
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeShareResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
@@ -76,4 +80,26 @@ interface ChallengeApi {
     suspend fun getWeeklyChallenges(
         @Path("groupId") groupId: Long,
     ): ApiResponse<WeeklyChallengeListResponse>
+
+    /** 주간 챌린지 인증 사진 목록. */
+    @GET("api/v1/groups/{groupId}/weekly-challenges/{groupChallengeId}/proofs")
+    suspend fun getWeeklyChallengeProofs(
+        @Path("groupId") groupId: Long,
+        @Path("groupChallengeId") groupChallengeId: Long,
+    ): ApiResponse<WeeklyChallengeProofListResponse>
+
+    /** 인증 사진 등록. 이미지는 presigned 업로드 후 받은 imageKey 로 참조한다. */
+    @POST("api/v1/groups/{groupId}/weekly-challenges/{groupChallengeId}/proofs")
+    suspend fun createWeeklyChallengeProof(
+        @Path("groupId") groupId: Long,
+        @Path("groupChallengeId") groupChallengeId: Long,
+        @Body request: WeeklyChallengeProofCreateRequest,
+    ): ApiResponse<WeeklyChallengeProofCreateResponse>
+
+    /** 공유용 콜라주 이미지 생성. 서버가 인증 사진들을 합쳐 한 장으로 준다. */
+    @POST("api/v1/groups/{groupId}/weekly-challenges/{groupChallengeId}/share")
+    suspend fun shareWeeklyChallenge(
+        @Path("groupId") groupId: Long,
+        @Path("groupChallengeId") groupChallengeId: Long,
+    ): ApiResponse<WeeklyChallengeShareResponse>
 }

@@ -30,4 +30,11 @@ sealed class NavigationEvent {
      * [route] 가 스택에 없으면 Up 으로 폴백.
      */
     data class BackTo(val route: Route) : NavigationEvent()
+
+    /**
+     * 현재 화면을 백스택에서 빼고 [route] 로 이동(치환). 목적지에서 뒤로가기를 하면
+     * 현재 화면이 아니라 그 이전 화면으로 돌아간다 — 예: 알림 목록에서 항목을 누르면
+     * 목록은 떠나고 대상 화면만 남는다.
+     */
+    data class Replace(val route: Route) : NavigationEvent()
 }

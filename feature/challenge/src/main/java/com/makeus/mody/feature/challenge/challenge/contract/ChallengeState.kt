@@ -51,5 +51,21 @@ data class ChallengeState(
      * 런처 실행 후 [ChallengeIntent.HealthPermissionRequestLaunched] 로 비운다.
      */
     val healthPermissionRequest: Set<String>? = null,
+    /** 현재 그룹 인원(나 포함). null/0 이면 아직 못 받았다. */
+    val groupMemberCount: Int? = null,
     val error: String? = null,
-) : UiState
+) : UiState {
+
+    /**
+     * 나 혼자인 그룹 — 연속 기록도 챌린지도 성립하지 않아 두 탭 모두 막는다.
+     *
+     * 그룹 목록의 인원 수가 1차 기준. 못 받았을 때(조회 실패/서버 미제공)만 버디 목록으로
+     * 대체 판정하되, 조회 실패도 빈 목록이라 성공한 적이 있을 때만 인정한다.
+     */
+    val isSoloGroup: Boolean
+        get() = if (groupMemberCount != null && groupMemberCount > 0) {
+            groupMemberCount <= 1
+        } else {
+            buddiesLoaded && buddies.isEmpty()
+        }
+}

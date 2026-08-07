@@ -1,5 +1,6 @@
 package com.makeus.mody.core.network.model.challenge
 
+import com.makeus.mody.core.network.model.record.ImageCropRegionDto
 import kotlinx.serialization.Serializable
 
 /** GET /api/v1/groups/{groupId}/challenges/summary — 연속 기록 탭 상단 요약. */
@@ -139,4 +140,45 @@ data class WeeklyChallengeParticipantResponse(
     val memberId: Long = 0,
     val nickname: String = "",
     val profileImageUrl: String? = null,
+)
+
+/** GET /api/v1/groups/{groupId}/weekly-challenges/{groupChallengeId}/proofs — 인증 사진 목록. */
+@Serializable
+data class WeeklyChallengeProofListResponse(
+    val proofs: List<WeeklyChallengeProofResponse> = emptyList(),
+)
+
+@Serializable
+data class WeeklyChallengeProofResponse(
+    val proofId: Long = 0,
+    val imageUrl: String = "",
+    val imageCropRegion: ImageCropRegionDto? = null,
+    val memberId: Long = 0,
+    val nickname: String = "",
+    val profileImageUrl: String? = null,
+)
+
+/** POST .../proofs — 인증 사진 등록. 이미지는 presigned 업로드 후 imageKey 로 참조. */
+@Serializable
+data class WeeklyChallengeProofCreateRequest(
+    val imageKey: String,
+    val imageCropRegion: ImageCropRegionDto? = null,
+)
+
+@Serializable
+data class WeeklyChallengeProofCreateResponse(
+    val proofId: Long = 0,
+    val groupChallengeId: Long = 0,
+    val imageUrl: String = "",
+    val imageCropRegion: ImageCropRegionDto? = null,
+)
+
+/** POST .../share — 공유용 콜라주. 서버가 인증 사진을 합쳐 한 장으로 준다. */
+@Serializable
+data class WeeklyChallengeShareResponse(
+    val imageUrl: String = "",
+    val imageCropRegion: ImageCropRegionDto? = null,
+    /** 콜라주 배치(서버가 사용한 격자). 표시엔 안 쓰고 로깅/검증용. */
+    val rows: Int = 0,
+    val columns: Int = 0,
 )

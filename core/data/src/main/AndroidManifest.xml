@@ -1,2 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+          공유용으로 내려받은 이미지(cacheDir/share)를 다른 앱에 넘기기 위한 provider.
+          android:name 은 모듈별 서브클래스, meta-data 는 필수
+          (getUriForFile() 이 이 값을 읽는다). 자세한 이유는 ShareFileProvider 주석 참고.
+        -->
+        <provider
+            android:name="com.makeus.mody.core.data.repository.ShareFileProvider"
+            android:authorities="${applicationId}.share.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/share_file_paths" />
+        </provider>
+    </application>
+</manifest>

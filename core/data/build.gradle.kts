@@ -29,6 +29,9 @@ dependencies {
     // 이미지 스트리밍 업로드용 RequestBody 구성 (PresignedUploader 에 전달)
     implementation(libs.okhttp)
 
+    // 공유용 이미지 캐시 파일을 다른 앱에 넘기기 위한 FileProvider
+    implementation(libs.androidx.core.ktx)
+
     // Health Connect (걸음 수 읽기)
     implementation(libs.androidx.health.connect)
 

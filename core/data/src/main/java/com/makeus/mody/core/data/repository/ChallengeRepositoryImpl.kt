@@ -1,6 +1,7 @@
 package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
@@ -8,10 +9,14 @@ import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.StepRecordResult
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
+import com.makeus.mody.core.domain.model.WeeklyChallengeProof
+import com.makeus.mody.core.domain.model.WeeklyChallengeShare
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.network.api.ChallengeApi
 import com.makeus.mody.core.network.model.challenge.StepChallengeChangeRequest
 import com.makeus.mody.core.network.model.challenge.StepRecordUpsertRequest
+import com.makeus.mody.core.network.model.challenge.WeeklyChallengeProofCreateRequest
+import com.makeus.mody.core.network.model.record.ImageCropRegionDto
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -139,6 +144,69 @@ class ChallengeRepositoryImpl @Inject constructor(
             }
         }.getOrElse { e -> ChallengeFallback.weeklyChallenges.ifEmpty { throw e } }
             .ifEmpty { ChallengeFallback.weeklyChallenges }
+
+    override suspend fun getWeeklyChallengeProofs(
+        groupId: Long,
+        groupChallengeId: Long,
+    ): List<WeeklyChallengeProof> =
+        apiCatching {
+            challengeApi.getWeeklyChallengeProofs(groupId, groupChallengeId)
+                .unwrapResult().proofs.map {
+                    WeeklyChallengeProof(
+                        proofId = it.proofId,
+                        imageUrl = it.imageUrl,
+                        cropRegion = it.imageCropRegion?.toCropRegion(),
+                        memberId = it.memberId,
+                        nickname = it.nickname,
+                        profileImageUrl = it.profileImageUrl,
+                    )
+                }
+        }.getOrElse { e -> ChallengeFallback.weeklyProofs.ifEmpty { throw e } }
+            .ifEmpty { ChallengeFallback.weeklyProofs }
+
+    // 인증 등록·공유는 폴백 대상이 아니다 — 실패를 감추면 올라간 줄 알고 화면을 닫게 된다.
+    override suspend fun createWeeklyChallengeProof(
+        groupId: Long,
+        groupChallengeId: Long,
+        imageKey: String,
+        cropRegion: CropRegion?,
+    ): WeeklyChallengeProof {
+        val r = challengeApi.createWeeklyChallengeProof(
+            groupId = groupId,
+            groupChallengeId = groupChallengeId,
+            request = WeeklyChallengeProofCreateRequest(
+                imageKey = imageKey,
+                imageCropRegion = cropRegion?.let {
+                    ImageCropRegionDto(x = it.x, y = it.y, width = it.width, height = it.height)
+                },
+            ),
+        ).unwrapResult()
+        // 등록 응답엔 작성자 정보가 없다. 화면은 등록 후 목록을 다시 받아 채운다.
+        return WeeklyChallengeProof(
+            proofId = r.proofId,
+            imageUrl = r.imageUrl,
+            cropRegion = r.imageCropRegion?.toCropRegion(),
+            memberId = 0,
+            nickname = "",
+            profileImageUrl = null,
+        )
+    }
+
+    override suspend fun shareWeeklyChallenge(
+        groupId: Long,
+        groupChallengeId: Long,
+    ): WeeklyChallengeShare {
+        val r = challengeApi.shareWeeklyChallenge(groupId, groupChallengeId).unwrapResult()
+        return WeeklyChallengeShare(
+            imageUrl = r.imageUrl,
+            cropRegion = r.imageCropRegion?.toCropRegion(),
+            rows = r.rows,
+            columns = r.columns,
+        )
+    }
+
+    private fun ImageCropRegionDto.toCropRegion(): CropRegion =
+        CropRegion(x = x, y = y, width = width, height = height)
 
     // 걸음 수 업로드는 폴백 대상이 아니다 — 실패를 감추면 동기화됐다고 오인한다.
     override suspend fun upsertStepRecord(

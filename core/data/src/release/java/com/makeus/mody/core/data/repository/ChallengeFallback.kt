@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.domain.model.WeeklyChallengeProof
 
 /**
  * release 빌드용 빈 폴백 — 더미 데이터 없음.
@@ -30,4 +31,6 @@ internal object ChallengeFallback {
     val stepRankings: List<StepRanking> = emptyList()
 
     val weeklyChallenges: List<WeeklyChallenge> = emptyList()
+
+    val weeklyProofs: List<WeeklyChallengeProof> = emptyList()
 }

@@ -3,6 +3,7 @@ package com.makeus.mody.feature.challenge.challenge
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.Group
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
@@ -83,11 +84,33 @@ class ChallengeViewModel @Inject constructor(
                     NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
                 )
             }
-            // TODO(challenge): 주간 챌린지 상세 화면 연결 (후속 PR).
-            is ChallengeIntent.WeeklyChallengeClicked -> Unit
+            is ChallengeIntent.WeeklyChallengeClicked ->
+                navigateToWeeklyDetail(intent.groupChallengeId)
             is ChallengeIntent.ToastShown -> setState { copy(toastMessage = null) }
             is ChallengeIntent.ErrorShown -> setState { copy(error = null) }
         }
+    }
+
+    /**
+     * 주간 챌린지 상세로 이동.
+     *
+     * 제목·마감 요일을 인자로 넘긴다. 상세 API 는 목록이 주지 않는 `challengeId` 를 요구해
+     * 호출할 수 없어, 목록이 이미 들고 있는 값을 그대로 전달한다.
+     */
+    private fun navigateToWeeklyDetail(groupChallengeId: Long) {
+        val groupId = currentGroupId ?: return
+        val challenge = currentState.weeklyChallenges
+            .firstOrNull { it.groupChallengeId == groupChallengeId } ?: return
+        navigationHelper.navigate(
+            NavigationEvent.To(
+                ChallengeGraph.WeeklyChallengeDetailRoute(
+                    groupId = groupId,
+                    groupChallengeId = groupChallengeId,
+                    title = challenge.title,
+                    deadlineDayOfWeek = challenge.deadlineDayOfWeek,
+                ),
+            ),
+        )
     }
 
     /** 그룹 결정 후 요약/버디 목록 병렬 조회. 부분 실패는 이전 값 유지(전체 에러로 막지 않음). */
@@ -95,7 +118,9 @@ class ChallengeViewModel @Inject constructor(
         // 첫 로드만 스켈레톤, 탭 복귀 재조회는 조용히 갱신(깜빡임 방지).
         setState { copy(isLoading = summary == null) }
         val previousGroupId = currentGroupId
-        val groupId = resolveGroupId()
+        // 조회 실패 시엔 null — 직전 그룹을 그대로 쓴다(인원 수도 이전 값 유지).
+        val group = resolveGroup()
+        val groupId = group?.groupId ?: currentGroupId
         if (groupId == null) {
             setState { copy(isLoading = false) }
             return@launch
@@ -159,6 +184,7 @@ class ChallengeViewModel @Inject constructor(
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
+                groupMemberCount = group?.memberCount ?: this.groupMemberCount,
             )
         }
         // 탭 진입(= 앱 실행 후 첫 진입 포함)마다 오늘 걸음 수를 서버에 반영.
@@ -251,22 +277,35 @@ class ChallengeViewModel @Inject constructor(
         setState { copy(isSyncingSteps = false) }
     }
 
+    /** 서버 날짜 포맷(yyyy-MM-dd). 걸음 수 기록·콕 찌르기 기록이 함께 쓴다. */
+    private fun today(): String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+
     /**
      * 마지막 선택 그룹(세션) > 첫 그룹. 피드의 그룹 결정 규칙과 동일.
      *
      * 캐시해두고 재사용하지 않는다. 피드에서 그룹을 바꾸면 세션의 마지막 그룹만 갱신되고
      * (FeedViewModel.selectGroup) 이 ViewModel 은 탭 전환에도 살아있으므로, 캐시를 쓰면
      * 앱을 재시작할 때까지 이전 그룹 데이터를 계속 보여주게 된다.
-     * 조회 실패 시에만 직전 그룹을 유지한다.
+     *
+     * id 만이 아니라 그룹 자체를 돌려준다 — 인원 수(혼자인 그룹 판정)가 여기에만 실려 온다.
+     * 조회 실패(null) 시엔 호출부가 직전 그룹을 유지한다.
+     *
+     * 취소는 실패로 뭉뚱그리지 않고 그대로 올린다. runCatching 이 CancellationException 까지
+     * 삼키면 화면을 떠난 뒤에도 호출부가 계속 진행해 setState 를 때린다.
      */
-    /** 서버 날짜 포맷(yyyy-MM-dd). 걸음 수 기록·콕 찌르기 기록이 함께 쓴다. */
-    private fun today(): String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+    private suspend fun resolveGroup(): Group? {
+        val groups = orNullUnlessCancelled { groupRepository.getMyGroups() } ?: return null
+        val lastGroupId = orNullUnlessCancelled { sessionRepository.getLastGroupId() }
+        return groups.firstOrNull { it.groupId == lastGroupId } ?: groups.firstOrNull()
+    }
 
-    private suspend fun resolveGroupId(): Long? {
-        val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return currentGroupId
-        val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
-            ?.takeIf { id -> groups.any { it.groupId == id } }
-        return lastGroupId ?: groups.firstOrNull()?.groupId
+    /** 실패는 null, 취소는 전파. */
+    private suspend fun <T> orNullUnlessCancelled(block: suspend () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private fun nudge(memberId: Long) = viewModelScope.launch {

@@ -32,6 +32,7 @@ import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.challenge.challenge.component.ChallengeTabContent
+import com.makeus.mody.feature.challenge.challenge.component.SoloGroupEmpty
 import com.makeus.mody.feature.challenge.challenge.component.StreakTabContent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
@@ -107,12 +108,16 @@ private fun ChallengeContent(
 
         // weight(1f): 탭 콘텐츠는 남은 높이만 차지 — fillMaxSize 콘텐츠가 하단 바 뒤로 밀리지 않게.
         Box(modifier = Modifier.weight(1f)) {
+            // 나 혼자인 그룹이면 두 탭 다 성립하지 않는다. 로딩 중엔 아직 판정 전이라 넘긴다.
+            if (!state.isLoading && state.isSoloGroup) {
+                SoloGroupEmpty(tab = state.selectedSubTab)
+                return@Box
+            }
             when (state.selectedSubTab) {
                 ChallengeSubTab.STREAK -> StreakTabContent(
                     isLoading = state.isLoading,
                     summary = state.summary,
                     buddies = state.buddies,
-                    buddiesLoaded = state.buddiesLoaded,
                     nudgingMemberIds = state.nudgingMemberIds,
                     nudgedMemberIds = state.nudgedMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
@@ -131,55 +136,50 @@ private fun ChallengeContent(
     }
 }
 
-/** 상단 서브탭(연속 기록/챌린지). 선택 탭은 gray10 + 하단 인디케이터, 미선택은 gray04. */
+/**
+ * 상단 서브탭(연속 기록/챌린지).
+ * 하단 인디케이터가 선택 탭 gray10 / 미선택 gray02 로 전체 폭을 채워 구분선 역할까지 겸한다.
+ */
 @Composable
 private fun SubTabRow(
     selected: ChallengeSubTab,
     onSelect: (ChallengeSubTab) -> Unit,
 ) {
-    Column {
-        // selectableGroup + Role.Tab: 접근성 서비스에 상호배타 탭 그룹으로 노출.
-        Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
-            ChallengeSubTab.entries.forEach { tab ->
-                val isSelected = tab == selected
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .selectable(
-                            selected = isSelected,
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.Tab,
-                        ) { onSelect(tab) },
-                    horizontalAlignment = Alignment.CenterHorizontally,
+    // selectableGroup + Role.Tab: 접근성 서비스에 상호배타 탭 그룹으로 노출.
+    Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
+        ChallengeSubTab.entries.forEach { tab ->
+            val isSelected = tab == selected
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .selectable(
+                        selected = isSelected,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Tab,
+                    ) { onSelect(tab) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.height(44.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        modifier = Modifier.height(44.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = tab.label,
-                            style = ModyTheme.typography.b3,
-                            color = if (isSelected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .background(
-                                if (isSelected) ModyTheme.colors.gray10 else ModyTheme.colors.white,
-                            ),
+                    Text(
+                        text = tab.label,
+                        style = ModyTheme.typography.b3,
+                        color = if (isSelected) ModyTheme.colors.gray10 else ModyTheme.colors.gray04,
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(
+                            if (isSelected) ModyTheme.colors.gray10 else ModyTheme.colors.gray02,
+                        ),
+                )
             }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(ModyTheme.colors.gray01),
-        )
     }
 }
 

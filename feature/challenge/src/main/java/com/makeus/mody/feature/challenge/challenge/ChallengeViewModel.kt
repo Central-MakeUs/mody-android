@@ -289,11 +289,23 @@ class ChallengeViewModel @Inject constructor(
      *
      * id 만이 아니라 그룹 자체를 돌려준다 — 인원 수(혼자인 그룹 판정)가 여기에만 실려 온다.
      * 조회 실패(null) 시엔 호출부가 직전 그룹을 유지한다.
+     *
+     * 취소는 실패로 뭉뚱그리지 않고 그대로 올린다. runCatching 이 CancellationException 까지
+     * 삼키면 화면을 떠난 뒤에도 호출부가 계속 진행해 setState 를 때린다.
      */
     private suspend fun resolveGroup(): Group? {
-        val groups = runCatching { groupRepository.getMyGroups() }.getOrNull() ?: return null
-        val lastGroupId = runCatching { sessionRepository.getLastGroupId() }.getOrNull()
+        val groups = orNullUnlessCancelled { groupRepository.getMyGroups() } ?: return null
+        val lastGroupId = orNullUnlessCancelled { sessionRepository.getLastGroupId() }
         return groups.firstOrNull { it.groupId == lastGroupId } ?: groups.firstOrNull()
+    }
+
+    /** 실패는 null, 취소는 전파. */
+    private suspend fun <T> orNullUnlessCancelled(block: suspend () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private fun nudge(memberId: Long) = viewModelScope.launch {

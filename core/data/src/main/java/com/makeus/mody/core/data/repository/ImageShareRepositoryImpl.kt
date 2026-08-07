@@ -6,6 +6,7 @@ import com.makeus.mody.core.domain.repository.ImageShareRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,16 @@ class ImageShareRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ImageShareRepository {
 
-    private val client by lazy { OkHttpClient() }
+    /**
+     * callTimeout 은 호출 전체(DNS·연결·본문 수신)의 상한이다. 기본값인 readTimeout 만으로는
+     * 한 번의 read 가 막히는 것만 막아서, 응답이 아주 느리게 계속 흘러오면 다운로드가 끝나지
+     * 않고 공유 버튼이 로딩 상태로 잠긴다.
+     */
+    private val client by lazy {
+        OkHttpClient.Builder()
+            .callTimeout(DOWNLOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+    }
 
     override suspend fun downloadForSharing(
         imageUrl: String,
@@ -51,5 +61,8 @@ class ImageShareRepositoryImpl @Inject constructor(
 
     private companion object {
         const val SHARE_DIR = "share"
+
+        /** 콜라주 한 장 받는 데 이보다 오래 걸리면 실패로 본다. */
+        const val DOWNLOAD_TIMEOUT_SECONDS = 60L
     }
 }

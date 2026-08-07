@@ -54,11 +54,28 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 인증 사진 목록 조회.
+     *
+     * 실패를 조용히 넘기면 "아직 인증한 버디가 없어요" 와 구분이 안 돼, 사용자가 남들이 안 한
+     * 줄 알고 화면을 닫는다. 실패는 알리고 직전 목록은 그대로 둔다.
+     */
     private fun loadProofs() = viewModelScope.launch {
-        val proofs = runCatching {
-            challengeRepository.getWeeklyChallengeProofs(route.groupId, route.groupChallengeId)
-        }.getOrNull()
-        setState { copy(isLoading = false, proofs = proofs ?: this.proofs) }
+        try {
+            val proofs =
+                challengeRepository.getWeeklyChallengeProofs(route.groupId, route.groupChallengeId)
+            setState { copy(isLoading = false, proofs = proofs) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            setState {
+                copy(
+                    isLoading = false,
+                    error = (e as? HttpResponseException)?.msg
+                        ?: "인증 사진을 불러오지 못했어요. 다시 시도해주세요.",
+                )
+            }
+        }
     }
 
     /**
@@ -83,15 +100,25 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
                 // 크롭 UI 가 없어 원본 그대로 올린다. 표시는 셀에서 center-crop.
                 cropRegion = null,
             )
-            val proofs = runCatching {
+            // 여기부터의 실패는 등록 실패가 아니라 목록 갱신 실패다. 아래 catch 로 흘리면
+            // "등록에 실패했어요" 가 떠서, 이미 올라간 사진을 다시 올리게 만든다.
+            val proofs = try {
                 challengeRepository.getWeeklyChallengeProofs(route.groupId, route.groupChallengeId)
-            }.getOrNull()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
             setState {
-                copy(
-                    isUploading = false,
-                    proofs = proofs ?: this.proofs,
-                    toastMessage = "인증 사진을 올렸어요!",
-                )
+                if (proofs != null) {
+                    copy(isUploading = false, proofs = proofs, toastMessage = "인증 사진을 올렸어요!")
+                } else {
+                    // 성공 토스트만 띄우면 방금 올린 사진이 목록에 없는 이유를 알 수 없다.
+                    copy(
+                        isUploading = false,
+                        error = "인증 사진은 올라갔어요. 목록을 불러오지 못했으니 다시 들어와 확인해주세요.",
+                    )
+                }
             }
         } catch (e: CancellationException) {
             throw e

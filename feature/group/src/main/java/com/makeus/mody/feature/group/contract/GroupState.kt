@@ -26,6 +26,11 @@ data class GroupState(
     companion object {
         const val JOIN_CODE_LENGTH = 8
         const val GROUP_NAME_MAX = 14
-        const val MAX_MEMBERS = 12
+
+        /**
+         * 그룹 최대 인원. 한도를 강제하는 건 서버이고(초과 참여는 서버가 거부),
+         * 이 값은 그룹 생성 화면 안내 문구에만 쓴다. 서버 설정이 바뀌면 같이 고쳐야 한다.
+         */
+        const val MAX_MEMBERS = 8
     }
 }

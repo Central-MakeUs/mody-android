@@ -43,6 +43,7 @@ import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
+import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -58,6 +59,9 @@ import java.time.LocalDate
 
 /** 유저가 속할 수 있는 그룹 최대 개수. */
 private const val MAX_GROUP_COUNT = 4
+
+/** 그룹명 자리 스켈레톤 폭. 네 글자(“아자아자”) 정도를 가늠한 값. */
+private val GroupNameSkeletonWidth = 96.dp
 
 /** 실제 진입점: ViewModel 상태를 stateless [FeedContent] 로 흘려보낸다. */
 @Composable
@@ -288,27 +292,50 @@ private fun FeedList(
     }
 }
 
-/** 그룹명 셀렉터: "아자아자" + 화살표. 탭 → 그룹 선택 시트. */
+/** 그룹명 셀렉터: "아자아자 그룹" + 화살표. 탭 → 그룹 선택 시트. */
 @Composable
 private fun GroupSelector(
     groupName: String,
     onClick: () -> Unit,
 ) {
+    // 그룹 조회 전에는 이름이 비어 있다. 한 번 채워지면 다시 비지 않으므로(그룹 전환도 새 이름을
+    // 바로 넣는다) 이 조건이 곧 "첫 로드" 다 — 복귀 재조회에 스켈레톤이 깜빡이지 않는다.
+    val isGroupLoaded = groupName.isNotBlank()
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp),
     ) {
         Row(
-            modifier = Modifier.clickable(onClick = onClick),
+            // 그룹 목록이 없으면 시트를 열어도 빈 화면이라 그 전엔 막는다.
+            modifier = Modifier.clickable(enabled = isGroupLoaded, onClick = onClick),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = groupName,
-                style = ModyTheme.typography.b2,
-                color = ModyTheme.colors.gray10,
-            )
+            if (isGroupLoaded) {
+                // 이름과 "그룹" 은 글자 크기가 달라 세로 중앙 정렬이면 어긋난다. 베이스라인으로 맞춘다.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = groupName,
+                        style = ModyTheme.typography.b2,
+                        color = ModyTheme.colors.gray10,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    // 이름만 있으면 이게 그룹인지 알기 어려워 뒤에 종류를 붙인다.
+                    Text(
+                        text = "그룹",
+                        style = ModyTheme.typography.b7,
+                        color = ModyTheme.colors.gray05,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
+            } else {
+                // "그룹" 라벨은 같이 숨긴다 — placeholder 옆에 홀로 남으면 그게 그룹명처럼 보인다.
+                ModyTextSkeleton(
+                    width = GroupNameSkeletonWidth,
+                    lineHeight = ModyTheme.typography.b2.lineHeight,
+                )
+            }
             Icon(
                 painter = painterResource(ModyIcons.Up),
                 contentDescription = "그룹 선택",

@@ -38,9 +38,11 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyAvatarSkeleton
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
+import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.HealthAvailability
@@ -74,6 +76,13 @@ fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
 }
 
 private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
+
+private val ProfileAvatarSize = 48.dp
+
+/** 스켈레톤 폭 — 들어갈 값의 대략적인 글자 수를 가늠한 값. */
+private val NicknameSkeletonWidth = 88.dp
+private val DaysTogetherSkeletonWidth = 148.dp
+private val WeightSkeletonWidth = 56.dp
 
 /**
  * 건강 데이터 연동 설정 진입.
@@ -134,12 +143,14 @@ private fun MyPageContent(
             nickname = state.nickname,
             avatarUrl = state.profileImageUrl,
             daysTogether = state.daysTogether,
+            isLoaded = state.isProfileLoaded,
             onProfileSettingClick = { onIntent(MyPageIntent.ProfileSettingClicked) },
         )
 
         Spacer(modifier = Modifier.height(24.dp))
         WeightSection(
             weight = state.weight,
+            isLoaded = state.isWeightLoaded,
             onRecordClick = { onIntent(MyPageIntent.WeightRecordClicked) },
         )
 
@@ -175,6 +186,7 @@ private fun ProfileRow(
     nickname: String,
     avatarUrl: String?,
     daysTogether: Int,
+    isLoaded: Boolean,
     onProfileSettingClick: () -> Unit,
 ) {
     Row(
@@ -183,32 +195,53 @@ private fun ProfileRow(
             .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ModyAvatar(imageUrl = avatarUrl, size = 48.dp)
+        // 조회 전 ModyAvatar 를 그리면 기본 아바타가 떴다가 실제 사진으로 바뀐다.
+        if (isLoaded) {
+            ModyAvatar(imageUrl = avatarUrl, size = ProfileAvatarSize)
+        } else {
+            ModyAvatarSkeleton(size = ProfileAvatarSize)
+        }
         Spacer(modifier = Modifier.size(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = nickname,
-                style = ModyTheme.typography.b3,
-                color = ModyTheme.colors.gray10,
-            )
+            if (isLoaded) {
+                Text(
+                    text = nickname,
+                    style = ModyTheme.typography.b3,
+                    color = ModyTheme.colors.gray10,
+                )
+            } else {
+                ModyTextSkeleton(
+                    width = NicknameSkeletonWidth,
+                    lineHeight = ModyTheme.typography.b3.lineHeight,
+                )
+            }
             Spacer(modifier = Modifier.height(2.dp))
             val dateStyle = ModyTheme.typography.b5
-            Text(
-                text = buildAnnotatedString {
-                    append("모디와 함께한지 ")
-                    withStyle(
-                        SpanStyle(
-                            color = ModyTheme.colors.primary100,
-                            fontSize = dateStyle.fontSize,
-                            fontWeight = dateStyle.fontWeight,
-                        ),
-                    ) { append("${daysTogether}일") }
-                    append("째")
-                },
-                // 기본(모디와 함께한지 / 째) = b7 · gray05
-                style = ModyTheme.typography.b7,
-                color = ModyTheme.colors.gray05,
-            )
+            if (isLoaded) {
+                Text(
+                    text = buildAnnotatedString {
+                        append("모디와 함께한지 ")
+                        withStyle(
+                            SpanStyle(
+                                color = ModyTheme.colors.primary100,
+                                fontSize = dateStyle.fontSize,
+                                fontWeight = dateStyle.fontWeight,
+                            ),
+                        ) { append("${daysTogether}일") }
+                        append("째")
+                    },
+                    // 기본(모디와 함께한지 / 째) = b7 · gray05
+                    style = ModyTheme.typography.b7,
+                    color = ModyTheme.colors.gray05,
+                )
+            } else {
+                // 문구까지 통째로 가린다 — 일수만 스켈레톤이면 "모디와 함께한지 [   ]째" 가 돼
+                // 값이 비어 보이는 것과 다를 게 없다.
+                ModyTextSkeleton(
+                    width = DaysTogetherSkeletonWidth,
+                    lineHeight = ModyTheme.typography.b7.lineHeight,
+                )
+            }
         }
         // 프로필 설정 칩
         Box(
@@ -230,6 +263,7 @@ private fun ProfileRow(
 @Composable
 private fun WeightSection(
     weight: WeightSummary?,
+    isLoaded: Boolean,
     onRecordClick: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -246,7 +280,7 @@ private fun WeightSection(
                 .background(ModyTheme.colors.gray01)
                 .padding(12.dp),
         ) {
-            WeightCard(weight = weight)
+            WeightCard(weight = weight, isLoaded = isLoaded)
             Spacer(modifier = Modifier.height(16.dp))
             ModyButton(
                 text = "체중 기록하기",
@@ -258,9 +292,9 @@ private fun WeightSection(
     }
 }
 
-/** 이전 > 현재 > 목표 3열. 값 없으면 "-". */
+/** 이전 > 현재 > 목표 3열. 조회 전엔 스켈레톤, 조회 후 값이 없으면 "-". */
 @Composable
-private fun WeightCard(weight: WeightSummary?) {
+private fun WeightCard(weight: WeightSummary?, isLoaded: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,22 +303,35 @@ private fun WeightCard(weight: WeightSummary?) {
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        WeightColumn(label = "이전 체중", kg = weight?.startKg, modifier = Modifier.weight(1f))
+        WeightColumn("이전 체중", weight?.startKg, isLoaded, Modifier.weight(1f))
         WeightArrow()
-        WeightColumn(label = "현재 체중", kg = weight?.currentKg, modifier = Modifier.weight(1f))
+        WeightColumn("현재 체중", weight?.currentKg, isLoaded, Modifier.weight(1f))
         WeightArrow()
-        WeightColumn(label = "목표 체중", kg = weight?.targetKg, modifier = Modifier.weight(1f))
+        WeightColumn("목표 체중", weight?.targetKg, isLoaded, Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun WeightColumn(label: String, kg: Double?, modifier: Modifier = Modifier) {
+private fun WeightColumn(
+    label: String,
+    kg: Double?,
+    isLoaded: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // 라벨은 고정 문구라 그대로 둔다 — 숫자 자리만 가린다.
         Text(text = label, style = ModyTheme.typography.c2, color = ModyTheme.colors.gray05)
         Spacer(modifier = Modifier.height(4.dp))
+        if (!isLoaded) {
+            ModyTextSkeleton(
+                width = WeightSkeletonWidth,
+                lineHeight = ModyTheme.typography.h2.lineHeight,
+            )
+            return@Column
+        }
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = kg?.let { formatKg(it) } ?: "-",

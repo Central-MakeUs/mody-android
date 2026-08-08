@@ -133,6 +133,8 @@ class MyPageViewModel @Inject constructor(
                 profileImageUrl = if (p != null) p.profileImageUrl else profileImageUrl,
                 daysTogether = p?.daysTogether ?: daysTogether,
                 weight = w ?: weight,
+                isProfileLoaded = isProfileLoaded || p != null,
+                isWeightLoaded = isWeightLoaded || w != null,
                 isLoading = false,
             )
         }

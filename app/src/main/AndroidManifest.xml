@@ -64,6 +64,15 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_notification" />
 
+        <!--
+          Firebase 자동 화면 수집 끄기. 기본값(켜짐)이면 Activity 단위로 screen_view 를 남기는데,
+          이 앱은 전 화면이 MainActivity 하나라 전부 screen_class=MainActivity 로 뭉친다.
+          AnalyticsLogger 가 남기는 화면 이름과 섞이면 조회수가 두 배로 부풀고 화면 구분도 안 된다.
+        -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
+
         <!-- 카카오 로그인 리다이렉트 처리 (scheme = kakao{네이티브키}) -->
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"

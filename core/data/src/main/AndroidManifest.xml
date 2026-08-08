@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      GA4(FirebaseAnalytics) 가 요구하는 권한. 셋 다 play-services-measurement AAR 이
+      이미 선언하고 있어 최종 APK 의 권한 목록은 달라지지 않는다.
+
+      그런데도 여기 적는 건 lint 가 모듈 단위로 돌기 때문이다 — :core:data 만 볼 때는
+      app 매니페스트도 AAR 병합 결과도 안 보여 MissingPermission 이 뜬다.
+      권한을 쓰는 모듈이 스스로 선언하는 게 원래 방식이기도 하다.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application>
         <!--
           공유용으로 내려받은 이미지(cacheDir/share)를 다른 앱에 넘기기 위한 provider.

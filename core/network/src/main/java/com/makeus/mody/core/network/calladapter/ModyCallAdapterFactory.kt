@@ -1,5 +1,6 @@
 package com.makeus.mody.core.network.calladapter
 
+import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.model.error.ModyErrorCode
@@ -26,6 +27,7 @@ import javax.inject.Inject
  */
 class ModyCallAdapterFactory @Inject constructor(
     private val json: Json,
+    private val errorReporter: ErrorReporter,
 ) : CallAdapter.Factory() {
     override fun get(
         returnType: Type,
@@ -38,26 +40,31 @@ class ModyCallAdapterFactory @Inject constructor(
         val innerType = getParameterUpperBound(0, callType)
         if (getRawType(innerType) != ApiResponse::class.java) return null
 
-        return ModyCallAdapter<Any>(innerType, json)
+        return ModyCallAdapter<Any>(innerType, json, errorReporter)
     }
 }
 
 private class ModyCallAdapter<T : Any>(
     private val resultType: Type,
     private val json: Json,
+    private val errorReporter: ErrorReporter,
 ) : CallAdapter<T, Call<T>> {
     override fun responseType(): Type = resultType
-    override fun adapt(call: Call<T>): Call<T> = ErrorHandlingCall(call, json)
+    override fun adapt(call: Call<T>): Call<T> = ErrorHandlingCall(call, json, errorReporter)
 }
 
 private class ErrorHandlingCall<T : Any>(
     private val delegate: Call<T>,
     private val json: Json,
+    private val errorReporter: ErrorReporter,
 ) : Call<T> {
     override fun enqueue(callback: Callback<T>) {
         delegate.enqueue(object : Callback<T> {
             override fun onResponse(call: Call<T>, response: Response<T>) {
                 if (response.isSuccessful) {
+                    // 전송은 200 인데 본문이 논리적 실패인 경우. 던지는 건 unwrapResult() 의
+                    // 몫이지만, 그 뒤로는 대부분 흡수되어 흔적이 남지 않아 여기서 보고만 한다.
+                    reportLogicalFailure(call, response)
                     callback.onResponse(this@ErrorHandlingCall, response)
                     return
                 }
@@ -74,16 +81,45 @@ private class ErrorHandlingCall<T : Any>(
                         ?: errorResponse?.message
                         ?: "일시적인 서버 오류입니다. 반복되면 문의해주세요.",
                 )
+                report(call, exception)
                 callback.onFailure(this@ErrorHandlingCall, exception)
             }
 
             override fun onFailure(call: Call<T>, t: Throwable) {
+                report(call, t)
                 callback.onFailure(this@ErrorHandlingCall, t)
             }
         })
     }
 
-    override fun clone(): Call<T> = ErrorHandlingCall(delegate.clone(), json)
+    /** 200 + `isSuccess=false`. 서버가 정의한 실패라 예외로 만들어 코드/메시지만 남긴다. */
+    private fun reportLogicalFailure(call: Call<T>, response: Response<T>) {
+        val body = response.body() as? ApiResponse<*> ?: return
+        if (body.isSuccess) return
+        report(
+            call,
+            HttpResponseException(
+                status = HttpResponseStatus.Ok,
+                errorCode = ModyErrorCode.create(body.code),
+                msg = body.message,
+            ),
+        )
+    }
+
+    private fun report(call: Call<T>, throwable: Throwable) {
+        if (!throwable.isWorthReporting()) return
+        val request = call.request()
+        errorReporter.report(
+            throwable = throwable,
+            context = apiErrorContext(
+                method = request.method,
+                url = request.url.encodedPath,
+                throwable = throwable,
+            ),
+        )
+    }
+
+    override fun clone(): Call<T> = ErrorHandlingCall(delegate.clone(), json, errorReporter)
     override fun execute(): Response<T> =
         throw UnsupportedOperationException("suspend/enqueue 만 지원")
 

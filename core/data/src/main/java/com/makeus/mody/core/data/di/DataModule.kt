@@ -4,6 +4,7 @@ import com.makeus.mody.core.data.repository.AuthRepositoryImpl
 import com.makeus.mody.core.data.repository.ChallengeRepositoryImpl
 import com.makeus.mody.core.data.repository.HealthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
+import com.makeus.mody.core.data.repository.FirebaseAnalyticsLogger
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
 import com.makeus.mody.core.data.repository.ImageShareRepositoryImpl
 import com.makeus.mody.core.data.repository.ImageUploadRepositoryImpl
@@ -15,6 +16,7 @@ import com.makeus.mody.core.data.repository.RecordRepositoryImpl
 import com.makeus.mody.core.data.repository.RemoteConfigRepositoryImpl
 import com.makeus.mody.core.data.repository.SessionRepositoryImpl
 import com.makeus.mody.core.data.repository.TokenManagerImpl
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.HealthRepository
@@ -103,4 +105,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindImageShareRepository(impl: ImageShareRepositoryImpl): ImageShareRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAnalyticsLogger(impl: FirebaseAnalyticsLogger): AnalyticsLogger
 }

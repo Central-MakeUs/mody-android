@@ -12,6 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,7 +86,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
 
-            LaunchedEffect(Unit) {
+            // NavHost 가 그래프를 붙이기 전에 navigate 하면 "Navigation graph has not been set"
+            // 으로 죽는다. 준비된 뒤부터 소비한다 — 그 전에 발행된 이벤트는 Channel(BUFFERED)에
+            // 남아 있다가 그대로 전달되므로 유실되지 않는다.
+            // (세션 만료처럼 스플래시 단계에서 이미 올라와 있을 수 있는 이벤트가 여기 해당한다.)
+            var navHostReady by remember { mutableStateOf(false) }
+
+            LaunchedEffect(navHostReady) {
+                if (!navHostReady) return@LaunchedEffect
                 navigationHelper.navigationFlow.collect { event ->
                     when (event) {
                         is NavigationEvent.To -> navController.navigate(event.route) {
@@ -148,6 +158,8 @@ class MainActivity : ComponentActivity() {
                         .background(ModyTheme.colors.white))
                 } else {
                     AppNavHost(navController = navController, startDestination = route)
+                    // 합성이 끝나야 그래프가 붙는다. 이 시점부터 네비게이션 이벤트를 소비한다.
+                    LaunchedEffect(Unit) { navHostReady = true }
                 }
 
                 // 스플래시 게이트 다이얼로그(iOS 와 동일 순서: 강제 업데이트 → 최소 버전 → 공지).

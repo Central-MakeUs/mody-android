@@ -80,6 +80,9 @@ class MainViewModel @Inject constructor(
     /** 진행 중인 걸음 수 동기화. 겹쳐 돌면 늦게 끝난 오래된 값이 최신 기록을 덮어쓴다. */
     private var stepSyncJob: Job? = null
 
+    /** 이미 로그인 화면으로 보냈는지. 재개마다 같은 판정을 반복해 재이동하지 않도록. */
+    private var redirectedToLogin = false
+
     private val _startRoute = MutableStateFlow<Route?>(null)
     val startRoute = _startRoute.asStateFlow()
 
@@ -93,6 +96,9 @@ class MainViewModel @Inject constructor(
      * 여기서 팝업이 뜨는 일은 없다. 실패는 다음 진입에 다시 시도하면 되므로 로그만 남긴다.
      */
     fun onAppEntered() {
+        // 걸음 수 동기화보다 먼저 — 세션이 죽었으면 어차피 다 401 이고, 사용자를 죽은 화면에
+        // 세워두는 시간을 줄인다. 간격 제한 대상도 아니다(값싼 로컬 조회).
+        verifySession()
         val now = SystemClock.elapsedRealtime()
         if (lastStepSyncAt != 0L && now - lastStepSyncAt < STEP_SYNC_MIN_INTERVAL_MS) return
         // 최소 간격만으로는 부족하다 — 앞선 동기화가 느리면 두 번이 겹치고, 먼저 시작한 쪽이
@@ -175,15 +181,49 @@ class MainViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            sessionExpiredNotifier.events.collect {
-                runCatching { sessionRepository.clear() }
-                val sent = navigationHelper.navigate(
-                    NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true),
-                )
-                if (!sent) {
-                    Log.w(TAG, "Dropped session-expired navigation event")
-                }
+            // 상태 구독이라 백그라운드에서 만료돼 구독이 늦게 붙어도 놓치지 않는다.
+            sessionExpiredNotifier.expired.collect { expired ->
+                if (expired) goToLogin()
             }
         }
+    }
+
+    /**
+     * 세션을 정리하고 로그인 화면으로. 만료 통지·재개 검사 양쪽이 같은 경로를 쓴다.
+     *
+     * 통지를 먼저 내려야 재로그인 성공 후에도 만료로 남아 다시 튕기지 않는다.
+     */
+    private suspend fun goToLogin() {
+        sessionExpiredNotifier.consume()
+        redirectedToLogin = true
+        runCatching { sessionRepository.clear() }
+        val sent = navigationHelper.navigate(
+            NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true),
+        )
+        if (!sent) {
+            Log.w(TAG, "Dropped session-expired navigation event")
+        }
+    }
+
+    /**
+     * 앱 재개마다 세션이 아직 살아 있는지 확인한다.
+     *
+     * 진입 목적지는 앱 시작 시 한 번만 정해지므로, 그 뒤에 세션이 죽으면 만료 통지에만
+     * 기대게 된다. 통지가 유실되거나(구독 없음) 애초에 발행되지 않은 경로가 있으면
+     * 로그인 안 된 채로 피드에 남는다 — 마지막 안전망.
+     */
+    private fun verifySession() = viewModelScope.launch {
+        // 시작 목적지 판정 전이면 그쪽이 알아서 로그인으로 보낸다.
+        val route = _startRoute.value ?: return@launch
+        if (route == AuthGraphBaseRoute) return@launch
+        // 조회 실패(저장소 오류)로 멀쩡한 세션을 끊지 않는다.
+        val loggedIn = runCatching { sessionRepository.isLoggedIn() }.getOrDefault(true)
+        if (loggedIn) {
+            // 재로그인하면 다음 만료 때 다시 보낼 수 있게 되돌린다.
+            redirectedToLogin = false
+            return@launch
+        }
+        if (redirectedToLogin) return@launch
+        goToLogin()
     }
 }

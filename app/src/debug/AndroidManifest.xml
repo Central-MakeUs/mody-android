@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+          debug 빌드는 GA4 수집 자체를 끈다.
+
+          dev 는 별도 Firebase 앱(com.makeus.mody.dev)이지만 같은 GA4 속성의 다른 스트림이라,
+          켜두면 개발 중 화면 전환이 전부 기본 리포트에 섞인다.
+          Crashlytics 의 isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG 와 같은 정책이고,
+          코드가 아니라 매니페스트로 두는 건 :app 이 analytics 에 직접 의존하지 않아서다.
+        -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+    </application>
+</manifest>

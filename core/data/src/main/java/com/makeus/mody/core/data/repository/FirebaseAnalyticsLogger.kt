@@ -32,7 +32,9 @@ class FirebaseAnalyticsLogger @Inject constructor(
         analytics.logEvent(
             name.take(EVENT_NAME_MAX),
             Bundle().apply {
-                params.forEach { (key, value) ->
+                // 25개를 넘기면 초과분을 GA4 가 말없이 버린다. 어느 게 잘렸는지 알 수 없어
+                // 여기서 먼저 자른다(Map 순회 순서 = 호출부가 넣은 순서).
+                params.entries.take(EVENT_PARAM_MAX).forEach { (key, value) ->
                     putString(key.take(PARAM_KEY_MAX), value.take(PARAM_VALUE_MAX))
                 }
             },
@@ -44,5 +46,6 @@ class FirebaseAnalyticsLogger @Inject constructor(
         const val EVENT_NAME_MAX = 40
         const val PARAM_KEY_MAX = 40
         const val PARAM_VALUE_MAX = 100
+        const val EVENT_PARAM_MAX = 25
     }
 }

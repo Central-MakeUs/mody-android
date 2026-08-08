@@ -77,7 +77,7 @@ private val WalkerHeight = 82.dp
 private val GaugeHeight = GaugeContentTop + 40.dp + WalkerHeight
 
 /** 호 밑변 ~ 0/100 라벨 윗변 간격. */
-private val GaugeLabelGap = 5.dp
+private val GaugeLabelGap = 6.dp
 
 /** "100" 은 호 오른쪽 끝(347)보다 더 나간다(시안 우측 끝 353). */
 private val GaugeMaxLabelOffset = 6.dp

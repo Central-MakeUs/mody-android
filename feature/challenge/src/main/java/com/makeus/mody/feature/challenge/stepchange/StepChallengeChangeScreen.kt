@@ -38,8 +38,9 @@ import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
-import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
+import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
+import com.makeus.mody.core.designsystem.modifier.shimmer
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.feature.challenge.stepchange.contract.StepChallengeChangeIntent
@@ -87,10 +88,6 @@ private fun StepChallengeChangeContent(
             )
         },
     ) {
-        if (state.isLoading) {
-            ModyLoadingScreen()
-            return@ModyScreenScaffold
-        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,22 +95,64 @@ private fun StepChallengeChangeContent(
                 .padding(horizontal = 24.dp),
         ) {
             Spacer(modifier = Modifier.height(24.dp))
+            // 안내 문구는 데이터가 아니라 로딩 중에도 그대로 둔다 — 화면 골격이 먼저 서야
+            // 목록이 도착할 때 아래로 밀리지 않는다.
             Text(
                 text = "다른 챌린지를 선택해주세요.",
                 style = ModyTheme.typography.b3,
                 color = ModyTheme.colors.gray10,
             )
             Spacer(modifier = Modifier.height(24.dp))
-            state.options.forEachIndexed { index, option ->
-                if (index > 0) Spacer(modifier = Modifier.height(8.dp))
-                StepChallengeOptionCard(
-                    option = option,
-                    onClick = {
-                        onIntent(StepChallengeChangeIntent.OptionClicked(option.challengeId))
-                    },
-                )
+            if (state.isLoading) {
+                StepChallengeOptionSkeletonList()
+            } else {
+                state.options.forEachIndexed { index, option ->
+                    if (index > 0) Spacer(modifier = Modifier.height(8.dp))
+                    StepChallengeOptionCard(
+                        option = option,
+                        onClick = {
+                            onIntent(StepChallengeChangeIntent.OptionClicked(option.challengeId))
+                        },
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * 목록 자리 스켈레톤. 개수를 모르므로 고정 [count]장.
+ *
+ * [StepChallengeOptionCard] 와 같은 파일에 두는 건 레이아웃을 그대로 베껴야 하기 때문이다 —
+ * 카드 쪽 패딩·간격이 바뀌면 여기도 같이 고쳐야 값이 도착할 때 화면이 안 튄다.
+ */
+@Composable
+private fun StepChallengeOptionSkeletonList(count: Int = 3) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(count) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ModyTheme.colors.gray01)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // 배지와 같은 60dp — 카드 높이를 이 원이 정하므로 크기가 어긋나면 안 된다.
+                Box(modifier = Modifier.size(60.dp).shimmer(CircleShape))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ModyTextSkeleton(
+                        width = 168.dp,
+                        lineHeight = ModyTheme.typography.b6.lineHeight,
+                    )
+                    ModyTextSkeleton(
+                        width = 104.dp,
+                        lineHeight = ModyTheme.typography.c2.lineHeight,
+                    )
+                }
+            }
         }
     }
 }
@@ -201,6 +240,17 @@ private fun formatSteps(steps: Int): String = when {
 /** 60.0 → "60", 12.5 → "12.5". */
 private fun formatDistance(km: Double): String =
     if (km % 1.0 == 0.0) km.toInt().toString() else "%.1f".format(km)
+
+@Preview(showBackground = true, heightDp = 500, name = "로딩(스켈레톤)")
+@Composable
+private fun StepChallengeChangeLoadingPreview() {
+    ModyTheme {
+        StepChallengeChangeContent(
+            state = StepChallengeChangeState(isLoading = true),
+            onIntent = {},
+        )
+    }
+}
 
 @Preview(showBackground = true, heightDp = 900)
 @Composable

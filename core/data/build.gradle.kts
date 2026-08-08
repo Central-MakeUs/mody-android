@@ -38,6 +38,8 @@ dependencies {
     // Firebase Remote Config (기능 플래그: 챌린지 탭 노출 제어)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.config)
+    // 조용히 흡수되는 실패를 non-fatal 로 남기기 위한 ErrorReporter 구현
+    implementation(libs.firebase.crashlytics)
     // GA4 사용 로그(AnalyticsLogger 구현)
     implementation(libs.firebase.analytics)
 }

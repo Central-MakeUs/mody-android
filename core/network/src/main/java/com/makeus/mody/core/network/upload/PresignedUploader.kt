@@ -1,5 +1,6 @@
 package com.makeus.mody.core.network.upload
 
+import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.model.error.ModyErrorCode
@@ -21,6 +22,7 @@ import javax.inject.Singleton
 @Singleton
 class PresignedUploader @Inject constructor(
     private val okHttpClient: OkHttpClient,
+    private val errorReporter: ErrorReporter,
 ) {
     suspend fun upload(presignedUrl: String, bytes: ByteArray, contentType: String) =
         upload(presignedUrl, bytes.toRequestBody(contentType.toMediaTypeOrNull()))
@@ -35,11 +37,21 @@ class PresignedUploader @Inject constructor(
         withContext(Dispatchers.IO) {
             okHttpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw HttpResponseException(
+                    val e = HttpResponseException(
                         status = HttpResponseStatus.create(response.code),
                         errorCode = ModyErrorCode.UNKNOWN,
                         msg = "사진 업로드에 실패했어요. 잠시 후 다시 시도해주세요.",
                     )
+                    // S3 직통이라 Retrofit CallAdapter 를 안 탄다 — 여기서 직접 보고한다.
+                    // presigned URL 은 쿼리에 서명이 들어 있어 통째로 남기면 안 된다.
+                    errorReporter.report(
+                        throwable = e,
+                        context = mapOf(
+                            "source" to "presigned_upload",
+                            "http_status" to response.code.toString(),
+                        ),
+                    )
+                    throw e
                 }
             }
         }

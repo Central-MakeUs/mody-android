@@ -3,6 +3,7 @@ package com.makeus.mody.core.domain.usecase
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRecordResult
+import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.HealthRepository
@@ -42,6 +43,7 @@ class SyncTodayStepsUseCase @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
+    private val errorReporter: ErrorReporter,
 ) {
     /**
      * @param groupId 이미 아는 그룹이 있으면 전달(재조회 생략). null 이면 직접 결정한다.
@@ -65,7 +67,12 @@ class SyncTodayStepsUseCase @Inject constructor(
         var last: StepRecordResult? = null
 
         for ((date, range) in dayRanges(from, now, zone)) {
+            // 읽기 실패는 걸음 수가 안 오르는 것으로만 드러난다(화면엔 아무 표시도 없다).
+            // 서버 업로드 실패는 네트워크 계층이 이미 보고하므로 여기선 읽기만 남긴다.
             val steps = runCatching { healthRepository.readStepCount(range.first, range.second) }
+                .onFailure { e ->
+                    errorReporter.report(e, mapOf("source" to "health_connect_read_steps"))
+                }
                 .getOrDefault(0)
             // 0 은 올리지 않는다. 읽기 창(30일) 경계나 데이터 누락으로 나온 0 을 그대로 올리면
             // 덮어쓰기라서 서버에 쌓여 있던 그날 기록이 지워진다. 기록이 없는 날 = 0 이라 손해도 없다.

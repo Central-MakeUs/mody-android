@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.crashlytics)
 }
 
 // local.properties(gitignore)에서 카카오 네이티브 키 로드. 없으면 빈 문자열(컴파일은 됨).
@@ -54,6 +55,11 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
+            // 개발 중 크래시가 대시보드를 덮지 않도록 수집 자체를 끈다(수집 여부는
+            // ModyApplication 에서도 한 번 더 막는다). 매핑 업로드는 빌드만 느리게 해서 제외.
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
             buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyDev\"")
             manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyDev
             // 그룹 초대 App Links host. feature:group INVITE_BASE_URL 과 도메인 일치 필수.
@@ -61,6 +67,10 @@ android {
         }
         release {
             isMinifyEnabled = true
+            // 난독화된 스택트레이스를 되돌리려면 매핑 업로드가 필수다.
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = true
+            }
             signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyProd\"")
             manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyProd
@@ -95,6 +105,8 @@ dependencies {
     // FCM 수신(푸시). messaging 만 있으면 됨(BOM 이 버전 정렬).
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    // 수집 on/off 스위치만 :app 에서 만진다. 실제 보고는 :core:data 의 ErrorReporter 구현.
+    implementation(libs.firebase.crashlytics)
 
 
     testImplementation(libs.junit)

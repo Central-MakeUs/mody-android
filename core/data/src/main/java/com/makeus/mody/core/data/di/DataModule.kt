@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.di
 
 import com.makeus.mody.core.data.repository.AuthRepositoryImpl
 import com.makeus.mody.core.data.repository.ChallengeRepositoryImpl
+import com.makeus.mody.core.data.repository.CrashlyticsErrorReporter
 import com.makeus.mody.core.data.repository.HealthRepositoryImpl
 import com.makeus.mody.core.data.repository.FeedRepositoryImpl
 import com.makeus.mody.core.data.repository.GroupRepositoryImpl
@@ -16,6 +17,7 @@ import com.makeus.mody.core.data.repository.RemoteConfigRepositoryImpl
 import com.makeus.mody.core.data.repository.SessionRepositoryImpl
 import com.makeus.mody.core.data.repository.TokenManagerImpl
 import com.makeus.mody.core.domain.repository.AuthRepository
+import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.FeedRepository
@@ -103,4 +105,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindImageShareRepository(impl: ImageShareRepositoryImpl): ImageShareRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindErrorReporter(impl: CrashlyticsErrorReporter): ErrorReporter
 }

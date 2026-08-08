@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.repository
 
 import android.content.Context
 import androidx.core.content.FileProvider
+import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.repository.ImageShareRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -23,6 +24,7 @@ import okhttp3.Request
 @Singleton
 class ImageShareRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val errorReporter: ErrorReporter,
 ) : ImageShareRepository {
 
     /**
@@ -44,7 +46,17 @@ class ImageShareRepositoryImpl @Inject constructor(
         val file = File(dir, "$fileNameBase.${imageUrl.toExtension()}")
         client.newCall(Request.Builder().url(imageUrl).build()).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("공유 이미지 다운로드 실패 (HTTP ${response.code})")
+                val e = IOException("공유 이미지 다운로드 실패 (HTTP ${response.code})")
+                // 서버가 준 URL 이 안 열리는 상황(만료·권한). 사용자에겐 실패 문구만 보여
+                // 원인을 알 수 없어 따로 남긴다. 공용 클라이언트가 아니라 CallAdapter 도 안 탄다.
+                errorReporter.report(
+                    throwable = e,
+                    context = mapOf(
+                        "source" to "share_image_download",
+                        "http_status" to response.code.toString(),
+                    ),
+                )
+                throw e
             }
             val body = response.body ?: throw IOException("공유 이미지 응답이 비어 있음")
             file.outputStream().use { out -> body.byteStream().copyTo(out) }

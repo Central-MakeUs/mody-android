@@ -43,7 +43,9 @@ private val FireOrange = Color(0xFFFF5C00)
  * 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안).
  * showHeader=false 면 헤더(아바타·이름·N일차) 생략 — 상세 화면처럼 탑바가 이미 작성자 정보를 보일 때.
  * showArrow=false 면 우상단 화살표(→상세 이동) 생략 — 상세 화면처럼 더 들어갈 곳이 없을 때.
- * onReportClick 지정 시 헤더 우측에 미트볼(⋯) → "신고" 메뉴 노출.
+ *
+ * 미트볼(⋯) 메뉴는 [onReportClick]/[onDeleteClick] 중 지정된 것만 항목으로 낸다.
+ * 남의 글이면 신고, 내 글이면 삭제 — 둘 다 null 이면 메뉴 자체를 안 그린다.
  */
 @Composable
 fun FeedCard(
@@ -52,6 +54,7 @@ fun FeedCard(
     showHeader: Boolean = true,
     showArrow: Boolean = true,
     onReportClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (showHeader) {
@@ -60,6 +63,7 @@ fun FeedCard(
                 avatarUrl = card.avatarUrl,
                 dayCount = card.dayCount,
                 onReportClick = onReportClick,
+                onDeleteClick = onDeleteClick,
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -73,6 +77,7 @@ private fun FeedCardHeader(
     avatarUrl: String?,
     dayCount: Int,
     onReportClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -90,16 +95,19 @@ private fun FeedCardHeader(
             color = ModyTheme.colors.gray09,
         )
         DayCountChip(dayCount = dayCount)
-        if (onReportClick != null) {
+        if (onReportClick != null || onDeleteClick != null) {
             Spacer(modifier = Modifier.weight(1f))
-            ReportMenu(onReportClick = onReportClick)
+            FeedCardMenu(onReportClick = onReportClick, onDeleteClick = onDeleteClick)
         }
     }
 }
 
-/** 미트볼(⋯) 버튼 + "신고" 드롭다운. */
+/** 미트볼(⋯) 버튼 + 드롭다운. 넘어온 동작만 항목으로 낸다. */
 @Composable
-private fun ReportMenu(onReportClick: () -> Unit) {
+private fun FeedCardMenu(
+    onReportClick: (() -> Unit)?,
+    onDeleteClick: (() -> Unit)?,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         Icon(
@@ -119,19 +127,45 @@ private fun ReportMenu(onReportClick: () -> Unit) {
             shape = RoundedCornerShape(10.dp),
             containerColor = ModyTheme.colors.white,
         ) {
-            Text(
-                text = "신고",
-                style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.gray09,
-                modifier = Modifier
-                    .clickable {
+            if (onReportClick != null) {
+                FeedCardMenuItem(
+                    text = "신고",
+                    color = ModyTheme.colors.gray09,
+                    onClick = {
                         expanded = false
                         onReportClick()
-                    }
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-            )
+                    },
+                )
+            }
+            if (onDeleteClick != null) {
+                // 되돌릴 수 없는 동작이라 색으로도 구분한다(확인 다이얼로그는 화면이 띄운다).
+                FeedCardMenuItem(
+                    text = "삭제",
+                    color = ModyTheme.colors.error,
+                    onClick = {
+                        expanded = false
+                        onDeleteClick()
+                    },
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun FeedCardMenuItem(
+    text: String,
+    color: Color,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = text,
+        style = ModyTheme.typography.c1,
+        color = color,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    )
 }
 
 /** "N일차 🔥" 칩. */

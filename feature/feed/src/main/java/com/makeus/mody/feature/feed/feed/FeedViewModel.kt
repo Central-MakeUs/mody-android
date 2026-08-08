@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
@@ -40,6 +41,7 @@ class FeedViewModel @Inject constructor(
     private val pendingStreakTabHolder: PendingStreakTabHolder,
     private val sessionRepository: SessionRepository,
     private val myPageRepository: MyPageRepository,
+    private val recordRepository: RecordRepository,
     private val unreadNotificationStore: UnreadNotificationStore,
     remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
@@ -163,6 +165,10 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.ReportConfirmed -> reportRecord()
             is FeedIntent.ReportCompleteConfirmed -> setState { copy(showReportComplete = false) }
             is FeedIntent.ReportErrorShown -> setState { copy(reportError = null) }
+            is FeedIntent.DeleteClicked -> setState { copy(deleteTargetRecordId = intent.recordId) }
+            is FeedIntent.DeleteDialogDismissed -> setState { copy(deleteTargetRecordId = null) }
+            is FeedIntent.DeleteConfirmed -> deleteRecord()
+            is FeedIntent.DeleteErrorShown -> setState { copy(deleteError = null) }
             is FeedIntent.WriteExerciseClicked -> {
                 setState { copy(isFabExpanded = false) }
                 navigationHelper.navigate(NavigationEvent.To(RecordGraph.HealthRoute))
@@ -363,6 +369,38 @@ class FeedViewModel @Inject constructor(
                         isReporting = false,
                         reportTargetRecordId = null,
                         reportError = "신고 접수에 실패했어요. 다시 시도해주세요.",
+                    )
+                }
+            }
+    }
+
+    /**
+     * 삭제 확인 다이얼로그 "삭제하기" → 서버 삭제 후 목록에서 제거.
+     *
+     * 성공하면 카드를 먼저 지워 결과를 즉시 보여주고, 캘린더를 다시 받는다 — 그날의 마지막
+     * 기록이었으면 주간 스트립의 불이 꺼져야 한다. 목록 재조회는 하지 않는다(깜빡임).
+     */
+    private fun deleteRecord() = viewModelScope.launch {
+        val recordId = currentState.deleteTargetRecordId ?: return@launch
+        if (currentState.isDeleting) return@launch
+        setState { copy(isDeleting = true) }
+        runCatching { recordRepository.deleteRecord(recordId) }
+            .onSuccess {
+                setState {
+                    copy(
+                        isDeleting = false,
+                        deleteTargetRecordId = null,
+                        feeds = feeds.filterNot { it.id == recordId },
+                    )
+                }
+                loadCalendar()
+            }
+            .onFailure {
+                setState {
+                    copy(
+                        isDeleting = false,
+                        deleteTargetRecordId = null,
+                        deleteError = "게시물 삭제에 실패했어요. 다시 시도해주세요.",
                     )
                 }
             }

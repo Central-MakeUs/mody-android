@@ -35,4 +35,10 @@ interface RecordRepository {
         durationMinutes: Int,
         cropRegion: CropRegion?,
     ): Long
+
+    /**
+     * 기록 삭제. 기록 단위라 그룹을 받지 않는다 — 여러 그룹에 올라간 기록이면 전부에서 사라진다.
+     * 남의 기록인지는 서버가 판단하므로, 화면은 내 기록에만 메뉴를 노출하는 정도로 충분하다.
+     */
+    suspend fun deleteRecord(recordId: Long)
 }

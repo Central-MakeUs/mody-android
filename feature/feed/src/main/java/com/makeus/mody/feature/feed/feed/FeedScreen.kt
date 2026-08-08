@@ -126,6 +126,7 @@ private fun FeedContent(
                     state = state,
                     onCardClick = { id -> onIntent(FeedIntent.FeedCardClicked(id)) },
                     onReportClick = { id -> onIntent(FeedIntent.ReportClicked(id)) },
+                    onDeleteClick = { id -> onIntent(FeedIntent.DeleteClicked(id)) },
                     onLoadMore = { onIntent(FeedIntent.LoadMoreFeeds) },
                     modifier = Modifier.weight(1f),
                 )
@@ -173,9 +174,27 @@ private fun FeedContent(
         )
     }
 
+    if (state.deleteTargetRecordId != null) {
+        ModyDialog(
+            title = "게시물을 삭제하시겠어요?",
+            message = "삭제한 게시물은 되돌릴 수 없어요.",
+            confirmText = "삭제하기",
+            dismissText = "취소",
+            // 삭제 중 중복 탭 방지
+            confirmEnabled = !state.isDeleting,
+            onConfirm = { onIntent(FeedIntent.DeleteConfirmed) },
+            onDismissRequest = { onIntent(FeedIntent.DeleteDialogDismissed) },
+        )
+    }
+
     ModyErrorDialog(
         message = state.reportError,
         onDismiss = { onIntent(FeedIntent.ReportErrorShown) },
+    )
+
+    ModyErrorDialog(
+        message = state.deleteError,
+        onDismiss = { onIntent(FeedIntent.DeleteErrorShown) },
     )
 }
 
@@ -246,6 +265,7 @@ private fun FeedList(
     state: FeedState,
     onCardClick: (Long) -> Unit,
     onReportClick: (Long) -> Unit,
+    onDeleteClick: (Long) -> Unit,
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -269,12 +289,15 @@ private fun FeedList(
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(state.feeds, key = { it.id }) { card ->
+            // 남의 글이면 신고, 내 글이면 삭제. myMemberId 로딩 전(null)에는 둘 다 숨긴다 —
+            // 판별이 뒤집히면 항목이 신고↔삭제로 바뀌어 보인다.
+            val isMine = state.myMemberId != null && card.memberId == state.myMemberId
+            val isOthers = state.myMemberId != null && card.memberId != state.myMemberId
             FeedCard(
                 card = card,
                 onClick = { onCardClick(card.id) },
-                // 내 게시물엔 신고 미노출. myMemberId 로딩 전(null)에도 숨김 — 떴다 사라지는 깜빡임 방지.
-                onReportClick = { onReportClick(card.id) }
-                    .takeIf { state.myMemberId != null && card.memberId != state.myMemberId },
+                onReportClick = { onReportClick(card.id) }.takeIf { isOthers },
+                onDeleteClick = { onDeleteClick(card.id) }.takeIf { isMine },
             )
         }
         if (state.isLoadingMore) {

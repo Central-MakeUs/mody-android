@@ -66,13 +66,19 @@ data class FeedState(
     val phaseTwoFeaturesEnabled: Boolean = false,
     // 상단바 알림 아이콘 뱃지(안 읽은 알림 존재).
     val hasUnreadNotification: Boolean = false,
-    // 내 memberId(/mypage/me). 로딩 전(null)에는 신고 메뉴 미노출 — 내 글에 잠깐 떴다 사라지는 것 방지.
+    // 내 memberId(/mypage/me). 로딩 전(null)에는 메뉴 자체를 숨긴다 — 판별이 뒤집히면
+    // 내 글에 "신고"가, 남의 글에 "삭제"가 잠깐 떴다 바뀐다.
     val myMemberId: Long? = null,
     // 신고 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 접수 중 → 완료/실패 다이얼로그
     val reportTargetRecordId: Long? = null,
     val isReporting: Boolean = false,
     val showReportComplete: Boolean = false,
     val reportError: String? = null,
+    // 삭제 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 삭제 중 → 실패 다이얼로그.
+    // 신고와 달리 완료 다이얼로그가 없다 — 카드가 목록에서 사라지는 것이 곧 결과다.
+    val deleteTargetRecordId: Long? = null,
+    val isDeleting: Boolean = false,
+    val deleteError: String? = null,
 ) : UiState {
     val isEmpty: Boolean get() = feeds.isEmpty()
 }

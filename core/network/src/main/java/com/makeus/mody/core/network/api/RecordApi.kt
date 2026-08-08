@@ -5,7 +5,9 @@ import com.makeus.mody.core.network.model.record.PresignedUrlResponse
 import com.makeus.mody.core.network.model.record.RecordCreateRequest
 import com.makeus.mody.core.network.model.record.RecordCreateResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface RecordApi {
@@ -26,4 +28,14 @@ interface RecordApi {
     suspend fun createRecord(
         @Body request: RecordCreateRequest,
     ): ApiResponse<RecordCreateResponse>
+
+    /**
+     * 기록 삭제. 그룹 단위가 아니라 기록 단위라 groupId 를 받지 않는다 —
+     * 여러 그룹에 올라간 기록이면 모든 그룹에서 함께 사라진다.
+     * 작성자 검증은 서버가 한다.
+     */
+    @DELETE("api/v1/records/{recordId}")
+    suspend fun deleteRecord(
+        @Path("recordId") recordId: Long,
+    ): ApiResponse<Unit>
 }

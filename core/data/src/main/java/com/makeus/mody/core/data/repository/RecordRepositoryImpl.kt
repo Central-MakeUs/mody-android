@@ -91,6 +91,11 @@ class RecordRepositoryImpl @Inject constructor(
         ).unwrapResult().recordId
     }
 
+    // 실패를 삼키지 않는다 — 지워진 줄 알고 화면을 닫으면 다음 진입에 되살아난 것처럼 보인다.
+    override suspend fun deleteRecord(recordId: Long) {
+        recordApi.deleteRecord(recordId).unwrapResult()
+    }
+
     private suspend fun readBytes(uri: Uri): ByteArray = withContext(Dispatchers.IO) {
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw HttpResponseException(

@@ -62,6 +62,18 @@ sealed class FeedIntent : UiIntent {
     /** 신고 실패 다이얼로그 소비 */
     data object ReportErrorShown : FeedIntent()
 
+    /** 카드 미트볼 메뉴 "삭제" 탭 → 삭제 확인 다이얼로그 (내 게시물에만 노출) */
+    data class DeleteClicked(val recordId: Long) : FeedIntent()
+
+    /** 삭제 확인 다이얼로그 "삭제하기" → 서버 삭제 */
+    data object DeleteConfirmed : FeedIntent()
+
+    /** 삭제 확인 다이얼로그 닫기(취소/스크림) */
+    data object DeleteDialogDismissed : FeedIntent()
+
+    /** 삭제 실패 다이얼로그 소비 */
+    data object DeleteErrorShown : FeedIntent()
+
     /** FAB 탭 → 기록 메뉴 확장/축소 */
     data object FabClicked : FeedIntent()
 

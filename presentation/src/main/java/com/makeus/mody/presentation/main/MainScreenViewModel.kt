@@ -3,6 +3,7 @@ package com.makeus.mody.presentation.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
@@ -29,6 +30,7 @@ class MainScreenViewModel @Inject constructor(
     private val remoteConfigRepository: RemoteConfigRepository,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
     private val pendingStreakTabHolder: PendingStreakTabHolder,
+    private val analyticsLogger: AnalyticsLogger,
 ) : ViewModel() {
 
     private companion object {
@@ -83,6 +85,17 @@ class MainScreenViewModel @Inject constructor(
 
     fun selectTab(tab: MainTab) {
         _selectedTab.value = tab
+    }
+
+    /**
+     * 현재 탭을 화면 노출로 기록한다.
+     *
+     * MainActivity 의 목적지 추적은 Main 을 건너뛴다 — 컨테이너라서 실제로 보이는 건 탭이다.
+     * 탭 전환뿐 아니라 다른 화면에 갔다 돌아온 경우에도 다시 불려야 해서, 호출 시점은
+     * 화면(컴포지션)이 정한다.
+     */
+    fun trackCurrentTabScreen() {
+        analyticsLogger.logScreenView(_selectedTab.value.screenName)
     }
 
     fun logout() {

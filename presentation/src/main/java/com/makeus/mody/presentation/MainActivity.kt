@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.Box
 import android.net.Uri
 import com.makeus.mody.core.designsystem.component.ModyDialog
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.domain.notification.NotificationDeepLink
@@ -28,6 +29,8 @@ import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
+import com.makeus.mody.presentation.analytics.MainScreenName
+import com.makeus.mody.presentation.analytics.toScreenName
 import com.makeus.mody.presentation.navigation.AppNavHost
 import com.makeus.mody.core.navigation.NotificationDestination
 import com.makeus.mody.core.navigation.NotificationLinkParser
@@ -41,6 +44,7 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
     @Inject lateinit var navigationHelper: NavigationHelper
+    @Inject lateinit var analyticsLogger: AnalyticsLogger
     @Inject lateinit var inviteCodeHolder: InviteCodeHolder
     @Inject lateinit var notificationDeepLinkHolder: NotificationDeepLinkHolder
     @Inject lateinit var pendingGroupSelectionHolder: PendingGroupSelectionHolder
@@ -111,6 +115,17 @@ class MainActivity : ComponentActivity() {
                             restoreState = true
                         }
                     }
+                }
+            }
+
+            // 화면 노출 로그. Compose 는 자동 수집이 Activity 단위(전부 MainActivity)라
+            // 여기서 직접 남긴다. 목적지 하나만 보면 되므로 화면마다 붙이지 않는다.
+            LaunchedEffect(navController) {
+                navController.currentBackStackEntryFlow.collect { entry ->
+                    val screenName = entry.destination.route.toScreenName() ?: return@collect
+                    // Main 은 컨테이너라 실제로 보이는 건 탭이다 — MainScreen 이 탭 이름으로 남긴다.
+                    if (screenName == MainScreenName) return@collect
+                    analyticsLogger.logScreenView(screenName)
                 }
             }
 

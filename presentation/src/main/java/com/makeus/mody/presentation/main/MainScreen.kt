@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,6 +27,10 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
     val visibleTabs by viewModel.visibleTabs.collectAsState()
     val feedViewModel: FeedViewModel = hiltViewModel()
     val feedState by feedViewModel.state.collectAsStateWithLifecycle()
+
+    // 탭 전환 + 다른 화면에 갔다 돌아온 경우(NavHost 가 이 컴포저블을 버렸다 다시 만든다)
+    // 모두 화면 노출로 남긴다. ViewModel init 은 재진입 때 다시 돌지 않아 여기서 부른다.
+    LaunchedEffect(selectedTab) { viewModel.trackCurrentTabScreen() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(

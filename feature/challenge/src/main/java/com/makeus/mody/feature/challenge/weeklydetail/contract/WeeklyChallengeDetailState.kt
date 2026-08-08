@@ -14,8 +14,8 @@ data class WeeklyChallengeDetailState(
     val deadlineDayOfWeek: String = "",
     val isLoading: Boolean = true,
     val proofs: List<WeeklyChallengeProof> = emptyList(),
-    /** 촬영 요청됨 — 화면이 카메라를 띄우고 나면 다시 false 로 되돌린다. */
-    val isCaptureRequested: Boolean = false,
+    /** 촬영 오버레이 표시 중. */
+    val isCameraVisible: Boolean = false,
     /** 업로드 진행 중 — 중복 등록 방지 + 인디케이터. */
     val isUploading: Boolean = false,
     /** 공유 이미지 준비 중(콜라주 생성 + 다운로드). */

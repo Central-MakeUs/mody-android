@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.camera
+package com.makeus.mody.core.camera
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -42,19 +42,19 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.CropRegion
 import kotlin.math.roundToInt
 
-/** 기록 카드 비율(354:200). */
-private const val FRAME_RATIO = 200f / 354f
-
 /**
- * 조정 단계: 촬영본을 세로로 드래그해 354:200 크롭 영역을 맞춘다.
+ * 조정 단계: 촬영본을 세로로 드래그해 크롭 영역을 맞춘다.
  * 프레임은 화면 중앙 고정, 사진이 위아래로 움직인다. 프레임 밖은 어둡게.
  *
  * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
- * 세로 슬라이스만 지원하므로 x=0, width=1, y/height 만 변한다.
+ * 세로 슬라이스만 지원하므로 x=0, width=1, y/height 만 변한다 — 프레임은 항상 화면 폭을 채운다.
+ *
+ * @param frameRatio 프레임 높이/너비. 화면보다 세로로 길면 드래그 여지가 없어 1 이하만 의미가 있다.
  */
 @Composable
 fun AdjustLayer(
     image: UprightImage,
+    frameRatio: Float,
     onRetake: () -> Unit,
     onConfirm: (originalUri: String, cropRegion: CropRegion) -> Unit,
     onClose: () -> Unit,
@@ -66,7 +66,7 @@ fun AdjustLayer(
         val screenH = constraints.maxHeight.toFloat()
 
         val frameW = screenW
-        val frameH = frameW * FRAME_RATIO
+        val frameH = frameW * frameRatio
         val baseFrameTop = (screenH - frameH) / 2f
 
         // 사진은 화면 중앙 고정. 프레임(사각형)이 위아래로 움직인다.

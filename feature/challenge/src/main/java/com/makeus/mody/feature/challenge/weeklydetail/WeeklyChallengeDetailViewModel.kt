@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.ImageShareRepository
@@ -43,10 +44,11 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
             is WeeklyChallengeDetailIntent.BackClicked ->
                 navigationHelper.navigate(NavigationEvent.Up)
             is WeeklyChallengeDetailIntent.AddProofClicked ->
-                setState { copy(isCaptureRequested = true) }
-            is WeeklyChallengeDetailIntent.CaptureLaunched ->
-                setState { copy(isCaptureRequested = false) }
-            is WeeklyChallengeDetailIntent.PhotoPicked -> uploadProof(intent.imageUri)
+                setState { copy(isCameraVisible = true) }
+            is WeeklyChallengeDetailIntent.CameraDismissed ->
+                setState { copy(isCameraVisible = false) }
+            is WeeklyChallengeDetailIntent.PhotoCaptured ->
+                uploadProof(intent.imageUri, intent.cropRegion)
             is WeeklyChallengeDetailIntent.ShareClicked -> share()
             is WeeklyChallengeDetailIntent.ShareLaunched -> setState { copy(shareImageUri = null) }
             is WeeklyChallengeDetailIntent.ToastShown -> setState { copy(toastMessage = null) }
@@ -84,9 +86,9 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
      * 등록 응답에는 작성자 정보가 없어 그대로 목록에 끼워 넣으면 이름/아바타가 빈 칸이 된다.
      * 그래서 성공 후 목록을 다시 받는다.
      */
-    private fun uploadProof(imageUri: String) = viewModelScope.launch {
+    private fun uploadProof(imageUri: String, cropRegion: CropRegion) = viewModelScope.launch {
         if (currentState.isUploading) return@launch
-        setState { copy(isUploading = true) }
+        setState { copy(isUploading = true, isCameraVisible = false) }
         try {
             val imageKey = imageUploadRepository.uploadImage(
                 imageUri = imageUri,
@@ -97,8 +99,8 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
                 groupId = route.groupId,
                 groupChallengeId = route.groupChallengeId,
                 imageKey = imageKey,
-                // 크롭 UI 가 없어 원본 그대로 올린다. 표시는 셀에서 center-crop.
-                cropRegion = null,
+                // 원본을 그대로 올리고, 조정 단계에서 맞춘 영역만 좌표로 넘긴다.
+                cropRegion = cropRegion,
             )
             // 여기부터의 실패는 등록 실패가 아니라 목록 갱신 실패다. 아래 catch 로 흘리면
             // "등록에 실패했어요" 가 떠서, 이미 올라간 사진을 다시 올리게 만든다.

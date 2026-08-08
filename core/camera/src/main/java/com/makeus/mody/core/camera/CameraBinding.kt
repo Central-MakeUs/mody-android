@@ -1,4 +1,4 @@
-package com.makeus.mody.feature.record.camera
+package com.makeus.mody.core.camera
 
 import android.content.Context
 import android.util.Rational

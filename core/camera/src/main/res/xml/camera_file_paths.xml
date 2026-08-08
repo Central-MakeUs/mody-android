@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path
-        name="challenge_camera"
-        path="challenge/camera/" />
+        name="camera"
+        path="camera/" />
 </paths>

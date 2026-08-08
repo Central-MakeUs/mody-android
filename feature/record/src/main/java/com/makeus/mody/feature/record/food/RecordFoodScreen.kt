@@ -50,7 +50,8 @@ import com.makeus.mody.core.designsystem.component.ModyTimePicker
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.CropRegion
-import com.makeus.mody.feature.record.camera.RecordCameraOverlay
+import com.makeus.mody.core.camera.ModyCameraOverlay
+import com.makeus.mody.core.camera.RECORD_FRAME_RATIO
 import com.makeus.mody.feature.record.component.SectionHeader
 import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
@@ -152,7 +153,8 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
     }
 
     if (state.isCameraVisible) {
-        RecordCameraOverlay(
+        ModyCameraOverlay(
+            frameRatio = RECORD_FRAME_RATIO,
             onConfirm = { uri, region ->
                 viewModel.onIntent(RecordFoodIntent.PhotoSelected(uri, region))
             },

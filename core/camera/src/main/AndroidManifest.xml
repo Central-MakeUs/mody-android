@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 커스텀 촬영 화면(CameraX) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
+    <application>
+        <!--
+          촬영 결과 임시 파일(cacheDir/camera)을 표시·업로드에 넘기기 위한 provider.
+          android:name 은 모듈별 서브클래스(다른 모듈 provider 와 이름이 겹치면 매니페스트 병합이
+          충돌한다), meta-data 는 필수 — 정적 getUriForFile() 이 이 값으로 경로 전략을 만든다.
+        -->
+        <provider
+            android:name="com.makeus.mody.core.camera.CameraFileProvider"
+            android:authorities="${applicationId}.camera.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/camera_file_paths" />
+        </provider>
+    </application>
+</manifest>

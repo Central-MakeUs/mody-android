@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.ChallengeSummary
@@ -149,19 +150,19 @@ class ChallengeViewModel @Inject constructor(
         )
         val loaded = supervisorScope {
             val summaryDeferred = async {
-                runCatching { challengeRepository.getSummary(groupId) }.getOrNull()
+                loadOrNull("summary") { challengeRepository.getSummary(groupId) }
             }
             val buddiesDeferred = async {
-                runCatching { challengeRepository.getNudgeTargets(groupId) }.getOrNull()
+                loadOrNull("nudgeTargets") { challengeRepository.getNudgeTargets(groupId) }
             }
             val stepDeferred = async {
-                runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
+                loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
             }
             val rankingsDeferred = async {
-                runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+                loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }
             }
             val weeklyDeferred = async {
-                runCatching { challengeRepository.getWeeklyChallenges(groupId) }.getOrNull()
+                loadOrNull("weeklyChallenges") { challengeRepository.getWeeklyChallenges(groupId) }
             }
             Loaded(
                 summary = summaryDeferred.await(),
@@ -194,8 +195,8 @@ class ChallengeViewModel @Inject constructor(
     /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
     private fun refreshStep() = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
-        val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
-        val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+        val step = loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
+        val rankings = loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }
         setState {
             copy(
                 stepChallenge = step ?: stepChallenge,
@@ -233,8 +234,8 @@ class ChallengeViewModel @Inject constructor(
         runCatching { onboardingRepository.reportHealthConnection(granted) }
         if (!granted) return@launch
         val groupId = currentGroupId ?: return@launch
-        val step = runCatching { challengeRepository.getStepChallenge(groupId) }.getOrNull()
-        val rankings = runCatching { challengeRepository.getStepRankings(groupId) }.getOrNull()
+        val step = loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
+        val rankings = loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }
         setState {
             copy(
                 stepChallenge = step ?: stepChallenge,
@@ -338,5 +339,25 @@ class ChallengeViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * 조회 실패를 null 로 바꿔 다른 항목 로딩을 막지 않되, **로그는 남긴다.**
+     *
+     * 실패를 조용히 삼키면 화면상 "빈 응답"과 구분되지 않아, 서버에 데이터가 없는 건지
+     * 호출이 깨진 건지 알 수 없다. 취소는 실패가 아니므로 그대로 전파한다.
+     */
+    private inline fun <T> loadOrNull(name: String, block: () -> T): T? =
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "$name 조회 실패 — 화면은 빈 상태로 남는다", e)
+            null
+        }
+
+    private companion object {
+        const val TAG = "ChallengeViewModel"
     }
 }

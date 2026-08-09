@@ -29,10 +29,15 @@ data class NudgeTargetResponse(
     val buttonStatus: String? = null,
 )
 
-/** POST .../challenges/nudges/{memberId} — 찌른 뒤의 버튼 상태. */
+/**
+ * POST .../challenges/nudges/{memberId} — 찌른 뒤의 버튼 상태.
+ *
+ * [nudgedToday] 는 nullable 이다. `= false` 로 두면 "필드를 안 준 구버전 서버"와
+ * "서버가 명시적으로 false 를 준 경우"가 뭉개져, 후자에까지 "이미 찔렀음"을 덮어씌우게 된다.
+ */
 @Serializable
 data class NudgeResponse(
-    val nudgedToday: Boolean = false,
+    val nudgedToday: Boolean? = null,
     val buttonStatus: String? = null,
 )
 

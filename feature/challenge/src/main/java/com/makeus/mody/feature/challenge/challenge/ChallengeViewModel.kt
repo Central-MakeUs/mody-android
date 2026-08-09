@@ -304,6 +304,14 @@ class ChallengeViewModel @Inject constructor(
     /**
      * 콕 찌르기. 결과 상태는 서버가 응답으로 주므로 그 버디의 상태만 갈아끼운다
      * (목록 재조회 없음).
+     *
+     * 요청 시점의 groupId 를 붙들고, 응답이 온 뒤 현재 그룹과 같은지 확인한다 — 피드에서
+     * 그룹을 바꾸면 [load] 가 currentGroupId 를 갈아끼우는데, 그 뒤 늦게 도착한 응답을 그대로
+     * 반영하면 memberId 가 겹치는 다른 그룹의 버디 상태를 바꾸고 엉뚱한 토스트가 뜬다.
+     * (`FeedViewModel` 이 날짜에 대해 하는 것과 같은 방어.)
+     *
+     * 버리고 나가도 nudgingMemberIds 는 남지 않는다 — 그룹이 바뀌면 [load] 가 상태를
+     * 새로 만들면서 함께 비워진다.
      */
     private fun nudge(memberId: Long) = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
@@ -313,6 +321,7 @@ class ChallengeViewModel @Inject constructor(
         setState { copy(nudgingMemberIds = nudgingMemberIds + memberId) }
         try {
             val status = challengeRepository.nudge(groupId, memberId)
+            if (groupId != currentGroupId) return@launch
             setState {
                 copy(
                     nudgingMemberIds = nudgingMemberIds - memberId,
@@ -325,6 +334,7 @@ class ChallengeViewModel @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            if (groupId != currentGroupId) return@launch
             setState {
                 copy(
                     nudgingMemberIds = nudgingMemberIds - memberId,

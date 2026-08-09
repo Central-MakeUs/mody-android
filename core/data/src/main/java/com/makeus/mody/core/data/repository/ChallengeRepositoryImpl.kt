@@ -58,11 +58,12 @@ class ChallengeRepositoryImpl @Inject constructor(
 
     override suspend fun nudge(groupId: Long, memberId: Long): NudgeButtonStatus {
         val r = challengeApi.nudge(groupId, memberId).unwrapResult()
-        // 응답이 상태를 안 주면 방금 찌른 게 확실하므로 NUDGED 로 본다.
         return NudgeButtonStatus.from(
             raw = r.buttonStatus,
             recordedToday = false,
-            nudgedToday = true,
+            // 서버가 값을 줬으면 그대로 믿는다. 아예 안 준 경우(구버전)에만 성공한 POST 라는
+            // 사실로 true 를 채운다 — 명시적 false 까지 덮어쓰면 서버 판단을 뒤집는다.
+            nudgedToday = r.nudgedToday ?: true,
         )
     }
 

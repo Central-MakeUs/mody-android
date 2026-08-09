@@ -2,6 +2,7 @@ package com.makeus.mody.feature.challenge.stepchange
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -157,16 +158,34 @@ private fun StepChallengeOptionSkeletonList(count: Int = 3) {
     }
 }
 
+/**
+ * 선택지 카드. 시안의 세 상태를 그린다.
+ *
+ * - 진행 중([StepChallengeOption.selected]): 연한 노랑 배경 + 노랑 테두리. 배지는 없고 색으로만
+ *   구분한다. 바꿀 게 없으므로 탭도 받지 않는다 — 색이 그 이유를 대신 설명한다.
+ * - 완료([StepChallengeOption.completed]): 우측에 "완료" 배지. 배경은 일반과 같다.
+ * - 일반: gray01 배경.
+ */
 @Composable
 private fun StepChallengeOptionCard(
     option: StepChallengeOption,
     onClick: () -> Unit,
 ) {
+    val shape = RoundedCornerShape(12.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ModyTheme.colors.gray01)
+            .clip(shape)
+            .background(
+                if (option.selected) ModyTheme.colors.primary400 else ModyTheme.colors.gray01,
+            )
+            .then(
+                if (option.selected) {
+                    Modifier.border(1.5.dp, ModyTheme.colors.primary100, shape)
+                } else {
+                    Modifier
+                },
+            )
             // 이미 진행 중인 챌린지는 바꿀 게 없어 탭을 받지 않는다.
             .clickable(enabled = !option.selected, onClick = onClick)
             .padding(16.dp),
@@ -174,7 +193,11 @@ private fun StepChallengeOptionCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StepChallengeBadge(targetStepCount = option.targetStepCount)
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // weight(1f): 제목이 길어도 "완료" 배지를 밀어내지 않고 두 줄로 접힌다.
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Text(
                 text = option.title,
                 style = ModyTheme.typography.b6,
@@ -186,6 +209,30 @@ private fun StepChallengeOptionCard(
                 color = ModyTheme.colors.gray08,
             )
         }
+        // 진행 중인 카드에는 붙이지 않는다 — 시안상 그 자리는 비어 있고, 두 상태가 겹치면
+        // "완료했는데 또 진행 중"으로 읽힌다.
+        if (option.completed && !option.selected) {
+            CompletedBadge()
+        }
+    }
+}
+
+/** "완료" 배지 — 이미 달성한 챌린지. */
+@Composable
+private fun CompletedBadge() {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(ModyTheme.colors.primary100)
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "완료",
+            style = ModyTheme.typography.c1,
+            color = ModyTheme.colors.gray10,
+            maxLines = 1,
+        )
     }
 }
 
@@ -259,10 +306,24 @@ private fun StepChallengeChangeContentPreview() {
         StepChallengeChangeContent(
             state = StepChallengeChangeState(
                 isLoading = false,
+                // 시안 그대로 세 상태를 한 화면에서 확인 — 진행 중 / 완료 / 일반.
                 options = listOf(
-                    StepChallengeOption(1, "서울에서 인천까지 걸어가기", "서울", "인천", 60.0, 150_000, false),
-                    StepChallengeOption(2, "서울에서 천안까지 걸어가기", "서울", "천안", 90.0, 200_000, false),
-                    StepChallengeOption(3, "서울에서 부산까지 걸어가기", "서울", "부산", 325.0, 500_000, false),
+                    StepChallengeOption(
+                        1, "서울에서 인천까지 걸어가기", "서울", "인천", 60.0, 150_000,
+                        selected = true,
+                    ),
+                    StepChallengeOption(
+                        2, "서울에서 천안까지 걸어가기", "서울", "천안", 90.0, 200_000,
+                        selected = false, completed = true,
+                    ),
+                    StepChallengeOption(
+                        3, "서울에서 대전까지 걸어가기", "서울", "대전", 160.0, 300_000,
+                        selected = false,
+                    ),
+                    StepChallengeOption(
+                        4, "서울에서 부산까지 걸어가기", "서울", "부산", 325.0, 500_000,
+                        selected = false,
+                    ),
                 ),
             ),
             onIntent = {},

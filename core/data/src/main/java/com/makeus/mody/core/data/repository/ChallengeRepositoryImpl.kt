@@ -88,6 +88,7 @@ class ChallengeRepositoryImpl @Inject constructor(
                 distanceKm = it.distanceKm,
                 targetStepCount = it.targetStepCount,
                 selected = it.selected,
+                completed = it.completed,
             )
         }
 

@@ -209,7 +209,7 @@ buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 ## PR / 커밋 규칙
 
 - **PR 본문**: `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채워서 올린다 (작업 내용 / 변경 이유 / 주요 변경사항 / 스크린샷 / 리뷰 포인트 / 체크리스트 / 관련 이슈). base 브랜치는 `main`.
-- **PR 올리기 전 1차 셀프 코드리뷰**: 변경 diff를 훑어 (1) 버그·부작용(특히 공용 토큰/컴포넌트 리네임이 다른 화면에 미치는 영향)과 (2) 아래 **아키텍처 적합성**을 함께 점검하고, 발견 사항을 PR "리뷰어가 집중해서 봐줬으면 하는 부분"에 남긴다.
+- **PR 올리기 전 1차 셀프 코드리뷰**: 변경 diff를 훑어 (1) 버그·부작용(특히 공용 토큰/컴포넌트 리네임이 다른 화면에 미치는 영향), (2) 아래 **아키텍처 적합성**, (3) **비동기·실패 경로**를 함께 점검하고, 발견 사항을 PR "리뷰어가 집중해서 봐줬으면 하는 부분"에 남긴다.
 
 ### 아키텍처 셀프 점검 체크리스트 (Clean Architecture + MVI)
 
@@ -221,6 +221,30 @@ buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 - **네이밍/구조**: 네이밍 컨벤션 표 준수, 새 기능은 `feature/xxx` 파일 구조(navigation·screen·viewmodel·contract) 따름.
 - **커밋 단위**: 논리 단위로 분리 (designsystem 변경 / feature UI / fix 등 섞지 않기). 커밋 메시지는 `type(scope): 요약` (Conventional Commits).
 - **커밋 트레일러**: 커밋 메시지 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`, PR 본문 끝에 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+
+### 비동기·실패 경로 셀프 점검
+
+실제 코드리뷰에서 Major 로 반복해 걸린 유형들. 아키텍처 체크리스트를 통과해도 여기서 걸린다.
+
+- **비슷한 문제를 이미 푼 코드가 레포에 있는지 먼저 찾는다.** 아래 항목 대부분은 이미 한 번
+  풀린 문제였고, 새 코드가 그 선례를 안 따라서 다시 났다. 나머지 항목은 이걸 놓쳤을 때의 보험.
+- **응답 도착 시 컨텍스트 재확인**: 요청을 시작할 때의 `groupId`/날짜/id 를 지역 변수로 붙들고,
+  성공·실패 핸들러 **첫 줄**에서 현재 값과 같은지 본다. 다르면 버린다. 사용자가 그 사이 그룹·
+  날짜를 바꾸면 늦게 온 응답이 엉뚱한 대상에 반영된다.
+  선례: `FeedViewModel.loadMoreFeeds` — *"요청 시점 날짜 고정 — 조회 중 날짜 바뀌면 이어붙이기 취소"*
+- **중복 실행 차단**: 같은 작업이 겹쳐 돌 수 있으면 진행 중 `Job`/`Set` 으로 막는다. 먼저 시작한
+  쪽이 늦게 끝나면서 최신 결과를 덮어쓴다. 선례: `MainViewModel.stepSyncJob`
+- **실패 경로에서 상태를 먼저 소비하지 않기**: `consume()`·플래그 set 처럼 되돌릴 수 없는 소비는
+  후속 동작이 **성공한 뒤**에. 중간에 실패하면 재시도할 수 있는 상태로 남겨둔다.
+- **기본값이 정보를 지우지 않는지**: DTO 기본값(`= false`)과 폴백 로직이 겹치면 "필드 없음"과
+  "명시적 false"가 뭉개진다. 둘을 구분해야 하면 nullable 로 두고 `?:` 로 채운다.
+- **경계값 명시**: 네트워크 호출엔 전체 호출 타임아웃(OkHttp 는 `readTimeout` 만으론 부족 —
+  `callTimeout`), 목록엔 상한, 재시도엔 횟수.
+- **`runCatching` 은 `CancellationException` 까지 삼킨다**: ViewModel 의 suspend 호출은
+  `try/catch (e: CancellationException) { throw e }` 로. 안 그러면 화면을 떠난 뒤에도
+  후속 코드가 계속 돌아 `setState` 를 때린다.
+- **실패를 조용히 넘기지 않기**: 조회 실패를 빈 목록으로 흡수하면 "데이터 없음"과 구분되지 않는다.
+  등록·삭제 실패를 삼키면 사용자가 성공한 줄 알고 화면을 닫는다.
 
 ## 핵심 파일 위치
 

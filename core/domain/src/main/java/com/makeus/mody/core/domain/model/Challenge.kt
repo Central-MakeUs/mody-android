@@ -80,6 +80,7 @@ data class StepChallengeStatus(
 /**
  * 챌린지 변경 화면에서 고를 수 있는 걸음 수 챌린지 한 줄.
  * @param selected 현재 그룹이 진행 중인 챌린지.
+ * @param completed 이미 달성한 챌린지.
  */
 data class StepChallengeOption(
     val challengeId: Long,
@@ -89,6 +90,8 @@ data class StepChallengeOption(
     val distanceKm: Double,
     val targetStepCount: Int,
     val selected: Boolean,
+    /** 이미 달성한 챌린지. 서버가 아직 안 주므로 현재는 항상 false. */
+    val completed: Boolean = false,
 )
 
 /** 걸음 수 기여도 순위 한 줄. */

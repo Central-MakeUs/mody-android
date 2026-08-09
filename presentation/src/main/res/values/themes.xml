@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      MainActivity 가 쓰는 테마라 그 Activity 를 선언하는 모듈(:presentation)이 함께 들고 있는다.
+      :app 에 두면 라이브러리인 :presentation 이 자기 매니페스트에서 참조하는 리소스를 스스로
+      해결하지 못해, release 빌드의 verifyReleaseResources 에서 링크가 깨진다
+      (의존 방향이 :app → :presentation 이라 반대로는 안 보인다).
+      debug 엔 이 검증이 없어 앱 병합 시점에만 맞아떨어져 오래 드러나지 않았다.
+    -->
+    <style name="Theme.Mody" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 다크모드 미고려: 시스템 force-dark 비활성화(라이트 고정).
+             forceDarkAllowed는 API 29+ 전용이나, force-dark 자체가 29부터라 하위에선 무시됨. -->
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+    </style>
+</resources>

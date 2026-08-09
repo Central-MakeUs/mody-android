@@ -24,6 +24,21 @@ data class NudgeTargetResponse(
     val nickname: String = "",
     val profileImageUrl: String? = null,
     val recordedToday: Boolean = false,
+    val nudgedToday: Boolean = false,
+    /** AVAILABLE | NUDGED | RECORDED. 매핑은 [NudgeButtonStatus]. */
+    val buttonStatus: String? = null,
+)
+
+/**
+ * POST .../challenges/nudges/{memberId} — 찌른 뒤의 버튼 상태.
+ *
+ * [nudgedToday] 는 nullable 이다. `= false` 로 두면 "필드를 안 준 구버전 서버"와
+ * "서버가 명시적으로 false 를 준 경우"가 뭉개져, 후자에까지 "이미 찔렀음"을 덮어씌우게 된다.
+ */
+@Serializable
+data class NudgeResponse(
+    val nudgedToday: Boolean? = null,
+    val buttonStatus: String? = null,
 )
 
 /** GET /api/v1/groups/{groupId}/challenges/step/current — 걸음 수 챌린지 현황. */

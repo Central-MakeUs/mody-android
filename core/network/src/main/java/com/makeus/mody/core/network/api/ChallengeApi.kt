@@ -2,6 +2,7 @@ package com.makeus.mody.core.network.api
 
 import com.makeus.mody.core.network.model.ApiResponse
 import com.makeus.mody.core.network.model.challenge.ChallengeSummaryResponse
+import com.makeus.mody.core.network.model.challenge.NudgeResponse
 import com.makeus.mody.core.network.model.challenge.NudgeTargetListResponse
 import com.makeus.mody.core.network.model.challenge.StepChallengeChangeRequest
 import com.makeus.mody.core.network.model.challenge.StepChallengeChangeResponse
@@ -36,12 +37,12 @@ interface ChallengeApi {
         @Path("groupId") groupId: Long,
     ): ApiResponse<NudgeTargetListResponse>
 
-    /** 콕 찌르기(푸시 발송). */
+    /** 콕 찌르기(푸시 발송). 응답으로 찌른 뒤의 버튼 상태를 준다. */
     @POST("api/v1/groups/{groupId}/challenges/nudges/{memberId}")
     suspend fun nudge(
         @Path("groupId") groupId: Long,
         @Path("memberId") memberId: Long,
-    ): ApiResponse<Unit>
+    ): ApiResponse<NudgeResponse>
 
     /** 진행 중인 그룹 필수(걸음 수) 챌린지 현황. */
     @GET("api/v1/groups/{groupId}/challenges/step/current")

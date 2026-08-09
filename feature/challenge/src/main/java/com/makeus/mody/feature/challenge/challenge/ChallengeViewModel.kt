@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
@@ -27,8 +28,6 @@ import com.makeus.mody.feature.challenge.challenge.contract.ChallengeIntent
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeState
 import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -172,16 +171,12 @@ class ChallengeViewModel @Inject constructor(
                 weekly = weeklyDeferred.await(),
             )
         }
-        // 오늘 이미 찌른 멤버 복원. 날짜가 넘어갔으면 저장소가 빈 집합을 준다.
-        val nudged = runCatching { sessionRepository.getNudgedMembers(groupId, today()) }
-            .getOrDefault(emptySet())
         setState {
             copy(
                 isLoading = false,
                 summary = loaded.summary ?: this.summary,
                 buddies = loaded.buddies ?: this.buddies,
                 buddiesLoaded = buddiesLoaded || loaded.buddies != null,
-                nudgedMemberIds = nudged,
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
@@ -278,9 +273,6 @@ class ChallengeViewModel @Inject constructor(
         setState { copy(isSyncingSteps = false) }
     }
 
-    /** 서버 날짜 포맷(yyyy-MM-dd). 걸음 수 기록·콕 찌르기 기록이 함께 쓴다. */
-    private fun today(): String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-
     /**
      * 마지막 선택 그룹(세션) > 첫 그룹. 피드의 그룹 결정 규칙과 동일.
      *
@@ -309,28 +301,40 @@ class ChallengeViewModel @Inject constructor(
         null
     }
 
+    /**
+     * 콕 찌르기. 결과 상태는 서버가 응답으로 주므로 그 버디의 상태만 갈아끼운다
+     * (목록 재조회 없음).
+     *
+     * 요청 시점의 groupId 를 붙들고, 응답이 온 뒤 현재 그룹과 같은지 확인한다 — 피드에서
+     * 그룹을 바꾸면 [load] 가 currentGroupId 를 갈아끼우는데, 그 뒤 늦게 도착한 응답을 그대로
+     * 반영하면 memberId 가 겹치는 다른 그룹의 버디 상태를 바꾸고 엉뚱한 토스트가 뜬다.
+     * (`FeedViewModel` 이 날짜에 대해 하는 것과 같은 방어.)
+     *
+     * 버리고 나가도 nudgingMemberIds 는 남지 않는다 — 그룹이 바뀌면 [load] 가 상태를
+     * 새로 만들면서 함께 비워진다.
+     */
     private fun nudge(memberId: Long) = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
         if (memberId in currentState.nudgingMemberIds) return@launch
-        if (memberId in currentState.nudgedMemberIds) return@launch
+        val buddy = currentState.buddies.firstOrNull { it.memberId == memberId } ?: return@launch
+        if (buddy.nudgeStatus != NudgeButtonStatus.AVAILABLE) return@launch
         setState { copy(nudgingMemberIds = nudgingMemberIds + memberId) }
         try {
-            challengeRepository.nudge(groupId, memberId)
-            // 성공 기록은 기기에 남긴다. 서버가 하루 1회 제한을 걸지만 이미 찔렀는지를
-            // 응답으로 주지 않아, 이게 없으면 재진입 시 버튼이 다시 눌리는 것처럼 보인다.
-            runCatching { sessionRepository.saveNudgedMember(groupId, memberId, today()) }
-            val nickname = currentState.buddies.firstOrNull { it.memberId == memberId }?.nickname
+            val status = challengeRepository.nudge(groupId, memberId)
+            if (groupId != currentGroupId) return@launch
             setState {
                 copy(
                     nudgingMemberIds = nudgingMemberIds - memberId,
-                    nudgedMemberIds = nudgedMemberIds + memberId,
-                    toastMessage = nickname?.let { "${it}님에게 알림을 보냈어요" }
-                        ?: "알림을 보냈어요",
+                    buddies = buddies.map {
+                        if (it.memberId == memberId) it.copy(nudgeStatus = status) else it
+                    },
+                    toastMessage = "${buddy.nickname}님에게 알림을 보냈어요",
                 )
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            if (groupId != currentGroupId) return@launch
             setState {
                 copy(
                     nudgingMemberIds = nudgingMemberIds - memberId,

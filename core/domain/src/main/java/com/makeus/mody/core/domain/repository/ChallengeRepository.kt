@@ -2,6 +2,7 @@ package com.makeus.mody.core.domain.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
@@ -19,8 +20,11 @@ interface ChallengeRepository {
     /** 버디 신기록 도전 목록(멤버별 오늘 기록 여부). */
     suspend fun getNudgeTargets(groupId: Long): List<NudgeTarget>
 
-    /** 오늘 기록 안 한 버디 콕 찌르기(푸시 발송). */
-    suspend fun nudge(groupId: Long, memberId: Long)
+    /**
+     * 오늘 기록 안 한 버디 콕 찌르기(푸시 발송).
+     * @return 찌른 뒤의 버튼 상태. 목록을 다시 받지 않고 그 자리만 갱신하는 데 쓴다.
+     */
+    suspend fun nudge(groupId: Long, memberId: Long): NudgeButtonStatus
 
     /** 진행 중인 그룹 필수(걸음 수) 챌린지 현황. */
     suspend fun getStepChallenge(groupId: Long): StepChallengeStatus

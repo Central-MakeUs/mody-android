@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
@@ -47,11 +48,23 @@ class ChallengeRepositoryImpl @Inject constructor(
                 nickname = it.nickname,
                 profileImageUrl = it.profileImageUrl,
                 recordedToday = it.recordedToday,
+                nudgeStatus = NudgeButtonStatus.from(
+                    raw = it.buttonStatus,
+                    recordedToday = it.recordedToday,
+                    nudgedToday = it.nudgedToday,
+                ),
             )
         }
 
-    override suspend fun nudge(groupId: Long, memberId: Long) {
-        challengeApi.nudge(groupId, memberId).unwrapResult()
+    override suspend fun nudge(groupId: Long, memberId: Long): NudgeButtonStatus {
+        val r = challengeApi.nudge(groupId, memberId).unwrapResult()
+        return NudgeButtonStatus.from(
+            raw = r.buttonStatus,
+            recordedToday = false,
+            // 서버가 값을 줬으면 그대로 믿는다. 아예 안 준 경우(구버전)에만 성공한 POST 라는
+            // 사실로 true 를 채운다 — 명시적 false 까지 덮어쓰면 서버 판단을 뒤집는다.
+            nudgedToday = r.nudgedToday ?: true,
+        )
     }
 
     override suspend fun getStepChallenge(groupId: Long): StepChallengeStatus {

@@ -37,6 +37,7 @@ import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 
 /**
@@ -48,7 +49,6 @@ fun StreakTabContent(
     summary: ChallengeSummary?,
     buddies: List<NudgeTarget>,
     nudgingMemberIds: Set<Long>,
-    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     if (isLoading) {
@@ -64,7 +64,6 @@ fun StreakTabContent(
         BuddySection(
             buddies = buddies,
             nudgingMemberIds = nudgingMemberIds,
-            nudgedMemberIds = nudgedMemberIds,
             onNudgeClick = onNudgeClick,
         )
     }
@@ -206,7 +205,6 @@ private fun StatDivider() {
 private fun BuddySection(
     buddies: List<NudgeTarget>,
     nudgingMemberIds: Set<Long>,
-    nudgedMemberIds: Set<Long>,
     onNudgeClick: (Long) -> Unit,
 ) {
     Column(
@@ -243,7 +241,6 @@ private fun BuddySection(
                     BuddyRow(
                         buddy = buddy,
                         isNudging = buddy.memberId in nudgingMemberIds,
-                        isNudged = buddy.memberId in nudgedMemberIds,
                         onNudgeClick = { onNudgeClick(buddy.memberId) },
                     )
                 }
@@ -256,7 +253,6 @@ private fun BuddySection(
 private fun BuddyRow(
     buddy: NudgeTarget,
     isNudging: Boolean,
-    isNudged: Boolean,
     onNudgeClick: () -> Unit,
 ) {
     Row(
@@ -279,11 +275,12 @@ private fun BuddyRow(
                 color = ModyTheme.colors.gray06,
             )
         }
-        when {
-            buddy.recordedToday -> RecordedBadge()
-            // 서버가 하루 1회로 막으므로 이미 보낸 뒤에는 다시 누를 수 없게 한다.
-            isNudged -> NudgedBadge()
-            else -> NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
+        // 어떤 배지를 낼지는 서버가 정한다(buttonStatus) — 기기가 기억하던 값이 아니라서
+        // 앱을 지우거나 다른 기기에서 봐도 같은 상태가 보인다.
+        when (buddy.nudgeStatus) {
+            NudgeButtonStatus.RECORDED -> RecordedBadge()
+            NudgeButtonStatus.NUDGED -> NudgedBadge()
+            NudgeButtonStatus.AVAILABLE -> NudgeButton(enabled = !isNudging, onClick = onNudgeClick)
         }
     }
 }
@@ -369,12 +366,12 @@ private fun StreakTabContentPreview() {
                 monthlyCompletedChallengeCount = 8,
             ),
             buddies = listOf(
-                NudgeTarget(1, "예은", null, recordedToday = true),
-                NudgeTarget(2, "동준", null, recordedToday = false),
-                NudgeTarget(3, "도윤", null, recordedToday = false),
+                // 배지 세 상태를 한 화면에서 확인.
+                NudgeTarget(1, "예은", null, recordedToday = true, NudgeButtonStatus.RECORDED),
+                NudgeTarget(2, "동준", null, recordedToday = false, NudgeButtonStatus.AVAILABLE),
+                NudgeTarget(3, "도윤", null, recordedToday = false, NudgeButtonStatus.NUDGED),
             ),
             nudgingMemberIds = emptySet(),
-            nudgedMemberIds = setOf(3L),
             onNudgeClick = {},
         )
     }

@@ -47,20 +47,26 @@ class SyncTodayStepsUseCase @Inject constructor(
 ) {
     /**
      * @param groupId 이미 아는 그룹이 있으면 전달(재조회 생략). null 이면 직접 결정한다.
+     * @param challenge 이미 받아둔 현황이 있으면 전달(재조회 생략). null 이면 직접 조회한다.
      * @return 동기화 결과. 미로그인·권한 없음·그룹 없음이면 null.
      */
-    suspend operator fun invoke(groupId: Long? = null): StepSyncResult? {
+    suspend operator fun invoke(
+        groupId: Long? = null,
+        challenge: StepChallengeStatus? = null,
+    ): StepSyncResult? {
         if (!runCatching { sessionRepository.isLoggedIn() }.getOrDefault(false)) return null
         if (healthRepository.availability() != HealthAvailability.AVAILABLE) return null
         if (!runCatching { healthRepository.hasStepPermission() }.getOrDefault(false)) return null
 
         val targetGroupId = groupId ?: resolveGroupId() ?: return null
-        val challenge = runCatching { challengeRepository.getStepChallenge(targetGroupId) }
-            .getOrNull()
+        // 호출부가 방금 받아둔 값이 있으면 그걸 쓴다 — 없을 때만 부른다.
+        // 여기서 쓰는 건 카운트 시작 시각뿐이라, 조회 직후 값이면 다시 받아도 같다.
+        val targetChallenge = challenge
+            ?: runCatching { challengeRepository.getStepChallenge(targetGroupId) }.getOrNull()
 
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
-        val from = countingStart(challenge, zone, now)
+        val from = countingStart(targetChallenge, zone, now)
 
         var uploadedDays = 0
         var readTotal = 0

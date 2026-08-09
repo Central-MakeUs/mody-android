@@ -184,7 +184,8 @@ class ChallengeViewModel @Inject constructor(
             )
         }
         // 탭 진입(= 앱 실행 후 첫 진입 포함)마다 오늘 걸음 수를 서버에 반영.
-        syncSteps(groupId, askPermission = false)
+        // 방금 받은 현황을 넘겨 use case 가 step/current 를 다시 부르지 않게 한다.
+        syncSteps(groupId, askPermission = false, challenge = loaded.step)
     }
 
     /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
@@ -200,7 +201,7 @@ class ChallengeViewModel @Inject constructor(
         }
         // 동기화가 마지막 — 순서를 바꾸면 조회 결과가 방금 반영한 실제 걸음 수를 덮어쓴다.
         // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
-        syncSteps(groupId, askPermission = true)
+        syncSteps(groupId, askPermission = true, challenge = step)
     }
 
     /**
@@ -209,10 +210,14 @@ class ChallengeViewModel @Inject constructor(
      * 권한이 없을 때: [askPermission] 이 true 면 무조건, false 면 아직 물어본 적 없을 때만
      * 시스템 권한 요청을 띄운다(탭 재진입마다 팝업이 뜨는 것 방지).
      */
-    private suspend fun syncSteps(groupId: Long, askPermission: Boolean) {
+    private suspend fun syncSteps(
+        groupId: Long,
+        askPermission: Boolean,
+        challenge: StepChallengeStatus? = null,
+    ) {
         if (healthRepository.availability() != HealthAvailability.AVAILABLE) return
         if (runCatching { healthRepository.hasStepPermission() }.getOrDefault(false)) {
-            uploadTodaySteps(groupId)
+            uploadTodaySteps(groupId, challenge)
             return
         }
         val alreadyAsked = runCatching { sessionRepository.getHealthPermissionAsked() }
@@ -238,7 +243,7 @@ class ChallengeViewModel @Inject constructor(
             )
         }
         // 조회 뒤에 올려야 방금 읽은 걸음 수가 조회 결과에 덮이지 않는다.
-        uploadTodaySteps(groupId)
+        uploadTodaySteps(groupId, step)
     }
 
     /**
@@ -248,11 +253,11 @@ class ChallengeViewModel @Inject constructor(
      * 업로드가 성공하면 서버 누적값이 정답이므로 그걸 쓰고, 실패하면(진행 중인 챌린지가
      * 없을 때 서버가 실패를 준다) 방금 읽은 값이라도 보여준다.
      */
-    private suspend fun uploadTodaySteps(groupId: Long) {
+    private suspend fun uploadTodaySteps(groupId: Long, challenge: StepChallengeStatus? = null) {
         setState { copy(isSyncingSteps = true) }
         // runCatching 은 취소까지 삼켜 ViewModel 정리 시 코루틴이 정상 종료로 보인다.
         val result = try {
-            syncTodaySteps(groupId)
+            syncTodaySteps(groupId, challenge)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

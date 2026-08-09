@@ -25,6 +25,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
@@ -194,14 +196,17 @@ class MainViewModel @Inject constructor(
      * 통지를 먼저 내려야 재로그인 성공 후에도 만료로 남아 다시 튕기지 않는다.
      */
     private suspend fun goToLogin() {
-        sessionExpiredNotifier.consume()
-        redirectedToLogin = true
         runCatching { sessionRepository.clear() }
         val sent = navigationHelper.navigate(
             NavigationEvent.To(AuthGraphBaseRoute, popUpTo = true),
         )
-        if (!sent) {
-            Log.w(TAG, "Dropped session-expired navigation event")
+        // 이동이 큐에 들어간 뒤에야 소비한다. 먼저 지우면 발행에 실패했을 때 만료 상태도
+        // 가드도 이미 닫혀 있어, 사용자가 로그인 안 된 화면에 그대로 남는다.
+        if (sent) {
+            sessionExpiredNotifier.consume()
+            redirectedToLogin = true
+        } else {
+            Log.w(TAG, "세션 만료 이동 발행 실패 — 상태를 유지해 다음 진입에 다시 시도한다")
         }
     }
 
@@ -213,8 +218,9 @@ class MainViewModel @Inject constructor(
      * 로그인 안 된 채로 피드에 남는다 — 마지막 안전망.
      */
     private fun verifySession() = viewModelScope.launch {
-        // 시작 목적지 판정 전이면 그쪽이 알아서 로그인으로 보낸다.
-        val route = _startRoute.value ?: return@launch
+        // 시작 목적지가 정해질 때까지 기다린다. 콜드 스타트에선 onStart 가 판정보다 먼저 와서,
+        // 여기서 그냥 빠지면 이 검사가 통째로 건너뛰어진다.
+        val route = _startRoute.filterNotNull().first()
         if (route == AuthGraphBaseRoute) return@launch
         // 조회 실패(저장소 오류)로 멀쩡한 세션을 끊지 않는다.
         val loggedIn = runCatching { sessionRepository.isLoggedIn() }.getOrDefault(true)

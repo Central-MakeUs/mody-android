@@ -126,6 +126,7 @@ private fun ChallengeContent(
                     stepChallenge = state.stepChallenge,
                     stepRankings = state.stepRankings,
                     weeklyChallenges = state.weeklyChallenges,
+                    weeklyLoaded = state.weeklyLoaded,
                     onStepRefreshClick = { onIntent(ChallengeIntent.StepRefreshClicked) },
                     onChangeStepChallengeClick = { onIntent(ChallengeIntent.ChangeStepChallengeClicked) },
                     onWeeklyChallengeClick = { onIntent(ChallengeIntent.WeeklyChallengeClicked(it)) },

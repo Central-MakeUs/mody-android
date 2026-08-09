@@ -30,6 +30,12 @@ data class ChallengeState(
      */
     val buddiesLoaded: Boolean = false,
     /**
+     * 주간 챌린지를 한 번이라도 성공적으로 받아왔는지.
+     * [buddiesLoaded] 와 같은 이유 — 조회 실패도 빈 목록이라, "이번주 챌린지가 없어요"는
+     * 성공 응답이 실제로 비었을 때만 띄운다. 네트워크 오류를 "없음"으로 단정하지 않는다.
+     */
+    val weeklyLoaded: Boolean = false,
+    /**
      * 콕 찌르기 전송 중인 memberId — 중복 탭 방지.
      * "이미 찔렀는지"는 서버가 [NudgeTarget.nudgeStatus] 로 주므로 여기서 들지 않는다.
      */

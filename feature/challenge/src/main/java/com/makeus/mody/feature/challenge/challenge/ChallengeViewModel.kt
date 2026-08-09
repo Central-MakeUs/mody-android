@@ -180,6 +180,7 @@ class ChallengeViewModel @Inject constructor(
                 stepChallenge = loaded.step ?: this.stepChallenge,
                 stepRankings = loaded.rankings ?: this.stepRankings,
                 weeklyChallenges = loaded.weekly ?: this.weeklyChallenges,
+                weeklyLoaded = weeklyLoaded || loaded.weekly != null,
                 groupMemberCount = group?.memberCount ?: this.groupMemberCount,
             )
         }

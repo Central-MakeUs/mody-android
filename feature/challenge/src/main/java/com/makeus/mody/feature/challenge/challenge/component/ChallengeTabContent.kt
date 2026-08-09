@@ -91,6 +91,7 @@ fun ChallengeTabContent(
     stepChallenge: StepChallengeStatus?,
     stepRankings: List<StepRanking>,
     weeklyChallenges: List<WeeklyChallenge>,
+    weeklyLoaded: Boolean,
     onStepRefreshClick: () -> Unit,
     onChangeStepChallengeClick: () -> Unit,
     onWeeklyChallengeClick: (Long) -> Unit,
@@ -112,6 +113,7 @@ fun ChallengeTabContent(
         RankingSection(rankings = stepRankings)
         WeeklySection(
             challenges = weeklyChallenges,
+            loaded = weeklyLoaded,
             onChallengeClick = onWeeklyChallengeClick,
         )
     }
@@ -429,12 +431,21 @@ private fun StepCountText(stepCount: Int) {
     )
 }
 
-/** 그룹 선택 챌린지: 주간 챌린지 카드 목록. */
+/**
+ * 그룹 선택 챌린지: 주간 챌린지 카드 목록.
+ *
+ * 목록이 비어 있어도 [loaded] 가 false 면(아직 못 받았거나 조회 실패) 섹션을 통째로 숨긴다.
+ * 네트워크 오류를 "이번주 챌린지가 없음"으로 단정하면 안 되기 때문. 기여도 순위 섹션이
+ * 빈 목록에 숨는 것과 같은 규칙.
+ */
 @Composable
 private fun WeeklySection(
     challenges: List<WeeklyChallenge>,
+    loaded: Boolean,
     onChallengeClick: (Long) -> Unit,
 ) {
+    if (challenges.isEmpty() && !loaded) return
+    val isEmpty = challenges.isEmpty()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -450,14 +461,20 @@ private fun WeeklySection(
             color = ModyTheme.colors.gray10,
         )
         Spacer(modifier = Modifier.height(2.dp))
+        // 서브타이틀 자리는 그대로 두고 문구만 바꾼다. 참여할 게 없는데 "참여해보세요"를
+        // 띄우면 안 되고, 없다는 사실은 이 줄이 알려주면 충분하다(별도 빈 상태 영역 없음).
         Text(
-            text = "원하는 챌린지에 참여해 인증해보세요!",
+            text = if (isEmpty) {
+                "진행중인 주간 챌린지가 없습니다!"
+            } else {
+                "원하는 챌린지에 참여해 인증해보세요!"
+            },
             style = ModyTheme.typography.c2,
             color = ModyTheme.colors.gray07,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-        if (challenges.isNotEmpty()) {
+        if (!isEmpty) {
+            Spacer(modifier = Modifier.height(16.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -594,6 +611,14 @@ private val previewParticipants = (1..5).map {
     WeeklyChallengeParticipant(it.toLong(), "버디$it", null)
 }
 
+@Preview(showBackground = true, name = "주간 챌린지 없음")
+@Composable
+private fun WeeklySectionEmptyPreview() {
+    ModyTheme {
+        WeeklySection(challenges = emptyList(), loaded = true, onChallengeClick = {})
+    }
+}
+
 @Preview(showBackground = true, heightDp = 1400)
 @Composable
 private fun ChallengeTabContentPreview() {
@@ -617,6 +642,7 @@ private fun ChallengeTabContentPreview() {
                 WeeklyChallenge(1, "이번주의 고해성사하기", "SUNDAY", 5, "버디1", previewParticipants),
                 WeeklyChallenge(2, "하루에 줄넘기 15분 하기", "FRIDAY", 5, "버디1", previewParticipants),
             ),
+            weeklyLoaded = true,
             onStepRefreshClick = {},
             onChangeStepChallengeClick = {},
             onWeeklyChallengeClick = {},

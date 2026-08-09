@@ -20,7 +20,44 @@ data class NudgeTarget(
     val nickname: String,
     val profileImageUrl: String?,
     val recordedToday: Boolean,
+    /** 콕 찌르기 버튼 자리에 무엇을 그릴지. 서버가 정한다. */
+    val nudgeStatus: NudgeButtonStatus = NudgeButtonStatus.AVAILABLE,
 )
+
+/**
+ * 콕 찌르기 버튼 상태. 서버가 내려주는 값을 그대로 쓴다 —
+ * "오늘 이미 찔렀는지"는 기기가 아니라 서버가 아는 사실이라, 앱을 지우거나 기기를 바꿔도
+ * 흔들리지 않아야 한다.
+ */
+enum class NudgeButtonStatus {
+    /** 찌를 수 있음. */
+    AVAILABLE,
+
+    /** 오늘 이미 찔렀음 → "이미 찔렀어요". */
+    NUDGED,
+
+    /** 상대가 오늘 기록을 마쳤음 → "기록 완료". 찌를 이유가 없다. */
+    RECORDED,
+    ;
+
+    companion object {
+        /**
+         * 서버 문자열 매핑. 값이 없거나 모르는 값이면 [recordedToday]/[nudgedToday] 로 되짚는다
+         * — 서버가 enum 을 아직 안 주는 배포에서도 배지가 깨지지 않게.
+         */
+        fun from(raw: String?, recordedToday: Boolean, nudgedToday: Boolean): NudgeButtonStatus =
+            when (raw) {
+                "RECORDED" -> RECORDED
+                "NUDGED" -> NUDGED
+                "AVAILABLE" -> AVAILABLE
+                else -> when {
+                    recordedToday -> RECORDED
+                    nudgedToday -> NUDGED
+                    else -> AVAILABLE
+                }
+            }
+    }
+}
 
 /** 그룹 필수(걸음 수) 챌린지 현황. */
 data class StepChallengeStatus(

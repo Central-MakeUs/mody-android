@@ -2,6 +2,7 @@ package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.domain.model.ChallengeSummary
 import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
 import com.makeus.mody.core.domain.model.StepChallengeStatus
@@ -47,11 +48,22 @@ class ChallengeRepositoryImpl @Inject constructor(
                 nickname = it.nickname,
                 profileImageUrl = it.profileImageUrl,
                 recordedToday = it.recordedToday,
+                nudgeStatus = NudgeButtonStatus.from(
+                    raw = it.buttonStatus,
+                    recordedToday = it.recordedToday,
+                    nudgedToday = it.nudgedToday,
+                ),
             )
         }
 
-    override suspend fun nudge(groupId: Long, memberId: Long) {
-        challengeApi.nudge(groupId, memberId).unwrapResult()
+    override suspend fun nudge(groupId: Long, memberId: Long): NudgeButtonStatus {
+        val r = challengeApi.nudge(groupId, memberId).unwrapResult()
+        // 응답이 상태를 안 주면 방금 찌른 게 확실하므로 NUDGED 로 본다.
+        return NudgeButtonStatus.from(
+            raw = r.buttonStatus,
+            recordedToday = false,
+            nudgedToday = true,
+        )
     }
 
     override suspend fun getStepChallenge(groupId: Long): StepChallengeStatus {

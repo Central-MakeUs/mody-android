@@ -24,6 +24,16 @@ data class NudgeTargetResponse(
     val nickname: String = "",
     val profileImageUrl: String? = null,
     val recordedToday: Boolean = false,
+    val nudgedToday: Boolean = false,
+    /** AVAILABLE | NUDGED | RECORDED. 매핑은 [NudgeButtonStatus]. */
+    val buttonStatus: String? = null,
+)
+
+/** POST .../challenges/nudges/{memberId} — 찌른 뒤의 버튼 상태. */
+@Serializable
+data class NudgeResponse(
+    val nudgedToday: Boolean = false,
+    val buttonStatus: String? = null,
 )
 
 /** GET /api/v1/groups/{groupId}/challenges/step/current — 걸음 수 챌린지 현황. */

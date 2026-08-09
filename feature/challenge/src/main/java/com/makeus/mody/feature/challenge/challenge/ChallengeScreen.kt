@@ -119,7 +119,6 @@ private fun ChallengeContent(
                     summary = state.summary,
                     buddies = state.buddies,
                     nudgingMemberIds = state.nudgingMemberIds,
-                    nudgedMemberIds = state.nudgedMemberIds,
                     onNudgeClick = { onIntent(ChallengeIntent.NudgeClicked(it)) },
                 )
                 ChallengeSubTab.CHALLENGE -> ChallengeTabContent(

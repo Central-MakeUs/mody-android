@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -120,6 +121,14 @@ private fun NotificationSettingContent(
             return@ModyScreenScaffold
         }
 
+        // 조회 실패(캐시도 없음) → 토글을 그리지 않는다. 기본값 false 3개는 "꺼짐"이 아니라
+        // "아직 모름"이라, 그대로 보여주면 사용자가 켜둔 설정이 꺼진 것처럼 보이고
+        // 거기서 하나만 만져도 나머지가 서버에서 실제로 꺼진다.
+        if (!state.isLoaded) {
+            LoadFailed(onRetry = { onIntent(NotificationSettingIntent.Load) })
+            return@ModyScreenScaffold
+        }
+
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(8.dp))
             // 코멘트/챌린지 알림 토글: Phase 2 기능이 열렸을 때만 노출.
@@ -212,6 +221,32 @@ private fun ToggleRow(
         }
         Spacer(modifier = Modifier.width(12.dp))
         ModySwitch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/** 알림 설정을 못 읽었을 때. 토글 대신 재시도만 제공한다. */
+@Composable
+private fun LoadFailed(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 120.dp, start = 24.dp, end = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "알림 설정을 불러오지 못했어요.",
+            style = ModyTheme.typography.b3,
+            color = ModyTheme.colors.gray10,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "다시 시도",
+            style = ModyTheme.typography.b3,
+            color = ModyTheme.colors.primary100,
+            modifier = Modifier
+                .clickable(onClick = onRetry)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
     }
 }
 

@@ -16,5 +16,11 @@ data class NotificationSettingState(
     /** 선택된 운동요일(1=월~7=일) → (hour24, minute). */
     val exerciseTimes: Map<Int, Pair<Int, Int>> = emptyMap(),
     val isLoading: Boolean = true,
+    /**
+     * 서버(또는 캐시)에서 설정을 실제로 읽었는지. 위 토글 기본값 false 는 "꺼짐"이 아니라
+     * "아직 모름"이라, 이 값이 false 인 상태로 PATCH 하면 안 읽은 값이 서버에 확정 저장된다
+     * (서버 PATCH 가 전체 교체라 항상 토글 3개를 함께 보내기 때문).
+     */
+    val isLoaded: Boolean = false,
     val error: String? = null,
 ) : UiState

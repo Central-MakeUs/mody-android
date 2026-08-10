@@ -49,6 +49,9 @@ class NotificationSettingViewModel @Inject constructor(
     // 스케줄 디바운스 job. 새 편집마다 리셋.
     private var scheduleSyncJob: Job? = null
 
+    // 진행 중인 조회. 재시도 연타로 조회가 겹치는 것을 막는다.
+    private var loadJob: Job? = null
+
     init {
         load()
     }
@@ -107,8 +110,16 @@ class NotificationSettingViewModel @Inject constructor(
      * 캐시 우선 + 백그라운드 재동기화(stale-while-revalidate).
      * 캐시가 있으면 즉시 표시해 진입 스피너를 없애고, 서버값으로 조용히 갱신한다.
      * 콜드(캐시 없음)에서만 스피너 1회.
+     *
+     * 진행 중이면 무시한다 — 실패 화면의 "다시 시도" 를 연타하면 조회가 겹쳐 나가고,
+     * 먼저 보낸 요청이 늦게 끝나면서 최신 결과를 덮어쓴다.
      */
-    private fun load() = viewModelScope.launch {
+    private fun load() {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch { loadOnce() }
+    }
+
+    private suspend fun loadOnce() {
         val cached = runCatching { myPageRepository.getCachedNotificationSettings() }.getOrNull()
         if (cached != null) {
             applySettings(cached)
@@ -136,6 +147,7 @@ class NotificationSettingViewModel @Inject constructor(
             dinnerHour = s.meals.hourOf(MealType.DINNER, dinnerHour),
             exerciseTimes = s.exercises.associate { it.dayOfWeek to (it.hour to it.minute) },
             isLoading = false,
+            isLoaded = true,
         )
     }
 
@@ -177,9 +189,13 @@ class NotificationSettingViewModel @Inject constructor(
      * 서버 PATCH 가 "보낸 필드만 적용, 나머지는 false 로 리셋"(전체 교체) 하므로,
      * 변경된 하나만 보내면 나머지 토글이 꺼진다. 항상 현재 상태 3개를 함께 보내 보존한다.
      * TODO(server): PATCH 가 부분 수정(안 보낸 필드 미변경)으로 고쳐지면 변경 필드만 전송하도록 원복.
+     *
+     * 전체 교체라서 아직 못 읽은 값도 같이 실린다 — 조회 전에는 절대 보내지 않는다.
+     * 안 그러면 조회 실패 시 기본값 false 3개가 사용자가 켜둔 설정을 덮어쓴다.
      */
     private suspend fun pushToggles() {
         val s = currentState
+        if (!s.isLoaded) return
         myPageRepository.updateNotificationToggles(
             recordReminderEnabled = s.recordReminderEnabled,
             commentNotificationEnabled = s.commentEnabled,
@@ -208,9 +224,14 @@ class NotificationSettingViewModel @Inject constructor(
         }
     }
 
-    /** 현재 상태의 식사(3)/운동 스케줄 전체를 PUT. */
+    /**
+     * 현재 상태의 식사(3)/운동 스케줄 전체를 PUT.
+     * 여기도 전체 교체라 [pushToggles] 와 같은 이유로 조회 전에는 보내지 않는다
+     * (기본 시각 8/12/18 + 빈 운동 목록이 실제 스케줄을 지운다).
+     */
     private suspend fun pushSchedules() {
         val s = currentState
+        if (!s.isLoaded) return
         val meals = listOf(
             meal(MealType.BREAKFAST, s.breakfastHour),
             meal(MealType.LUNCH, s.lunchHour),

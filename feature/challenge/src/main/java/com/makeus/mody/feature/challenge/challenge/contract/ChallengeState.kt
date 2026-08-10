@@ -2,6 +2,7 @@ package com.makeus.mody.feature.challenge.challenge.contract
 
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.domain.model.ChallengeSummary
+import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
@@ -60,6 +61,19 @@ data class ChallengeState(
      * 런처 실행 후 [ChallengeIntent.HealthPermissionRequestLaunched] 로 비운다.
      */
     val healthPermissionRequest: Set<String>? = null,
+    /**
+     * 권한 요청이 거부로 끝나 안내가 필요한 상태.
+     *
+     * 시스템 요청은 두 번 거부되면 이후로는 다이얼로그 없이 즉시 거부로 돌아온다. 그때
+     * 아무것도 안 하면 새로고침을 눌러도 화면이 그대로라 사용자는 기능이 고장 났다고 본다.
+     * 남은 경로는 Health Connect 설정뿐이라 그쪽으로 안내한다.
+     */
+    val showHealthPermissionGuide: Boolean = false,
+    /**
+     * 값이 있으면 이 가용성에 맞는 Health Connect 설정 화면을 연다(일회성).
+     * 실행 후 [ChallengeIntent.HealthSettingsLaunched] 로 비운다.
+     */
+    val healthSettingsRequest: HealthAvailability? = null,
     /** 현재 그룹 인원(나 포함). null/0 이면 아직 못 받았다. */
     val groupMemberCount: Int? = null,
     val error: String? = null,

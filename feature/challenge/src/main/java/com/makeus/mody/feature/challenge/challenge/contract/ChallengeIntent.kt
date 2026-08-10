@@ -30,6 +30,15 @@ sealed class ChallengeIntent : UiIntent {
     /** 권한 요청 런처를 띄운 뒤 일회성 트리거 해제. */
     data object HealthPermissionRequestLaunched : ChallengeIntent()
 
+    /** 권한 거부 안내에서 "설정 열기". */
+    data object HealthSettingsClicked : ChallengeIntent()
+
+    /** 설정 화면을 띄운 뒤 일회성 트리거 해제. */
+    data object HealthSettingsLaunched : ChallengeIntent()
+
+    /** 권한 거부 안내 닫기. */
+    data object HealthPermissionGuideDismissed : ChallengeIntent()
+
     /** 토스트 표시 완료 → 일회성 문구 해제. */
     data object ToastShown : ChallengeIntent()
 

@@ -28,6 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Text
+import com.makeus.mody.core.commonui.health.openHealthConnect
+import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -77,7 +79,31 @@ fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
         }
     }
 
+    // 안내에서 "설정 열기" → Health Connect(시스템). 마이페이지 연동 설정과 같은 진입 경로.
+    LaunchedEffect(state.healthSettingsRequest) {
+        state.healthSettingsRequest?.let {
+            openHealthConnect(context, it)
+            viewModel.onIntent(ChallengeIntent.HealthSettingsLaunched)
+        }
+    }
+
     ChallengeContent(state = state, onIntent = viewModel::onIntent)
+
+    // 권한 거부 안내. 두 번 거부한 뒤로는 시스템 요청이 다이얼로그 없이 즉시 거부로 돌아와
+    // 새로고침이 먹통처럼 보이므로, 남은 경로(Health Connect 설정)를 알려준다.
+    if (state.showHealthPermissionGuide) {
+        ModyDialog(
+            title = "걸음 수를 가져올 수 없어요",
+            message = "건강 데이터 접근을 허용해야 걸음 수가 챌린지에 반영돼요.\n" +
+                "설정에서 모디의 걸음 수 읽기 권한을 켜주세요.",
+            confirmText = "설정 열기",
+            onConfirm = { viewModel.onIntent(ChallengeIntent.HealthSettingsClicked) },
+            dismissText = "나중에",
+            onDismissRequest = {
+                viewModel.onIntent(ChallengeIntent.HealthPermissionGuideDismissed)
+            },
+        )
+    }
 
     ModyErrorDialog(
         message = state.error,

@@ -11,6 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,6 +25,18 @@ class PresignedUploader @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val errorReporter: ErrorReporter,
 ) {
+    /**
+     * 업로드 전용 클라이언트. 공유 클라이언트의 API 용 상한(callTimeout 30s)으로는
+     * 느린 회선에서 사진 한 장도 못 올린다.
+     * [OkHttpClient.newBuilder] 는 커넥션 풀·디스패처를 그대로 공유하므로 추가 비용이 없다.
+     */
+    private val uploadClient: OkHttpClient by lazy {
+        okHttpClient.newBuilder()
+            .writeTimeout(UPLOAD_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(UPLOAD_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+    }
+
     suspend fun upload(presignedUrl: String, bytes: ByteArray, contentType: String) =
         upload(presignedUrl, bytes.toRequestBody(contentType.toMediaTypeOrNull()))
 
@@ -35,7 +48,7 @@ class PresignedUploader @Inject constructor(
             .build()
 
         withContext(Dispatchers.IO) {
-            okHttpClient.newCall(request).execute().use { response ->
+            uploadClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     val e = HttpResponseException(
                         status = HttpResponseStatus.create(response.code),
@@ -55,5 +68,10 @@ class PresignedUploader @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        const val UPLOAD_WRITE_TIMEOUT_SECONDS = 60L
+        const val UPLOAD_CALL_TIMEOUT_SECONDS = 120L
     }
 }

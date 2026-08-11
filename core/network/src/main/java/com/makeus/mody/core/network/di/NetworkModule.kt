@@ -25,9 +25,16 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 private const val API_LOG_TAG = "MODY-API"
+
+// API 호출 상한. 대용량 업로드는 이 상한으로는 짧아 PresignedUploader 가 따로 늘려 쓴다.
+private const val CONNECT_TIMEOUT_SECONDS = 10L
+private const val READ_TIMEOUT_SECONDS = 15L
+private const val WRITE_TIMEOUT_SECONDS = 15L
+private const val CALL_TIMEOUT_SECONDS = 30L
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -46,6 +53,14 @@ object NetworkModule {
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient = OkHttpClient.Builder()
+        // callTimeout 이 없으면 요청 하나가 사실상 무한정 매달릴 수 있다. 특히 TokenAuthenticator 는
+        // 재발급을 락 안에서 동기 호출하므로, 그 호출이 안 끝나면 401 을 맞은 다른 요청들이
+        // 전부 그 락에 줄 선다. connect/read/write 는 구간별 상한이라 전체 시간을 못 막는다 —
+        // 재시도·리다이렉트·인증 재시도까지 포함하는 상한은 callTimeout 뿐이다.
+        .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .addInterceptor(authInterceptor)
         .authenticator(tokenAuthenticator)
         .addInterceptor(

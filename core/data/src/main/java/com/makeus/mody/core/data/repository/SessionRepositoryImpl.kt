@@ -1,6 +1,7 @@
 package com.makeus.mody.core.data.repository
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -33,11 +34,13 @@ class SessionRepositoryImpl @Inject constructor(
 
     private object Keys {
         val PERSONAL_INFO_COMPLETED = booleanPreferencesKey("personal_info_completed")
-        val GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
         val MAIN_ACCESSIBLE = booleanPreferencesKey("main_accessible")
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
         val LAST_GROUP_ID = longPreferencesKey("last_group_id")
         val HEALTH_PERMISSION_ASKED = booleanPreferencesKey("health_permission_asked")
+
+        /** 더는 읽지 않는 키. 기존 설치에 남은 값을 [clear] 에서 지우기 위해서만 남겨둔다. */
+        val LEGACY_GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
 
         // 콕 찌르기 기록은 날짜 + "groupId:memberId" 집합으로 둔다. 날짜가 바뀌면
         // 집합을 통째로 버리므로 따로 정리하는 로직이 필요 없다.
@@ -58,21 +61,27 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun getRefreshToken(): String = tokenManager.getRefreshToken()
 
     override suspend fun saveStatus(status: AuthStatus) {
-        dataStore.edit {
-            it[Keys.PERSONAL_INFO_COMPLETED] = status.personalInfoCompleted
-            it[Keys.GROUP_ONBOARDING_COMPLETED] = status.groupOnboardingCompleted
-            it[Keys.MAIN_ACCESSIBLE] = status.mainAccessible
-        }
+        dataStore.edit { it.write(status) }
+    }
+
+    // DataStore 의 edit 는 원자적이고 동시 호출을 직렬화한다 — 읽기와 쓰기를 이 블록 안에
+    // 함께 두는 것이 요점. 밖에서 읽어 밖에서 쓰면 그 사이 값이 끼어들어 덮어써진다.
+    override suspend fun updateStatus(transform: AuthStatus.() -> AuthStatus) {
+        dataStore.edit { it.write(it.readStatus().transform()) }
     }
 
     override suspend fun getStatus(): AuthStatus =
-        safePreferences.map {
-            AuthStatus(
-                personalInfoCompleted = it[Keys.PERSONAL_INFO_COMPLETED] ?: false,
-                groupOnboardingCompleted = it[Keys.GROUP_ONBOARDING_COMPLETED] ?: false,
-                mainAccessible = it[Keys.MAIN_ACCESSIBLE] ?: false,
-            )
-        }.first()
+        safePreferences.map { it.readStatus() }.first()
+
+    private fun Preferences.readStatus(): AuthStatus = AuthStatus(
+        personalInfoCompleted = this[Keys.PERSONAL_INFO_COMPLETED] ?: false,
+        mainAccessible = this[Keys.MAIN_ACCESSIBLE] ?: false,
+    )
+
+    private fun MutablePreferences.write(status: AuthStatus) {
+        this[Keys.PERSONAL_INFO_COMPLETED] = status.personalInfoCompleted
+        this[Keys.MAIN_ACCESSIBLE] = status.mainAccessible
+    }
 
     override suspend fun saveLastLoginType(type: SocialLoginType) {
         dataStore.edit { it[Keys.LAST_LOGIN_TYPE] = type.value }
@@ -102,8 +111,8 @@ class SessionRepositoryImpl @Inject constructor(
         tokenManager.clear()
         dataStore.edit {
             it.remove(Keys.PERSONAL_INFO_COMPLETED)
-            it.remove(Keys.GROUP_ONBOARDING_COMPLETED)
             it.remove(Keys.MAIN_ACCESSIBLE)
+            it.remove(Keys.LEGACY_GROUP_ONBOARDING_COMPLETED)
             it.remove(Keys.LAST_LOGIN_TYPE)
             it.remove(Keys.LAST_GROUP_ID)
             // 계정 전환 시 이전 사용자의 콕 찌르기 이력이 남지 않게 함께 제거.

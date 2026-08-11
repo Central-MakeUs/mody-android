@@ -11,8 +11,10 @@ import javax.inject.Inject
  * 2. 개인정보(온보딩) 미완료 → ONBOARDING
  * 3. mainAccessible == true → MAIN (속한 그룹 있고 회원가입 완료)
  * 4. 그 외 → GROUP (회원가입 완료: 그룹 참여/생성)
- *    - groupOnboardingCompleted true 이지만 그룹을 다 삭제한 예외 케이스 포함
- *      (mainAccessible=false 면 무조건 GROUP → groupOnboardingCompleted 는 분기에 미사용)
+ *    - 그룹을 전부 나가 mainAccessible=false 가 된 경우도 여기로 온다.
+ *
+ * 이 규칙은 여기 한 곳에만 둔다. 로그인 직후 진입도 같은 UseCase 를 태워서
+ * "로그인 직후"와 "앱 재시작"이 서로 다른 화면으로 갈라지지 않게 한다.
  */
 class ResolveStartDestinationUseCase @Inject constructor(
     private val session: SessionRepository,

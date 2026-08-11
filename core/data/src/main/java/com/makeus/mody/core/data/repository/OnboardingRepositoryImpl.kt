@@ -19,11 +19,9 @@ class OnboardingRepositoryImpl @Inject constructor(
     override suspend fun submitProfile(profile: OnboardingProfile) {
         val response = onboardingApi.submitProfile(profile.toRequest()).unwrapResult()
         // 서버 확정값으로 세션 상태 갱신 → 재접속 시 시작 라우팅이 GROUP 로 감
-        sessionRepository.saveStatus(
-            sessionRepository.getStatus().copy(
-                personalInfoCompleted = response.personalInfoCompleted,
-            ),
-        )
+        sessionRepository.updateStatus {
+            copy(personalInfoCompleted = response.personalInfoCompleted)
+        }
     }
 
     override suspend fun reportHealthConnection(connected: Boolean) {

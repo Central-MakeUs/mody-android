@@ -7,6 +7,7 @@ import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.AuthApi
+import com.makeus.mody.core.network.model.auth.SocialLoginResponse
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import javax.inject.Inject
@@ -21,10 +22,7 @@ class AuthRepositoryImpl @Inject constructor(
     private val pushTokenSynchronizer: PushTokenSynchronizer,
 ) : AuthRepository {
 
-    override suspend fun loginWithSocial(
-        type: SocialLoginType,
-        socialAccessToken: String,
-    ): AuthStatus {
+    override suspend fun loginWithSocial(type: SocialLoginType, socialAccessToken: String) {
         val response = authApi.clientLogin(
             loginType = type.value,
             socialAccessToken = socialAccessToken,
@@ -32,18 +30,12 @@ class AuthRepositoryImpl @Inject constructor(
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
         sessionRepository.saveLastLoginType(type)
-        val status = AuthStatus(
-            personalInfoCompleted = response.personalInfoCompleted,
-            groupOnboardingCompleted = response.groupOnboardingCompleted,
-            mainAccessible = response.mainAccessible,
-        )
-        sessionRepository.saveStatus(status)
+        sessionRepository.saveStatus(response.toAuthStatus())
         // 로그인 직후 이 기기 FCM 토큰 서버 등록(앱 재시작 없이도 푸시 수신되도록). fire-and-forget.
         pushTokenSynchronizer.sync()
-        return status
     }
 
-    override suspend fun loginForReview(): AuthStatus {
+    override suspend fun loginForReview() {
         // 서버 데모 provider(ANDROIDTEST) 로그인 — 외부 토큰 검증이 없어 accessToken 없이 호출.
         // 일반 소셜 로그인과 동일한 경로/응답이라 프로필 조회·수정까지 전 기능이 그대로 동작한다.
         // lastLoginType 은 저장하지 않음(무음 재로그인 provider 가 없으므로).
@@ -53,15 +45,14 @@ class AuthRepositoryImpl @Inject constructor(
         ).unwrapResult()
 
         sessionRepository.saveTokens(response.accessToken, response.refreshToken)
-        val status = AuthStatus(
-            personalInfoCompleted = response.personalInfoCompleted,
-            groupOnboardingCompleted = response.groupOnboardingCompleted,
-            mainAccessible = response.mainAccessible,
-        )
-        sessionRepository.saveStatus(status)
+        sessionRepository.saveStatus(response.toAuthStatus())
         pushTokenSynchronizer.sync()
-        return status
     }
+
+    private fun SocialLoginResponse.toAuthStatus(): AuthStatus = AuthStatus(
+        personalInfoCompleted = personalInfoCompleted,
+        mainAccessible = mainAccessible,
+    )
 
     override suspend fun logout() {
         // 토큰 유효할 때(clear 전에) 이 기기 푸시 토큰 비활성 → 로그아웃 후 푸시 안 감.

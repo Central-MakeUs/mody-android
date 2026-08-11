@@ -1,10 +1,10 @@
 package com.makeus.mody.feature.mypage.groupsetting
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
-import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.NavigationEvent
@@ -20,7 +20,6 @@ import javax.inject.Inject
 class GroupSettingViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val navigationHelper: NavigationHelper,
-    private val sessionRepository: SessionRepository,
 ) : BaseViewModel<GroupSettingState, GroupSettingIntent>(GroupSettingState()) {
 
     init {
@@ -88,17 +87,23 @@ class GroupSettingViewModel @Inject constructor(
      * 세션 플래그도 내려 재접속 시 시작 라우팅이 GROUP 으로 가게 한다.
      */
     private suspend fun redirectToGroupOnboarding() {
-        runCatching {
-            sessionRepository.saveStatus(
-                sessionRepository.getStatus().copy(
-                    groupOnboardingCompleted = false,
-                    mainAccessible = false,
-                ),
-            )
+        // 세션 반영이 실패해도 이동은 막지 않는다 — 여기서 멈추면 그룹이 하나도 없는
+        // 설정 화면에 갇힌다. 세션은 다음 실행에 같은 검사가 돌며 스스로 복구된다.
+        // 대신 조용히 삼키지 않는다: 반복되면 세션 저장이 깨졌다는 신호다.
+        try {
+            groupRepository.markNoGroups()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "그룹 없음 세션 반영 실패 — 다음 실행에서 다시 시도된다", e)
         }
         navigationHelper.navigate(NavigationEvent.To(
             GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
             popUpTo = true,
         ))
+    }
+
+    private companion object {
+        const val TAG = "GroupSettingViewModel"
     }
 }

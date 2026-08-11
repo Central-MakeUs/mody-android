@@ -8,7 +8,6 @@ data class SocialLoginResponse(
     val accessToken: String,
     val refreshToken: String,
     val personalInfoCompleted: Boolean = false,
-    val groupOnboardingCompleted: Boolean = false,
     val mainAccessible: Boolean = false,
 )
 
@@ -16,11 +15,6 @@ data class SocialLoginResponse(
 data class TokenReissueResponse(
     val accessToken: String,
     val refreshToken: String,
-)
-
-@Serializable
-data class OAuthRedirectUrlResponse(
-    val redirectUrl: String,
 )
 
 @Serializable

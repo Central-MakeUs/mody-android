@@ -79,6 +79,16 @@ class ChallengeViewModel @Inject constructor(
             is ChallengeIntent.HealthPermissionRequestLaunched ->
                 setState { copy(healthPermissionRequest = null) }
             is ChallengeIntent.HealthPermissionResult -> onHealthPermissionResult(intent.granted)
+            is ChallengeIntent.HealthSettingsClicked -> setState {
+                copy(
+                    showHealthPermissionGuide = false,
+                    healthSettingsRequest = healthRepository.availability(),
+                )
+            }
+            is ChallengeIntent.HealthSettingsLaunched ->
+                setState { copy(healthSettingsRequest = null) }
+            is ChallengeIntent.HealthPermissionGuideDismissed ->
+                setState { copy(showHealthPermissionGuide = false) }
             is ChallengeIntent.ChangeStepChallengeClicked -> currentGroupId?.let { groupId ->
                 navigationHelper.navigate(
                     NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
@@ -233,7 +243,12 @@ class ChallengeViewModel @Inject constructor(
         setState { copy(healthPermissionRequest = null) }
         // 연동 여부 기록 실패는 사용자 흐름을 막을 이유가 없어 조용히 넘긴다.
         runCatching { onboardingRepository.reportHealthConnection(granted) }
-        if (!granted) return@launch
+        if (!granted) {
+            // 거부를 조용히 넘기면 걸음 수가 0 인 채로 화면이 그대로다. 두 번 거부한 뒤로는
+            // 시스템이 다이얼로그 자체를 안 띄우므로, 사용자는 새로고침이 고장 났다고 본다.
+            setState { copy(showHealthPermissionGuide = true) }
+            return@launch
+        }
         val groupId = currentGroupId ?: return@launch
         val step = loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
         val rankings = loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }

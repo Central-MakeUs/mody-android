@@ -4,6 +4,7 @@ import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.model.error.ModyErrorCode
+import com.makeus.mody.core.network.di.UploadClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -11,32 +12,20 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * presigned URL 로 이미지 바이트를 직접 PUT 업로드 (S3).
- * 인증은 URL 쿼리 서명에 이미 포함되므로 Authorization 헤더를 붙이면 안 된다.
- * → [AuthInterceptor] 가 API 호스트가 아닌 요청엔 토큰을 붙이지 않도록 처리돼 있다.
+ * 인증은 URL 쿼리 서명에 이미 포함되므로 Authorization 헤더를 붙이면 안 된다
+ * → 아예 인증이 붙지 않는 [UploadClient] 를 쓴다.
  */
 @Singleton
 class PresignedUploader @Inject constructor(
-    private val okHttpClient: OkHttpClient,
+    /** 인증 인터셉터·authenticator·바디 로깅이 붙지 않은 전용 클라이언트. 이유는 [UploadClient]. */
+    @UploadClient private val uploadClient: OkHttpClient,
     private val errorReporter: ErrorReporter,
 ) {
-    /**
-     * 업로드 전용 클라이언트. 공유 클라이언트의 API 용 상한(callTimeout 30s)으로는
-     * 느린 회선에서 사진 한 장도 못 올린다.
-     * [OkHttpClient.newBuilder] 는 커넥션 풀·디스패처를 그대로 공유하므로 추가 비용이 없다.
-     */
-    private val uploadClient: OkHttpClient by lazy {
-        okHttpClient.newBuilder()
-            .writeTimeout(UPLOAD_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .callTimeout(UPLOAD_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .build()
-    }
-
     suspend fun upload(presignedUrl: String, bytes: ByteArray, contentType: String) =
         upload(presignedUrl, bytes.toRequestBody(contentType.toMediaTypeOrNull()))
 
@@ -68,10 +57,5 @@ class PresignedUploader @Inject constructor(
                 }
             }
         }
-    }
-
-    private companion object {
-        const val UPLOAD_WRITE_TIMEOUT_SECONDS = 60L
-        const val UPLOAD_CALL_TIMEOUT_SECONDS = 120L
     }
 }

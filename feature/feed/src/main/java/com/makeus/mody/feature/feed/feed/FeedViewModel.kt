@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.feed
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Group
@@ -28,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -191,7 +193,7 @@ class FeedViewModel @Inject constructor(
                 // 속한 그룹이 없으면(다른 기기에서 전부 나감 등) 그룹 참여/생성으로 강제 이동.
                 // 백스택 제거 → 피드 복귀 불가. 세션 플래그도 내려 재접속 시 GROUP 시작.
                 if (groups.isEmpty()) {
-                    runCatching { groupRepository.markNoGroups() }
+                    markNoGroupsOrLog()
                     navigationHelper.navigate(NavigationEvent.To(
                         GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
                         popUpTo = true,
@@ -449,7 +451,25 @@ class FeedViewModel @Inject constructor(
         return "${sunday.monthValue}월 ${weekOrdinal}주차"
     }
 
+    /**
+     * "속한 그룹 없음"을 세션에 반영한다. 실패해도 이동은 막지 않는다 —
+     * 여기서 멈추면 사용자는 보여줄 게 없는 빈 피드에 갇힌다. 세션이 안 내려가도
+     * 다음 실행에 MAIN 으로 들어와 같은 검사가 다시 돌아 스스로 복구된다.
+     *
+     * 다만 조용히 삼키지는 않는다 — 반복되면 세션 저장 자체가 깨진 신호다.
+     */
+    private suspend fun markNoGroupsOrLog() {
+        try {
+            groupRepository.markNoGroups()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "그룹 없음 세션 반영 실패 — 다음 실행에서 다시 시도된다", e)
+        }
+    }
+
     private companion object {
         val WEEKDAY_LABELS = listOf("일", "월", "화", "수", "목", "금", "토")
+        const val TAG = "FeedViewModel"
     }
 }

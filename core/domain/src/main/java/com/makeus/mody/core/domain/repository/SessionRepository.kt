@@ -17,8 +17,17 @@ interface SessionRepository {
     /** 저장된 refresh token(로그아웃/재발급용). 없으면 빈 문자열. */
     suspend fun getRefreshToken(): String
 
-    /** 진행 상태 flag 저장(로그인/온보딩 진행에 따라 갱신). */
+    /** 진행 상태 flag 전체 교체. 서버 응답이 확정값을 줄 때만 쓴다(로그인 응답 등). */
     suspend fun saveStatus(status: AuthStatus)
+
+    /**
+     * 진행 상태 flag 부분 갱신. 읽기-수정-쓰기를 **하나의 트랜잭션**으로 처리한다.
+     *
+     * `saveStatus(getStatus().copy(...))` 로 나눠 쓰면 두 호출 사이에 다른 쪽이 쓴 값을
+     * 덮어쓴다 — 예: 그룹 참여(mainAccessible=true)와 그룹 없음 감지(false)가 겹치면
+     * 나중에 쓴 쪽이 이긴다. [transform] 은 재시도 시 다시 실행될 수 있으므로 순수해야 한다.
+     */
+    suspend fun updateStatus(transform: AuthStatus.() -> AuthStatus)
 
     /** 저장된 진행 상태 flag. 없으면 전부 false. */
     suspend fun getStatus(): AuthStatus

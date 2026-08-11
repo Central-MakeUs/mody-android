@@ -1,12 +1,14 @@
 package com.makeus.mody.feature.auth.login
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.AuthStatus
+import com.makeus.mody.core.domain.model.StartDestination
 import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.domain.model.error.ErrorAlert
 import com.makeus.mody.core.domain.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SocialLoginProvider
+import com.makeus.mody.core.domain.usecase.ResolveStartDestinationUseCase
 import com.makeus.mody.feature.auth.social.SocialLoginCancelledException
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.MainRoute
@@ -26,6 +28,7 @@ class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val socialLoginProvider: SocialLoginProvider,
     private val remoteConfigRepository: RemoteConfigRepository,
+    private val resolveStartDestination: ResolveStartDestinationUseCase,
 ) : BaseViewModel<LoginState, LoginIntent>(LoginState()) {
 
     // 심사용 히든 로그인 진입: 로고 연타 카운트(간격 벌어지면 리셋)
@@ -61,16 +64,18 @@ class LoginViewModel @Inject constructor(
     }
 
     private suspend fun submitReviewLogin() {
-        if (currentState.reviewPassword != REVIEW_PASSWORD) {
+        // 비밀번호는 원격(Remote Config)에서만 받는다. 상수로 박아두면 APK 디컴파일로 그대로
+        // 나오고, 노출되면 앱을 새로 배포해야 바꿀 수 있다.
+        // 값이 비어 있으면(미설정·fetch 실패) 통과시키지 않는다 — 빈 입력이 빈 정답과 같아진다.
+        val expected = remoteConfigRepository.reviewLoginPassword()
+        if (expected.isBlank() || currentState.reviewPassword != expected) {
             setState { copy(reviewPasswordError = true) }
             return
         }
         setState { copy(showReviewLogin = false, reviewPassword = "", isLoading = true, error = null) }
         try {
-            val status = authRepository.loginForReview()
-            navigationHelper.navigate(
-                NavigationEvent.To(routeAfterLogin(status), popUpTo = true),
-            )
+            authRepository.loginForReview()
+            navigateAfterLogin()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -82,10 +87,8 @@ class LoginViewModel @Inject constructor(
         setState { copy(isLoading = true, error = null) }
         try {
             val socialAccessToken = socialLoginProvider.getAccessToken(type)
-            val status = authRepository.loginWithSocial(type, socialAccessToken)
-            navigationHelper.navigate(
-                NavigationEvent.To(routeAfterLogin(status), popUpTo = true),
-            )
+            authRepository.loginWithSocial(type, socialAccessToken)
+            navigateAfterLogin()
         } catch (e: CancellationException) {
             throw e // 구조적 동시성 유지 — 취소는 전파
         } catch (_: SocialLoginCancelledException) {
@@ -97,17 +100,39 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    /** 로그인 응답 상태에 따른 진입 화면(ResolveStartDestinationUseCase 와 동일 규칙). */
-    private fun routeAfterLogin(status: AuthStatus): Route = when {
-        !status.personalInfoCompleted -> OnboardingGraphBaseRoute
-        status.mainAccessible -> MainRoute
-        else -> GroupGraphBaseRoute
+    /**
+     * 로그인 성공 후 진입 화면으로 이동한다.
+     *
+     * 분기 규칙을 여기서 다시 쓰지 않고 [ResolveStartDestinationUseCase] 를 그대로 태운다.
+     * 로그인 응답은 이미 세션에 저장돼 있으므로, 저장된 값을 읽는 이 경로를 쓰면
+     * "로그인 직후 진입"과 "앱 재시작 진입"이 규칙 차이로 갈라질 수 없다.
+     */
+    private suspend fun navigateAfterLogin() {
+        val route: Route = when (resolveStartDestination()) {
+            StartDestination.ONBOARDING -> OnboardingGraphBaseRoute
+            StartDestination.GROUP -> GroupGraphBaseRoute
+            StartDestination.MAIN -> MainRoute
+            // 로그인 직후인데 미인증 = 토큰 저장이 실패했다. 그대로 보내면 곧장 되튕기므로
+            // 이동 대신 에러로 알리고 로그인 화면에 남긴다.
+            StartDestination.AUTH -> {
+                setState {
+                    copy(
+                        isLoading = false,
+                        error = ErrorAlert(
+                            title = "로그인에 실패했어요",
+                            message = "로그인 정보를 저장하지 못했어요. 다시 시도해주세요.",
+                        ),
+                    )
+                }
+                return
+            }
+        }
+        navigationHelper.navigate(NavigationEvent.To(route, popUpTo = true))
     }
 
     private companion object {
-        /** 심사용 히든 로그인: 로고 연속 탭 목표 횟수 / 허용 간격 / 비밀번호 */
+        /** 심사용 히든 로그인: 로고 연속 탭 목표 횟수 / 허용 간격 */
         const val REVIEW_TAP_TARGET = 20
         const val REVIEW_TAP_WINDOW_MS = 2_000L
-        const val REVIEW_PASSWORD = "77777"
     }
 }

@@ -20,6 +20,15 @@ interface RemoteConfigRepository {
      */
     val guestLoginEnabled: StateFlow<Boolean>
 
+    /**
+     * 심사용 히든 로그인 비밀번호 — review_login_password.
+     *
+     * APK 상수로 두면 디컴파일로 그대로 노출되고 교체에 재배포가 필요해 원격에서만 받는다.
+     * 기본값은 빈 문자열이며, **빈 값이면 히든 로그인을 열지 않는다**(빈 입력 통과 방지).
+     * 심사 기간에 [guestLoginEnabled] 와 함께 콘솔에서 설정해야 동작한다.
+     */
+    fun reviewLoginPassword(): String
+
     /** 개인정보처리방침 웹 URL(약관 상세 WebView). 기본값 = GitHub Pages. */
     fun privacyPolicyUrl(): String
 

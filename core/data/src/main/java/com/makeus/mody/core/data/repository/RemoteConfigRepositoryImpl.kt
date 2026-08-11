@@ -33,6 +33,8 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
                 KEY_MIN_SUPPORTED_VERSION to "",
                 KEY_APP_STORE_URL to "",
                 KEY_NOTICE to "",
+                // 빈 값 = 히든 로그인 비활성. 콘솔에 값이 있어야만 열린다.
+                KEY_REVIEW_LOGIN_PASSWORD to "",
                 KEY_PRIVACY_POLICY_URL to DEFAULT_PRIVACY_POLICY_URL,
                 KEY_TERMS_OF_SERVICE_URL to DEFAULT_TERMS_OF_SERVICE_URL,
             ),
@@ -61,6 +63,9 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
             _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
     }
+
+    // 원격 미설정·fetch 실패면 기본값인 빈 문자열이 나오고, 호출 측이 이를 "비활성"으로 다룬다.
+    override fun reviewLoginPassword(): String = remoteConfig.getString(KEY_REVIEW_LOGIN_PASSWORD)
 
     // 약관 URL 은 플래그와 달리 fetch 전에도 기본값(setDefaultsAsync)이 즉시 반환되므로
     // refresh 없이 바로 사용 가능. 콘솔에 값이 있으면 그 값이, 없으면 GitHub Pages 기본값이 나온다.
@@ -123,6 +128,10 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
 
         /** 심사용 히든 로그인 허용 — 심사 기간에만 콘솔에서 true 게시. */
         const val KEY_GUEST_LOGIN = "guest_login_flag"
+
+        /** 심사용 히든 로그인 비밀번호. 콘솔 미설정 시 빈 문자열 → 히든 로그인 차단. */
+        const val KEY_REVIEW_LOGIN_PASSWORD = "review_login_password"
+
         const val KEY_FORCE_UPDATE = "force_update_flag"
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
         const val KEY_APP_STORE_URL = "app_store_url"

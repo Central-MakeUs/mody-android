@@ -191,14 +191,7 @@ class FeedViewModel @Inject constructor(
                 // 속한 그룹이 없으면(다른 기기에서 전부 나감 등) 그룹 참여/생성으로 강제 이동.
                 // 백스택 제거 → 피드 복귀 불가. 세션 플래그도 내려 재접속 시 GROUP 시작.
                 if (groups.isEmpty()) {
-                    runCatching {
-                        sessionRepository.saveStatus(
-                            sessionRepository.getStatus().copy(
-                                groupOnboardingCompleted = false,
-                                mainAccessible = false,
-                            ),
-                        )
-                    }
+                    runCatching { groupRepository.markNoGroups() }
                     navigationHelper.navigate(NavigationEvent.To(
                         GroupGraph.GroupEntryRoute(source = GroupEntrySource.NoGroup),
                         popUpTo = true,

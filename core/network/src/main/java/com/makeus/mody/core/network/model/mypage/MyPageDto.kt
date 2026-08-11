@@ -12,7 +12,6 @@ data class MyPageMeResponse(
     val profileImageUrl: String? = null,
     val daysTogether: Int = 0,
     val personalInfoCompleted: Boolean = false,
-    val groupOnboardingCompleted: Boolean = false,
     val mainAccessible: Boolean = false,
 )
 

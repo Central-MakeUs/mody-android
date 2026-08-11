@@ -1,7 +1,6 @@
 package com.makeus.mody.core.network.api
 
 import com.makeus.mody.core.network.model.ApiResponse
-import com.makeus.mody.core.network.model.auth.OAuthRedirectUrlResponse
 import com.makeus.mody.core.network.model.auth.SocialLoginResponse
 import com.makeus.mody.core.network.model.auth.TokenLogoutRequest
 import com.makeus.mody.core.network.model.auth.TokenReissueRequest
@@ -26,11 +25,6 @@ interface AuthApi {
         @Path("loginType") loginType: String,
         @Query("accessToken") socialAccessToken: String?,
     ): ApiResponse<SocialLoginResponse>
-
-    @GET("api/v1/oauth/{loginType}/redirect-url")
-    suspend fun getRedirectUrl(
-        @Path("loginType") loginType: String,
-    ): ApiResponse<OAuthRedirectUrlResponse>
 
     @POST("api/v1/auth/reissue")
     suspend fun reissue(

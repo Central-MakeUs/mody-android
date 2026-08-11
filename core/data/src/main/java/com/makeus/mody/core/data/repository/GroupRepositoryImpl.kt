@@ -43,14 +43,14 @@ class GroupRepositoryImpl @Inject constructor(
             )
         }
 
-    // 그룹 보유 → 재접속 시 시작 라우팅이 MAIN 으로 가도록 세션 갱신
+    // 그룹 보유 → 재접속 시 시작 라우팅이 MAIN 으로 가도록 세션 갱신.
+    // updateStatus 로 personalInfoCompleted 를 건드리지 않고 이 플래그만 원자적으로 바꾼다.
     private suspend fun markGroupJoined() {
-        sessionRepository.saveStatus(
-            sessionRepository.getStatus().copy(
-                groupOnboardingCompleted = true,
-                mainAccessible = true,
-            ),
-        )
+        sessionRepository.updateStatus { copy(mainAccessible = true) }
+    }
+
+    override suspend fun markNoGroups() {
+        sessionRepository.updateStatus { copy(mainAccessible = false) }
     }
 }
 

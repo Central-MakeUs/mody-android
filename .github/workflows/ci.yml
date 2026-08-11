@@ -24,3 +24,18 @@ jobs:
 
       - name: Lint
         run: ./gradlew lint
+
+      # release 전용 실패를 PR 단계에서 잡는다. debug 빌드는 통과하는데 release 만 깨지는
+      # 경우가 있어(#120: :app 에 있는 style 을 라이브러리 :presentation 이 참조 →
+      # verifyReleaseResources 실패) 태그를 밀고 나서야 CD 에서 드러났다.
+      #
+      # 라이브러리 모듈의 release 리소스 검증은 모듈을 단독으로 링크하므로, 최종 앱에서
+      # 합쳐지면 해결되는 참조도 여기서 걸린다. debug 엔 이 단계 자체가 없다.
+      - name: Verify Release Resources
+        run: ./gradlew verifyReleaseResources
+
+      # fatal 등급만 보는 release 변형 lint. 위 `lint` 는 debug 변형이라 release 에서만
+      # 치명적인 항목(난독화·리소스 축소 관련 등)을 놓친다.
+      # 서명이 필요 없는 태스크라 CI 에 keystore 시크릿을 넣지 않아도 된다.
+      - name: Lint Vital (release)
+        run: ./gradlew :app:lintVitalRelease

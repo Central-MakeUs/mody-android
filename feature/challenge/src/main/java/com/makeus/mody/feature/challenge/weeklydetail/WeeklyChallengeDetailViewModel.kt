@@ -163,8 +163,12 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
     }
 
     private companion object {
-        /** presigned URL 발급 시 넘길 업로드 도메인(imageKey 접두 경로 결정). */
-        // TODO(challenge): 서버와 값 확인 필요 — record/profile 외 인증 사진용 도메인.
-        const val PROOF_UPLOAD_DOMAIN = "challenge"
+        /**
+         * presigned URL 발급 시 넘길 업로드 도메인(imageKey 접두 경로 결정).
+         *
+         * 서버가 허용 목록으로 검증한다 — 값이 다르면 발급 단계에서 400(UPLOAD301)이라
+         * 인증 사진이 아예 안 올라간다. 다른 도메인은 "record"(기록), "profile"(프로필).
+         */
+        const val PROOF_UPLOAD_DOMAIN = "weekly-challenge"
     }
 }

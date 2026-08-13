@@ -45,6 +45,16 @@ private fun modyTextStyle(
     ),
 )
 
+/**
+ * 앱 텍스트 스타일. Figma 변수(`H1_Bold`, `C2_Medium` …)와 1:1 이다.
+ *
+ * **lineHeight = fontSize × 1.4** 가 시안의 규칙이다(h0 만 letterSpacing 이 따로 붙는다).
+ * 새 스타일을 넣거나 크기를 고칠 때 이 비율을 지켜라 — 어긋나면 눈으로는 "살짝 빽빽한"
+ * 정도라서 리뷰에서 안 걸리고, 그 스타일을 쓰는 모든 화면의 세로 간격이 시안과 달라진다.
+ * 실제로 c2 가 14×1.4=19.6 이어야 하는데 아래 12sp 행의 16.8 이 들어가 있었다.
+ *
+ * 시안과 대조하는 방법은 `tools/figma/README.md`.
+ */
 data class ModyTypography(
     val h0: TextStyle = modyTextStyle(FontWeight.Bold, 36.sp, 50.4.sp, 0.36.sp), // spacing 1% of 36sp
     val h1: TextStyle = modyTextStyle(FontWeight.Bold, 28.sp, 39.2.sp),
@@ -58,7 +68,7 @@ data class ModyTypography(
     val b6: TextStyle = modyTextStyle(FontWeight.SemiBold, 16.sp, 22.4.sp),
     val b7: TextStyle = modyTextStyle(FontWeight.Medium, 16.sp, 22.4.sp),
     val c1: TextStyle = modyTextStyle(FontWeight.SemiBold, 14.sp, 19.6.sp),
-    val c2: TextStyle = modyTextStyle(FontWeight.Medium, 14.sp, 16.8.sp),
+    val c2: TextStyle = modyTextStyle(FontWeight.Medium, 14.sp, 19.6.sp),
     val c3: TextStyle = modyTextStyle(FontWeight.SemiBold, 12.sp, 16.8.sp),
     val c4: TextStyle = modyTextStyle(FontWeight.Medium, 12.sp, 16.8.sp)
 )

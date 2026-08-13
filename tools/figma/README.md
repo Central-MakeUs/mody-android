@@ -8,9 +8,17 @@ MCP 로 화면을 보고 눈대중으로 `16.dp` 를 적으면, 시안이 20 이
 ## 준비
 
 ```bash
-# Figma 설정 > Personal access tokens 에서 발급 (file_content:read 스코프)
 export FIGMA_TOKEN='figd_...'
 ```
+
+발급: Figma 웹 → 우상단 아바타 → **Settings** → **Security** 탭 → *Personal access tokens*
+→ `Generate new token`. 스코프는 **File content: Read-only** 만 준다. 생성 직후 한 번만
+보여주므로 그 자리에서 복사한다.
+
+무료(Starter) 플랜에서도 발급되고 이 스크립트가 쓰는 엔드포인트(`/files/{key}/nodes`)도
+동작한다. 유료가 필요한 건 **변수(Variables) REST API** 와 **팀 라이브러리 게시 스타일**
+쪽이라, 이 스크립트는 둘 다 없어도 돌아가게 만들었다 — 게시 스타일 조회가 실패하면 경고만
+남기고 파일 응답 안의 로컬 스타일로 넘어간다.
 
 토큰은 **환경변수로만** 넘긴다. 스크립트가 인자로 받지 않는 이유는 인자로 주면 셸
 히스토리와 `ps` 출력에 그대로 남기 때문이다. 리포에는 어떤 형태로도 커밋하지 않는다.
@@ -18,15 +26,19 @@ export FIGMA_TOKEN='figd_...'
 ## STEP 1 — 시안에서 스타일 추출
 
 ```bash
-# Figma 에서 프레임 우클릭 > Copy link 한 URL 을 그대로 붙여도 된다
-python3 tools/figma/extract_figma_tokens.py --node 'https://www.figma.com/design/.../?node-id=2001-3120'
+# 프레임 우클릭 > Copy link 한 URL 을 그대로 붙인다 (권장)
+python3 tools/figma/extract_figma_tokens.py --node 'https://www.figma.com/design/uQWU.../모디-MODY?node-id=9-29'
 
-# 노드 id 만 알면
-python3 tools/figma/extract_figma_tokens.py --node 2001-3120
+# 여러 프레임 한 번에 (같은 파일이어야 한다)
+python3 tools/figma/extract_figma_tokens.py --node '<URL1>,<URL2>'
 
-# 여러 프레임 한 번에
-python3 tools/figma/extract_figma_tokens.py --node 2001-3120,2001-4400
+# 노드 id 만 줄 거면 file key 를 따로 넘겨야 한다
+python3 tools/figma/extract_figma_tokens.py --file-key uQWUtLv8xzOFNrthwozXs9 --node 9-29
 ```
+
+**file key 를 코드에 박아두지 않는다.** 시안 파일이 작업용/export용으로 나뉘어 있어서,
+기본값을 두면 엉뚱한 파일을 보고도 정상 동작한 것처럼 보인다. URL 을 통째로 주면 거기서
+읽으므로 어긋날 일이 없다.
 
 결과: `tools/figma/out/figma-tokens-raw.json` (gitignore 대상 — 재생성 가능)
 

@@ -31,8 +31,9 @@ from collections import Counter
 
 API_BASE = "https://api.figma.com/v1"
 
-# MODY 디자인 파일. --file-key 나 FIGMA_FILE_KEY 로 덮어쓸 수 있다.
-DEFAULT_FILE_KEY = "eUXrUuSsupAVdKb5xIatWW"
+# 시안 파일이 여러 개(작업용/export용)라 기본값을 박지 않는다.
+# Figma URL 을 통째로 주면 거기서 읽고, id 만 줄 거면 --file-key / FIGMA_FILE_KEY 로 넘긴다.
+DEFAULT_FILE_KEY = os.environ.get("FIGMA_FILE_KEY")
 
 DEFAULT_OUT = "tools/figma/out/figma-tokens-raw.json"
 
@@ -73,22 +74,34 @@ def fetch(path, token, params=None):
         raise FigmaError("네트워크 실패: {}".format(e.reason))
 
 
-def normalize_node_id(raw):
-    """`1234-5678`, `1234:5678`, Figma URL 을 전부 API 형식(`1234:5678`)으로 맞춘다.
+def parse_target(raw):
+    """`1234-5678`, `1234:5678`, Figma URL 에서 (file_key, node_id) 를 뽑는다.
 
-    Figma URL 은 `node-id=1234-5678`(하이픈)로 주는데 REST API 는 콜론을 받는다.
-    여기서 안 바꾸면 노드를 못 찾고 조용히 빈 결과가 나온다 — 가장 흔한 함정.
+    두 가지를 여기서 해결한다.
+
+    1. **node id 형식** — Figma URL 은 `node-id=1234-5678`(하이픈)로 주는데 REST API 는
+       콜론을 받는다. 안 바꾸면 노드를 못 찾고 조용히 빈 결과가 나온다.
+    2. **file key** — 시안 파일이 여러 개(작업용/export용)라 기본값을 박아두면 엉뚱한
+       파일을 보게 된다. URL 을 통째로 붙이면 거기서 그대로 읽어 어긋날 일이 없다.
+
+    file_key 는 URL 로 준 경우에만 나오고, 아니면 None(호출부가 기본값을 쓴다).
     """
     raw = raw.strip()
+    file_key = None
     if raw.startswith("http"):
-        query = urllib.parse.parse_qs(urllib.parse.urlparse(raw).query)
+        parsed = urllib.parse.urlparse(raw)
+        # /design/{key}/{slug} · /file/{key}/{slug} · /proto/{key}/{slug}
+        m = re.match(r"^/(?:design|file|proto|board)/([A-Za-z0-9]+)", parsed.path)
+        if m:
+            file_key = m.group(1)
+        query = urllib.parse.parse_qs(parsed.query)
         ids = query.get("node-id") or query.get("node_id")
         if not ids:
-            raise FigmaError("URL 에 node-id 가 없다: {}".format(raw))
+            raise FigmaError("URL 에 node-id 가 없다 (프레임 우클릭 > Copy link): {}".format(raw))
         raw = ids[0]
     if not re.fullmatch(r"[0-9]+[-:][0-9]+", raw):
-        raise FigmaError("노드 id 형식이 아니다: {!r} (예: 1234-5678)".format(raw))
-    return raw.replace("-", ":")
+        raise FigmaError("노드 id 형식이 아니다: {!r} (예: 9-29)".format(raw))
+    return file_key, raw.replace("-", ":")
 
 
 def rgba_hex(color, opacity=None):
@@ -245,7 +258,8 @@ def main():
     parser = argparse.ArgumentParser(description="Figma 노드 스타일 추출 (STEP 1)")
     parser.add_argument("--node", required=True,
                         help="노드 id 또는 Figma URL. 쉼표로 여러 개.")
-    parser.add_argument("--file-key", default=os.environ.get("FIGMA_FILE_KEY", DEFAULT_FILE_KEY))
+    parser.add_argument("--file-key", default=DEFAULT_FILE_KEY,
+                        help="URL 대신 노드 id 만 줄 때 필요. URL 을 주면 무시된다.")
     parser.add_argument("--out", default=DEFAULT_OUT)
     args = parser.parse_args()
 
@@ -259,16 +273,28 @@ def main():
         return 2
 
     try:
-        node_ids = [normalize_node_id(n) for n in args.node.split(",") if n.strip()]
+        targets = [parse_target(n) for n in args.node.split(",") if n.strip()]
     except FigmaError as e:
         print(str(e), file=sys.stderr)
         return 2
 
-    print("파일 {} / 노드 {}".format(args.file_key, ", ".join(node_ids)))
+    node_ids = [node_id for _, node_id in targets]
+    # URL 에서 읽은 file key 가 있으면 그게 우선 — 명시적으로 준 것이라서.
+    url_keys = {key for key, _ in targets if key}
+    if len(url_keys) > 1:
+        print("URL 들의 file key 가 서로 다르다: {}\n같은 파일의 노드만 한 번에 넣어라."
+              .format(", ".join(sorted(url_keys))), file=sys.stderr)
+        return 2
+    file_key = url_keys.pop() if url_keys else args.file_key
+    if not file_key:
+        print("file key 가 없다. Figma URL 을 통째로 주거나 --file-key 를 넘겨라.", file=sys.stderr)
+        return 2
+
+    print("파일 {} / 노드 {}".format(file_key, ", ".join(node_ids)))
 
     try:
-        payload = fetch("files/{}/nodes".format(args.file_key), token, {"ids": ",".join(node_ids)})
-        published = fetch_published_styles(args.file_key, token)
+        payload = fetch("files/{}/nodes".format(file_key), token, {"ids": ",".join(node_ids)})
+        published = fetch_published_styles(file_key, token)
     except FigmaError as e:
         print(str(e), file=sys.stderr)
         return 1
@@ -292,7 +318,7 @@ def main():
         print("  경고: 응답에 없는 노드 — {}".format(", ".join(missing_ids)), file=sys.stderr)
 
     result = {
-        "fileKey": args.file_key,
+        "fileKey": file_key,
         "requestedNodeIds": node_ids,
         "lastModified": payload.get("lastModified"),
         "version": payload.get("version"),

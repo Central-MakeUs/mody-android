@@ -1,5 +1,6 @@
 package com.makeus.mody.core.camera
 
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
@@ -34,7 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.makeus.mody.core.designsystem.icon.ModyIcons
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private const val CAPTURE_FAILED_MESSAGE = "사진을 찍지 못했어요. 다시 시도해주세요."
 
 /**
  * 촬영 단계 레이어: 풀스크린 프리뷰 + 우상단 닫기 + 하단(갤러리 / 셔터 / 전후면 전환).
@@ -116,9 +122,17 @@ fun CaptureLayer(
                         try {
                             val file = createRawFile(context)
                             val path = capture.capture(context, file)
-                            onCaptured(normalizeToUpright(context, path))
+                            // 디코딩·회전·재인코딩은 무거워 메인 스레드에서 하면 셔터가 멈춘다.
+                            val upright = withContext(Dispatchers.IO) {
+                                normalizeToUpright(context, path)
+                            }
+                            onCaptured(upright)
+                        } catch (e: CancellationException) {
+                            // 화면을 벗어나 스코프가 취소된 경우. 삼키면 아래 안내가 잘못 뜬다.
+                            throw e
                         } catch (_: Exception) {
-                            // 실패 시 다시 촬영 가능하도록 상태만 복구
+                            // 조용히 넘기면 셔터를 눌러도 아무 반응이 없어 고장으로 보인다.
+                            Toast.makeText(context, CAPTURE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
                         } finally {
                             isCapturing = false
                         }

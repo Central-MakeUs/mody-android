@@ -93,6 +93,8 @@ fun ModyCameraOverlay(
     }
 
     LaunchedEffect(Unit) {
+        // 이전 촬영에서 남은 캐시 정리. 진입 시점이라 이번 세션 파일은 아직 없다.
+        clearStaleCameraCache(context)
         if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
@@ -113,7 +115,11 @@ fun ModyCameraOverlay(
             else -> AdjustLayer(
                 image = captured!!,
                 frameRatio = frameRatio,
-                onRetake = { captured = null },
+                onRetake = {
+                    // 버린 촬영본은 바로 지운다. 재촬영을 반복하면 그만큼 캐시가 쌓인다.
+                    deleteCameraFile(captured!!.path)
+                    captured = null
+                },
                 onConfirm = onConfirm,
                 onClose = onDismiss,
             )

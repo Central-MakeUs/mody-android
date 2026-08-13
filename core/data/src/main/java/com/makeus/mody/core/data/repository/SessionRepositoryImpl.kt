@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.makeus.mody.core.data.cache.NotificationSettingsCache
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.domain.model.StepSyncCheckpoint
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,11 @@ class SessionRepositoryImpl @Inject constructor(
         val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
         val LAST_GROUP_ID = longPreferencesKey("last_group_id")
         val HEALTH_PERMISSION_ASKED = booleanPreferencesKey("health_permission_asked")
+
+        // 걸음 수 동기화 체크포인트. 세 값이 한 묶음이라 하나라도 없으면 없는 것으로 본다.
+        val STEP_SYNC_GROUP_ID = longPreferencesKey("step_sync_group_id")
+        val STEP_SYNC_ANCHOR = longPreferencesKey("step_sync_anchor")
+        val STEP_SYNC_THROUGH = stringPreferencesKey("step_sync_through")
 
         /** 더는 읽지 않는 키. 기존 설치에 남은 값을 [clear] 에서 지우기 위해서만 남겨둔다. */
         val LEGACY_GROUP_ONBOARDING_COMPLETED = booleanPreferencesKey("group_onboarding_completed")
@@ -107,6 +113,25 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun getHealthPermissionAsked(): Boolean =
         safePreferences.map { it[Keys.HEALTH_PERMISSION_ASKED] ?: false }.first()
 
+    // 세 값을 한 edit 안에서 함께 쓴다 — 나눠 쓰면 중간 상태(그룹만 바뀐 체크포인트)가
+    // 읽힐 수 있고, 그건 다른 그룹의 진행도를 그대로 이어받는다는 뜻이다.
+    override suspend fun saveStepSyncCheckpoint(checkpoint: StepSyncCheckpoint) {
+        dataStore.edit {
+            it[Keys.STEP_SYNC_GROUP_ID] = checkpoint.groupId
+            it[Keys.STEP_SYNC_ANCHOR] = checkpoint.anchorEpochMs
+            it[Keys.STEP_SYNC_THROUGH] = checkpoint.syncedThrough
+        }
+    }
+
+    // 세 값이 함께여야 의미가 있다 — 하나라도 없으면 체크포인트가 없는 것으로 본다.
+    override suspend fun getStepSyncCheckpoint(): StepSyncCheckpoint? =
+        safePreferences.map { prefs ->
+            val groupId = prefs[Keys.STEP_SYNC_GROUP_ID] ?: return@map null
+            val anchor = prefs[Keys.STEP_SYNC_ANCHOR] ?: return@map null
+            val syncedThrough = prefs[Keys.STEP_SYNC_THROUGH] ?: return@map null
+            StepSyncCheckpoint(groupId, anchor, syncedThrough)
+        }.first()
+
     override suspend fun clear() {
         tokenManager.clear()
         dataStore.edit {
@@ -116,6 +141,10 @@ class SessionRepositoryImpl @Inject constructor(
             it.remove(Keys.LAST_LOGIN_TYPE)
             it.remove(Keys.LAST_GROUP_ID)
             // 계정 전환 시 이전 사용자의 콕 찌르기 이력이 남지 않게 함께 제거.
+            // 걸음 수 체크포인트도 마찬가지 — 남겨두면 새 계정의 과거 날짜를 건너뛴다.
+            it.remove(Keys.STEP_SYNC_GROUP_ID)
+            it.remove(Keys.STEP_SYNC_ANCHOR)
+            it.remove(Keys.STEP_SYNC_THROUGH)
         }
         // 계정 전환 시 이전 사용자의 알림 설정 캐시가 노출되지 않게 함께 제거
         // (로그아웃/탈퇴/세션만료 모두 이 clear 를 지나므로 여기서 일괄 처리).

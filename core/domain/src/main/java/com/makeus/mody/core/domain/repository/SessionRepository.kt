@@ -2,6 +2,7 @@ package com.makeus.mody.core.domain.repository
 
 import com.makeus.mody.core.domain.model.AuthStatus
 import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.domain.model.StepSyncCheckpoint
 
 /**
  * 로그인/온보딩 세션 상태 저장소.
@@ -49,6 +50,12 @@ interface SessionRepository {
 
     /** 건강 데이터 권한을 요청한 이력이 있는지. */
     suspend fun getHealthPermissionAsked(): Boolean
+
+    /** 걸음 수 동기화가 어디까지 끝났는지 기록(끝난 과거 날짜를 매번 다시 올리지 않도록). */
+    suspend fun saveStepSyncCheckpoint(checkpoint: StepSyncCheckpoint)
+
+    /** 마지막 걸음 수 동기화 체크포인트. 없으면 null. */
+    suspend fun getStepSyncCheckpoint(): StepSyncCheckpoint?
 
     /** 로그아웃 등 세션 초기화(토큰 + 상태 제거). */
     suspend fun clear()

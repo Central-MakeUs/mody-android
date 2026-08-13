@@ -1,0 +1,49 @@
+{
+  "_about": "시안 디자인 토큰 스냅샷. check_design_tokens.py 가 이 값과 코드를 대조한다.",
+  "_source": {
+    "fileKey": "uQWUtLv8xzOFNrthwozXs9",
+    "method": "Figma MCP get_variable_defs",
+    "verifiedNodes": ["251:3651", "251:2309", "251:3880"],
+    "capturedOn": "2026-08-13"
+  },
+  "_howToRefresh": "시안이 바뀌면 tools/figma/README.md 의 절차로 다시 뽑아 이 파일을 갱신하고 커밋한다. CI 는 이 스냅샷만 읽으므로 Figma 토큰이 필요 없다.",
+
+  "lineHeightRatio": 1.4,
+  "fontFamily": "Pretendard",
+
+  "colors": {
+    "Main0": { "hex": "FBD406", "code": "Primary0" },
+    "Main": { "hex": "FFE24A", "code": "Primary100" },
+    "Main3": { "hex": "FFF6C9", "code": "Primary300" },
+    "Main4": { "hex": "FFFCED", "code": "Primary400" },
+    "Sub": { "hex": "6E7CFF", "code": "Secondary100" },
+    "Gray1": { "hex": "F6F6F6", "code": "Gray01" },
+    "Gray2": { "hex": "E4E4E4", "code": "Gray02" },
+    "Gray4": { "hex": "B7B7B7", "code": "Gray04" },
+    "Gray5": { "hex": "A5A5A5", "code": "Gray05" },
+    "Gray6": { "hex": "878787", "code": "Gray06" },
+    "Gray7": { "hex": "6A6A6A", "code": "Gray07" },
+    "Gray8": { "hex": "4C4C4C", "code": "Gray08" },
+    "Gray9": { "hex": "2F2F2F", "code": "Gray09" },
+    "Gray10": { "hex": "111111", "code": "Gray10" },
+    "Black": { "hex": "000000", "code": "Black" },
+    "White": { "hex": "FFFFFF", "code": "White" }
+  },
+
+  "typography": {
+    "H1_Bold": { "size": 28, "weight": 700, "code": "h1" },
+    "H3_Bold": { "size": 20, "weight": 700, "code": "h3" },
+    "B3_SemiBold": { "size": 18, "weight": 600, "code": "b3" },
+    "B5_Bold": { "size": 16, "weight": 700, "code": "b5" },
+    "B6_SemiBold": { "size": 16, "weight": 600, "code": "b6" },
+    "C1_Semibold": { "size": 14, "weight": 600, "code": "c1" },
+    "C2_Medium": { "size": 14, "weight": 500, "code": "c2" },
+    "C3_SemiBold": { "size": 12, "weight": 600, "code": "c3" }
+  },
+
+  "_unverified": {
+    "_reason": "아직 대조한 프레임에 안 나온 코드 토큰. 값 검증은 못 했지만 lineHeight 비율 규칙은 전부에 적용된다.",
+    "colors": ["Primary200", "Secondary200", "Secondary300", "Secondary400", "Gray03", "Error", "KakaoYellow"],
+    "typography": ["h0", "h2", "b1", "b2", "b4", "b7", "c4"]
+  }
+}

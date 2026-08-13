@@ -66,6 +66,35 @@ python3 tools/figma/extract_figma_tokens.py --file-key uQWUtLv8xzOFNrthwozXs9 --
 - **변수 hex 값**: 이 스크립트는 노드에 실제로 칠해진 색을 뽑는다. 변수 자체의 정의값은
   Figma MCP `get_variable_defs` 쪽이 정확하다. 둘이 다르면 MCP 를 믿는다.
 
+## 토큰 드리프트 검사 (CI)
+
+```bash
+python3 tools/figma/check_design_tokens.py
+```
+
+`figma-tokens.lock.json`(시안 스냅샷)과 `Color.kt` / `Type.kt` 를 대조해 어긋나면 종료 코드 1.
+CI 의 `Check design tokens` 스텝이 PR 마다 돌린다.
+
+**Figma 를 호출하지 않는다.** 커밋된 스냅샷만 읽으므로 CI 에 Figma 토큰을 넣을 필요가 없고,
+Figma 장애나 레이트 리밋에 CI 가 흔들리지 않는다. 대신 시안이 바뀌면 사람이 스냅샷을
+갱신해 커밋해야 한다 — 그 변경이 PR diff 에 남는 것이 오히려 이 방식의 장점이다.
+
+검사 두 가지:
+
+1. **스냅샷 대조** — 잠근 색 16개, 타이포 8개의 hex·fontSize·weight. 팔레트에 알파가
+   섞이는 것도 막는다.
+2. **비율 규칙** — 시안 전체가 `lineHeight = fontSize × 1.4` 다. 스냅샷에 없는 토큰까지
+   **타이포 15개 전부**에 적용한다. 실제로 `c2` 를 잡아낸 것이 이 규칙이다.
+
+### 시안이 바뀌었을 때
+
+값을 코드에 맞추는 게 아니라 **스냅샷을 갱신**한다.
+
+1. 바뀐 프레임에서 토큰을 다시 뽑는다 (위 STEP 1, 또는 Figma MCP `get_variable_defs`)
+2. `figma-tokens.lock.json` 의 해당 항목과 `_source.capturedOn` 을 고친다
+3. 코드 토큰도 함께 고치고 한 PR 로 올린다 — 스냅샷만 고치면 검사는 통과하지만 화면은
+   그대로다
+
 ## 다음 단계
 
 - STEP 2 — `core/designsystem` 토큰 목록과 대조해 매핑 테이블 생성

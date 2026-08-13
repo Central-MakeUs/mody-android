@@ -23,3 +23,7 @@ release/
 *.jks
 *.keystore
 keystore.properties
+
+# Figma 추출 산출물 — 시안이 바뀌면 매번 다시 뽑는다(재생성 가능).
+# 매핑 테이블·스펙 문서는 사람이 검수한 결과라 추적한다.
+tools/figma/out/

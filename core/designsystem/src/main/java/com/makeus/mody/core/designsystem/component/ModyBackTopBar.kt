@@ -68,7 +68,9 @@ fun ModyBackTopBar(
                 Text(
                     text = title,
                     style = ModyTheme.typography.b6,
-                    color = ModyTheme.colors.gray10,
+                    // 시안은 탑바 타이틀만 Gray9 다 — 본문 제목(Gray10)보다 한 단계 옅다.
+                    // 같은 프레임에서 카드 제목 #111 / 탑바 #2F2F2F 로 나뉘어 있어 의도된 구분이다.
+                    color = ModyTheme.colors.gray09,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),

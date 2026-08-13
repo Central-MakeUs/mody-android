@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +37,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.domain.model.CropRegion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** 기록 카드 비율(354:200). */
 const val RECORD_FRAME_RATIO = 200f / 354f
@@ -63,6 +67,7 @@ fun ModyCameraOverlay(
 ) {
     val context = LocalContext.current
     val view = LocalView.current
+    val scope = rememberCoroutineScope()
 
     // 오버레이 표시 동안 하단 내비게이션 바 숨김(immersive). 벗어나면 원복.
     DisposableEffect(Unit) {
@@ -93,6 +98,9 @@ fun ModyCameraOverlay(
     }
 
     LaunchedEffect(Unit) {
+        // 이전 촬영에서 남은 캐시 정리. 진입 시점이라 이번 세션 파일은 아직 없다.
+        // LaunchedEffect 는 컴포지션 컨텍스트(메인)에서 도니 디렉터리 스캔·삭제는 IO 로 옮긴다.
+        withContext(Dispatchers.IO) { clearStaleCameraCache(context) }
         if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
@@ -113,7 +121,15 @@ fun ModyCameraOverlay(
             else -> AdjustLayer(
                 image = captured!!,
                 frameRatio = frameRatio,
-                onRetake = { captured = null },
+                onRetake = {
+                    // 버린 촬영본은 바로 지운다. 재촬영을 반복하면 그만큼 캐시가 쌓인다.
+                    // 경로를 먼저 붙들고 상태를 비운다 — 삭제는 IO 로 넘겨 화면 전환을 막지 않는다.
+                    val discarded = captured?.path
+                    captured = null
+                    if (discarded != null) {
+                        scope.launch { withContext(Dispatchers.IO) { deleteCameraFile(discarded) } }
+                    }
+                },
                 onConfirm = onConfirm,
                 onClose = onDismiss,
             )

@@ -136,13 +136,16 @@ private fun WeeklyChallengeDetailContent(
                     description = state.description,
                     deadlineDayOfWeek = state.deadlineDayOfWeek,
                 )
-                Spacer(modifier = Modifier.height(22.dp))
+                // 시안 실측 13 (카드 끝 207 → 그리드 220).
+                Spacer(modifier = Modifier.height(13.dp))
                 ProofGrid(
                     proofs = state.proofs,
                     isUploading = state.isUploading,
                     onAddClick = { onIntent(WeeklyChallengeDetailIntent.AddProofClicked) },
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                // 시안 실측 30 (그리드 끝 756 → 버튼 786). 버튼이 스크롤 밖에 고정이라
+                // 이 값은 끝까지 내렸을 때의 최소 간격이 된다.
+                Spacer(modifier = Modifier.height(30.dp))
             }
             ModyButton(
                 text = if (state.isPreparingShare) "공유 이미지 만드는 중…" else "SNS에 공유하기",

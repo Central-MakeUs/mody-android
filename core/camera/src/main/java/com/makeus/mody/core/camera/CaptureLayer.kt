@@ -119,20 +119,27 @@ fun CaptureLayer(
                     val capture = imageCapture ?: return@ShutterButton
                     isCapturing = true
                     scope.launch {
+                        // 실패 시 지울 수 있도록 try 밖에서 붙든다. 성공하면 normalizeToUpright 가
+                        // 원본을 대체하며 지우므로 여기서는 비운다.
+                        var rawPath: String? = null
                         try {
                             val file = createRawFile(context)
+                            rawPath = file.absolutePath
                             val path = capture.capture(context, file)
                             // 디코딩·회전·재인코딩은 무거워 메인 스레드에서 하면 셔터가 멈춘다.
                             val upright = withContext(Dispatchers.IO) {
                                 normalizeToUpright(context, path)
                             }
+                            rawPath = null
                             onCaptured(upright)
                         } catch (e: CancellationException) {
                             // 화면을 벗어나 스코프가 취소된 경우. 삼키면 아래 안내가 잘못 뜬다.
+                            // 남은 파일은 다음 진입의 오래된 캐시 정리가 걷어간다.
                             throw e
                         } catch (_: Exception) {
                             // 조용히 넘기면 셔터를 눌러도 아무 반응이 없어 고장으로 보인다.
                             Toast.makeText(context, CAPTURE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
+                            rawPath?.let { withContext(Dispatchers.IO) { deleteCameraFile(it) } }
                         } finally {
                             isCapturing = false
                         }

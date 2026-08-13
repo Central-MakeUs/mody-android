@@ -59,10 +59,18 @@ fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
             .also { if (it != src) src.recycle() }
     }
     val out = cameraCacheFile(context, "capture_${upright.width}x${upright.height}_${sourcePath.hashCode()}.jpg")
-    FileOutputStream(out).use { upright.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+    val encoded = FileOutputStream(out).use {
+        upright.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it)
+    }
     val w = upright.width
     val h = upright.height
     upright.recycle()
+    // 인코딩 실패(저장공간 부족 등)면 out 은 깨진 파일이다. 이때 원본까지 지우면 둘 다 잃는다.
+    // 원본을 남겨 호출부가 다시 시도할 수 있게 두고, 쓸모없어진 결과물만 치운다.
+    if (!encoded) {
+        runCatching { out.delete() }
+        error("이미지 인코딩 실패")
+    }
     // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
     runCatching { File(sourcePath).delete() }
     return UprightImage(

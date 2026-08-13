@@ -181,7 +181,8 @@ private fun StepChallengeOptionCard(
             )
             .then(
                 if (option.selected) {
-                    Modifier.border(1.5.dp, ModyTheme.colors.primary100, shape)
+                    // 시안 실측 2dp.
+                    Modifier.border(2.dp, ModyTheme.colors.primary100, shape)
                 } else {
                     Modifier
                 },
@@ -217,19 +218,25 @@ private fun StepChallengeOptionCard(
     }
 }
 
-/** "완료" 배지 — 이미 달성한 챌린지. */
+/**
+ * "완료" 배지 — 이미 달성한 챌린지.
+ *
+ * 시안의 `chip` 컴포넌트와 같은 규격이다: padding 8×2, radius 100, Main 배경,
+ * C2_Medium 텍스트. 주간 챌린지 상세의 D-N 칩도 같은 컴포넌트다.
+ * 코드에는 아직 공용 칩이 없어 화면마다 따로 그리고 있다.
+ */
 @Composable
 private fun CompletedBadge() {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
             .background(ModyTheme.colors.primary100)
-            .padding(horizontal = 14.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "완료",
-            style = ModyTheme.typography.c1,
+            style = ModyTheme.typography.c2,
             color = ModyTheme.colors.gray10,
             maxLines = 1,
         )

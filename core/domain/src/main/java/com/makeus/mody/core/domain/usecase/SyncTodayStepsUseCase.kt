@@ -3,6 +3,7 @@ package com.makeus.mody.core.domain.usecase
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRecordResult
+import com.makeus.mody.core.domain.model.StepSyncCheckpoint
 import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
@@ -13,6 +14,14 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+
+/**
+ * 체크포인트를 세우지 않고 매번 다시 읽는 최근 일수.
+ *
+ * 워치처럼 나중에 동기화되는 기기가 있어 어제 걸음 수가 오늘 들어오기도 한다. 오늘과 어제는
+ * 항상 다시 읽어 늦게 온 데이터를 반영한다.
+ */
+private const val RESYNC_DAYS = 2L
 
 /** 동기화 결과. 화면이 게이지를 즉시 갱신할 때 쓴다. */
 data class StepSyncResult(
@@ -66,11 +75,19 @@ class SyncTodayStepsUseCase @Inject constructor(
 
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
-        val from = countingStart(targetChallenge, zone, now)
+        // 챌린지가 정한 카운트 기준(클램프 전). 체크포인트 유효성 판정에 이 값을 쓴다 —
+        // 아래 countingStart 는 읽기 창 하한이 매일 밀려서 날짜가 바뀔 때마다 달라진다.
+        val anchor = countingAnchor(targetChallenge, zone)
+        val countingStart = clampToReadableWindow(anchor, zone, now)
+        val from = resumePoint(countingStart, anchor, targetGroupId, zone)
 
         var uploadedDays = 0
         var readTotal = 0
         var last: StepRecordResult? = null
+        // 앞에서부터 연속으로 끝난 마지막 날짜. 중간에 하나라도 실패하면 여기서 멈춘다 —
+        // 실패한 날을 넘겨 체크포인트를 세우면 그날 걸음 수는 영영 안 올라간다.
+        var contiguousDone: LocalDate? = null
+        var blocked = false
 
         for ((date, range) in dayRanges(from, now, zone)) {
             // 읽기 실패는 걸음 수가 안 오르는 것으로만 드러난다(화면엔 아무 표시도 없다).
@@ -79,10 +96,19 @@ class SyncTodayStepsUseCase @Inject constructor(
                 .onFailure { e ->
                     errorReporter.report(e, mapOf("source" to "health_connect_read_steps"))
                 }
-                .getOrDefault(0)
+                .getOrNull()
+            // 읽기 실패(null)와 진짜 0 을 구분한다. 둘 다 올리지는 않지만, 실패한 날은
+            // "끝났다"고 볼 수 없어 체크포인트를 여기서 멈춘다.
+            if (steps == null) {
+                blocked = true
+                continue
+            }
             // 0 은 올리지 않는다. 읽기 창(30일) 경계나 데이터 누락으로 나온 0 을 그대로 올리면
             // 덮어쓰기라서 서버에 쌓여 있던 그날 기록이 지워진다. 기록이 없는 날 = 0 이라 손해도 없다.
-            if (steps <= 0) continue
+            if (steps <= 0) {
+                if (!blocked) contiguousDone = date
+                continue
+            }
             val result = runCatching {
                 challengeRepository.upsertStepRecord(
                     groupId = targetGroupId,
@@ -95,8 +121,12 @@ class SyncTodayStepsUseCase @Inject constructor(
                 readTotal += steps
                 uploadedDays++
                 last = result
+                if (!blocked) contiguousDone = date
+            } else {
+                blocked = true
             }
         }
+        saveCheckpoint(contiguousDone, anchor, targetGroupId, zone)
         return StepSyncResult(
             uploadedDays = uploadedDays,
             readStepCount = readTotal,
@@ -106,26 +136,82 @@ class SyncTodayStepsUseCase @Inject constructor(
     }
 
     /**
-     * 걸음 수를 세기 시작할 시각.
+     * 실제로 읽기 시작할 시각. 체크포인트가 있으면 그 뒤부터.
+     *
+     * 체크포인트를 버리는 조건:
+     * - 그룹이 다르다 — 다른 그룹의 진행도다. (체크포인트는 하나뿐이라 그룹을 오가면 매번
+     *   처음부터 센다. 그룹이 여럿인 사용자가 드물어 단순한 쪽을 택했다.)
+     * - 카운트 기준이 다르다 — 챌린지가 바뀌어 세는 시작점이 달라졌다.
+     */
+    private suspend fun resumePoint(
+        countingStart: Instant,
+        anchor: Instant,
+        groupId: Long,
+        zone: ZoneId,
+    ): Instant {
+        val checkpoint = runCatching { sessionRepository.getStepSyncCheckpoint() }.getOrNull()
+            ?: return countingStart
+        if (checkpoint.groupId != groupId) return countingStart
+        if (checkpoint.anchorEpochMs != anchor.toEpochMilli()) return countingStart
+        val syncedThrough = runCatching { LocalDate.parse(checkpoint.syncedThrough) }.getOrNull()
+            ?: return countingStart
+        // 읽기 창 하한(countingStart)보다 앞으로는 못 간다.
+        return maxOf(countingStart, syncedThrough.plusDays(1).atStartOfDay(zone).toInstant())
+    }
+
+    /**
+     * 연속으로 끝난 마지막 날짜를 기록한다.
+     *
+     * 최근 [RESYNC_DAYS] 일은 기록하지 않고 잘라낸다 — 워치처럼 나중에 동기화되는 기기가 있어
+     * 어제 걸음 수가 오늘 들어오기도 한다. 그 창을 남겨두면 늦게 온 데이터도 다음 동기화에
+     * 반영된다. 안정 상태에서 읽기/업로드는 이 창 크기로 수렴한다.
+     */
+    private suspend fun saveCheckpoint(
+        contiguousDone: LocalDate?,
+        anchor: Instant,
+        groupId: Long,
+        zone: ZoneId,
+    ) {
+        if (contiguousDone == null) return
+        val cutoff = LocalDate.now(zone).minusDays(RESYNC_DAYS)
+        // 오늘까지 다 끝났어도 재동기화 창만큼은 뒤로 물려 기록한다.
+        val through = if (contiguousDone.isAfter(cutoff)) cutoff else contiguousDone
+        // 카운트 시작일보다 앞선 날짜는 기록해봐야 재개점을 못 당긴다.
+        if (through.isBefore(anchor.atZone(zone).toLocalDate())) return
+        runCatching {
+            sessionRepository.saveStepSyncCheckpoint(
+                StepSyncCheckpoint(
+                    groupId = groupId,
+                    anchorEpochMs = anchor.toEpochMilli(),
+                    syncedThrough = through.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                ),
+            )
+        }
+    }
+
+    /**
+     * 챌린지가 정한 카운트 기준 시각.
      *
      * 서버가 [StepChallengeStatus.fetchFromAt] 을 주면 그 값, 없으면 오늘 0시(기존 동작).
-     * 어느 쪽이든 Health Connect 가 읽을 수 있는 창([HealthRepository.EARLIEST_READABLE_DAYS])
-     * 안으로 자른다 — 그보다 오래된 구간은 에러가 아니라 0 이 돌아와서, 안 자르면 과거 기록을
+     * 읽기 창으로 자르기 전 값이라 날짜가 바뀌어도 안 변한다 — 체크포인트 유효성 판정에 쓴다.
+     */
+    private fun countingAnchor(challenge: StepChallengeStatus?, zone: ZoneId): Instant =
+        challenge?.fetchFromAt ?: LocalDate.now(zone).atStartOfDay(zone).toInstant()
+
+    /**
+     * 실제로 읽을 수 있는 시작 시각.
+     *
+     * Health Connect 가 읽을 수 있는 창([HealthRepository.EARLIEST_READABLE_DAYS]) 안으로
+     * 자른다 — 그보다 오래된 구간은 에러가 아니라 0 이 돌아와서, 안 자르면 과거 기록을
      * 0 으로 덮어쓰게 된다.
      */
-    private fun countingStart(
-        challenge: StepChallengeStatus?,
-        zone: ZoneId,
-        now: Instant,
-    ): Instant {
-        val today = LocalDate.now(zone)
-        val default = today.atStartOfDay(zone).toInstant()
+    private fun clampToReadableWindow(anchor: Instant, zone: ZoneId, now: Instant): Instant {
         // 경계에 걸친 하루는 앞부분이 잘려 실제보다 적게 읽히므로, 온전히 읽을 수 있는
         // 날짜(오늘 - 29일)의 0시를 하한으로 둔다.
-        val earliest = today.minusDays(HealthRepository.EARLIEST_READABLE_DAYS - 1L)
+        val earliest = LocalDate.now(zone)
+            .minusDays(HealthRepository.EARLIEST_READABLE_DAYS - 1L)
             .atStartOfDay(zone).toInstant()
-        val from = challenge?.fetchFromAt ?: default
-        return maxOf(from, earliest).coerceAtMost(now)
+        return maxOf(anchor, earliest).coerceAtMost(now)
     }
 
     /**

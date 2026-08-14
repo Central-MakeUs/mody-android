@@ -89,10 +89,10 @@ class SyncTodayStepsUseCase @Inject constructor(
         var contiguousDone: LocalDate? = null
         var blocked = false
 
-        for ((date, range) in dayRanges(from, now, zone)) {
+        for ((date, rangeStart, rangeEnd) in dayRanges(from, now, zone)) {
             // 읽기 실패는 걸음 수가 안 오르는 것으로만 드러난다(화면엔 아무 표시도 없다).
             // 서버 업로드 실패는 네트워크 계층이 이미 보고하므로 여기선 읽기만 남긴다.
-            val steps = runCatching { healthRepository.readStepCount(range.first, range.second) }
+            val steps = runCatching { healthRepository.readStepCount(rangeStart, rangeEnd) }
                 .onFailure { e ->
                     errorReporter.report(e, mapOf("source" to "health_connect_read_steps"))
                 }
@@ -197,46 +197,6 @@ class SyncTodayStepsUseCase @Inject constructor(
      */
     private fun countingAnchor(challenge: StepChallengeStatus?, zone: ZoneId): Instant =
         challenge?.fetchFromAt ?: LocalDate.now(zone).atStartOfDay(zone).toInstant()
-
-    /**
-     * 실제로 읽을 수 있는 시작 시각.
-     *
-     * Health Connect 가 읽을 수 있는 창([HealthRepository.EARLIEST_READABLE_DAYS]) 안으로
-     * 자른다 — 그보다 오래된 구간은 에러가 아니라 0 이 돌아와서, 안 자르면 과거 기록을
-     * 0 으로 덮어쓰게 된다.
-     */
-    private fun clampToReadableWindow(anchor: Instant, zone: ZoneId, now: Instant): Instant {
-        // 경계에 걸친 하루는 앞부분이 잘려 실제보다 적게 읽히므로, 온전히 읽을 수 있는
-        // 날짜(오늘 - 29일)의 0시를 하한으로 둔다.
-        val earliest = LocalDate.now(zone)
-            .minusDays(HealthRepository.EARLIEST_READABLE_DAYS - 1L)
-            .atStartOfDay(zone).toInstant()
-        return maxOf(anchor, earliest).coerceAtMost(now)
-    }
-
-    /**
-     * [from] ~ [to] 를 날짜별 구간으로 쪼갠다.
-     * 첫날은 [from] 부터(리셋 시각 반영), 마지막 날은 [to] 까지, 중간 날은 하루 전체.
-     */
-    private fun dayRanges(
-        from: Instant,
-        to: Instant,
-        zone: ZoneId,
-    ): List<Pair<LocalDate, Pair<Instant, Instant>>> {
-        if (!to.isAfter(from)) return emptyList()
-        val ranges = mutableListOf<Pair<LocalDate, Pair<Instant, Instant>>>()
-        var date = from.atZone(zone).toLocalDate()
-        val lastDate = to.atZone(zone).toLocalDate()
-        while (!date.isAfter(lastDate)) {
-            val dayStart = date.atStartOfDay(zone).toInstant()
-            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant()
-            val start = maxOf(dayStart, from)
-            val end = minOf(dayEnd, to)
-            if (end.isAfter(start)) ranges += date to (start to end)
-            date = date.plusDays(1)
-        }
-        return ranges
-    }
 
     /** 마지막 선택 그룹(세션) > 첫 그룹. 챌린지 탭·피드의 그룹 결정 규칙과 동일. */
     private suspend fun resolveGroupId(): Long? {

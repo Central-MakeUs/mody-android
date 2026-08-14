@@ -79,8 +79,12 @@ fun StreakTabContent(
 @Composable
 private fun StreakHeader(summary: ChallengeSummary?) {
     if (summary == null) return
-    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-        Spacer(modifier = Modifier.height(24.dp))
+    // 이 영역만 좌우 36 이다(아래 버디 섹션은 24). 시안 연속기록 블록·통계 블록 모두 x36,
+    // 통계 블록 폭 330 = 402 - 36*2. 이 폭이라야 SpaceBetween 간격이 시안의 22.5 가 된다.
+    Column(modifier = Modifier.padding(horizontal = 36.dp)) {
+        // 시안 실측 35.5 (탭 바 끝 162 → 캐릭터 윗변 197.5). 텍스트가 아니라 캐릭터가
+        // 행의 위아래를 정한다 — 캐릭터 91 이 텍스트 묶음 78.4 보다 크다.
+        Spacer(modifier = Modifier.height(36.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
@@ -113,7 +117,8 @@ private fun StreakHeader(summary: ChallengeSummary?) {
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        // 시안 실측 27.7 (캐릭터 밑변 288.3 → 통계 블록 316).
+        Spacer(modifier = Modifier.height(28.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -212,7 +217,8 @@ private fun BuddySection(
             .fillMaxWidth()
             .background(ModyTheme.colors.gray01)
             .padding(horizontal = 24.dp)
-            .padding(top = 32.dp, bottom = 24.dp),
+            // 시안 실측: 배경 423~836, 내용 455~804 → 위 32 / 아래 32.
+            .padding(top = 32.dp, bottom = 32.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

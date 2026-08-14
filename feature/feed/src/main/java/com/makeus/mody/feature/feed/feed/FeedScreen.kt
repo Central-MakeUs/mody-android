@@ -285,7 +285,8 @@ private fun FeedList(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 80.dp),
+        // top 16: 시안 주간 스트립 끝 283 → 첫 카드 299.
+        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(state.feeds, key = { it.id }) { card ->

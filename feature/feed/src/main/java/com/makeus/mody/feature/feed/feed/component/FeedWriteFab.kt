@@ -68,7 +68,8 @@ fun FeedWriteFab(
                 .navigationBarsPadding()
                 .padding(end = 24.dp, bottom = fabBottomPadding),
             horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            // 시안 실측 10 (항목 56, 다음 항목 66).
+        verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (expanded) {
                 WriteMenuItem(label = "운동 기록", icon = ModyIcons.Exercise, onClick = onWriteExercise)
@@ -100,12 +101,14 @@ private fun WriteMenuItem(
     onClick: () -> Unit,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // 시안 실측 8 (라벨 끝 67 → 버튼 75).
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            style = ModyTheme.typography.b6,
+            // 시안 라벨 높이 25 = 18sp x 1.4 (b3). 56 높이 안에서 y15.5 로 중앙 정렬된다.
+            style = ModyTheme.typography.b3,
             color = ModyTheme.colors.white,
         )
         Box(

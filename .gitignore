@@ -23,3 +23,6 @@ release/
 *.jks
 *.keystore
 keystore.properties
+# 예외: debug 전용 키스토어. 팀·CI 가 같은 서명을 써야 카카오 키 해시가 고정된다.
+# 비밀번호가 안드로이드 기본값(android)인 공개 키스토어이고, 릴리스 서명키와 무관하다.
+!app/debug.keystore

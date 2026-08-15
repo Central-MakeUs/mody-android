@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -299,14 +298,23 @@ private fun BuddyRow(
     }
 }
 
+/**
+ * 버디 카드 우측 버튼·배지 규격. 시안 `Button` 인스턴스(251:3268 등)가 전부 88x34 다.
+ *
+ * 세 상태가 같은 자리에서 서로 바뀌므로 폭이 다르면 목록이 들쭉날쭉해 보인다.
+ * 폭을 고정으로 두면 글자가 넘칠 때 잘리니, 텍스트 길이는 이 안에 들어와야 한다.
+ */
+private val NudgeSlotWidth = 88.dp
+private val NudgeSlotHeight = 34.dp
+private val NudgeSlotShape = RoundedCornerShape(8.dp)
+
 /** 기록 완료(비활성 회색) 배지. */
 @Composable
 private fun RecordedBadge() {
     Box(
         modifier = Modifier
-            .width(88.dp)
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(width = NudgeSlotWidth, height = NudgeSlotHeight)
+            .clip(NudgeSlotShape)
             .background(ModyTheme.colors.gray03),
         contentAlignment = Alignment.Center,
     ) {
@@ -314,6 +322,7 @@ private fun RecordedBadge() {
             text = "기록 완료",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.white,
+            maxLines = 1,
         )
     }
 }
@@ -323,16 +332,13 @@ private fun RecordedBadge() {
 private fun NudgedBadge() {
     Box(
         modifier = Modifier
-            // "기록 완료" 배지와 폭을 맞추되, 글자가 길어 88dp 를 넘으면 잘리지 않게 늘어난다.
-            .widthIn(min = 88.dp)
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(ModyTheme.colors.gray02)
-            .padding(horizontal = 10.dp),
+            .size(width = NudgeSlotWidth, height = NudgeSlotHeight)
+            .clip(NudgeSlotShape)
+            .background(ModyTheme.colors.gray02),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "이미 찔렀어요",
+            text = "찌르기 완료",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.gray06,
             maxLines = 1,
@@ -345,13 +351,13 @@ private fun NudgedBadge() {
 private fun NudgeButton(enabled: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(width = NudgeSlotWidth, height = NudgeSlotHeight)
+            .clip(NudgeSlotShape)
             .background(ModyTheme.colors.primary100)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(start = 6.dp, end = 8.dp),
+            .clickable(enabled = enabled, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        // 폭이 고정이라 좌우 패딩 대신 가운데 정렬로 여백을 나눈다.
+        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
     ) {
         Icon(
             painter = painterResource(ModyIcons.Nudge),
@@ -363,6 +369,7 @@ private fun NudgeButton(enabled: Boolean, onClick: () -> Unit) {
             text = "콕 찌르기",
             style = ModyTheme.typography.c1,
             color = ModyTheme.colors.gray10,
+            maxLines = 1,
         )
     }
 }

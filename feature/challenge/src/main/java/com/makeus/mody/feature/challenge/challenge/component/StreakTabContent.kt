@@ -83,27 +83,41 @@ private fun StreakHeader(summary: ChallengeSummary?) {
         Spacer(modifier = Modifier.height(24.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
-                // 글자 아래 여백으로 붙어 글자만 위로 뜨기 때문. 베이스라인으로 맞춘다.
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                if (summary.allMemberRecordedDays > 0) {
+                    // 두 글자 크기가 달라 Bottom 정렬은 어긋난다. 숫자의 lineHeight(50.4sp)가
+                    // 글자 아래 여백으로 붙어 글자만 위로 뜨기 때문. 베이스라인으로 맞춘다.
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = "${summary.allMemberRecordedDays}",
+                            style = ModyTheme.typography.h1
+                                .copy(fontSize = 36.sp, lineHeight = 50.4.sp),
+                            color = ModyTheme.colors.gray09,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                        Text(
+                            text = "일째",
+                            style = ModyTheme.typography.h1,
+                            color = ModyTheme.colors.gray09,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                    }
                     Text(
-                        text = "${summary.allMemberRecordedDays}",
-                        style = ModyTheme.typography.h1.copy(fontSize = 36.sp, lineHeight = 50.4.sp),
+                        text = "전원 연속 기록 완료!",
+                        style = ModyTheme.typography.b2,
                         color = ModyTheme.colors.gray09,
-                        modifier = Modifier.alignByBaseline(),
                     )
+                } else {
+                    // 0 을 그대로 쓰면 "0일째 전원 연속 기록 완료!" 가 돼, 아직 아무도 기록하지
+                    // 않았는데 달성한 것처럼 읽힌다. 시안(251:3523)은 숫자를 빼고 권유 문구만 둔다.
+                    //
+                    // 줄바꿈은 넣지 않는다. 남은 폭(354 - 일러스트 118 = 236)에서 자연히
+                    // "버디들과 연속기록을 / 시작해보세요!" 로 갈려 시안의 2줄(높이 56)과 같다.
                     Text(
-                        text = "일째",
-                        style = ModyTheme.typography.h1,
+                        text = "버디들과 연속기록을 시작해보세요!",
+                        style = ModyTheme.typography.b2,
                         color = ModyTheme.colors.gray09,
-                        modifier = Modifier.alignByBaseline(),
                     )
                 }
-                Text(
-                    text = "전원 연속 기록 완료!",
-                    style = ModyTheme.typography.b2,
-                    color = ModyTheme.colors.gray09,
-                )
             }
             Image(
                 painter = painterResource(R.drawable.img_streak),
@@ -370,6 +384,29 @@ private fun StreakTabContentPreview() {
                 NudgeTarget(1, "예은", null, recordedToday = true, NudgeButtonStatus.RECORDED),
                 NudgeTarget(2, "동준", null, recordedToday = false, NudgeButtonStatus.AVAILABLE),
                 NudgeTarget(3, "도윤", null, recordedToday = false, NudgeButtonStatus.NUDGED),
+            ),
+            nudgingMemberIds = emptySet(),
+            onNudgeClick = {},
+        )
+    }
+}
+
+/** 아직 아무도 기록하지 않은 그룹 — 숫자 대신 권유 문구(시안 251:3523). */
+@Preview(showBackground = true)
+@Composable
+private fun StreakTabContentZeroDayPreview() {
+    ModyTheme {
+        StreakTabContent(
+            isLoading = false,
+            summary = ChallengeSummary(
+                daysTogether = 0,
+                allMemberRecordedDays = 0,
+                monthlyExerciseMinutes = 0,
+                monthlyCompletedChallengeCount = 0,
+            ),
+            buddies = listOf(
+                NudgeTarget(1, "예은", null, recordedToday = false, NudgeButtonStatus.AVAILABLE),
+                NudgeTarget(2, "동준", null, recordedToday = false, NudgeButtonStatus.AVAILABLE),
             ),
             nudgingMemberIds = emptySet(),
             onNudgeClick = {},

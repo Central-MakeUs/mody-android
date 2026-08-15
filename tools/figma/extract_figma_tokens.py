@@ -314,8 +314,21 @@ def main():
         walk(doc, [], acc, counter)
         frames[node_id] = {"name": doc.get("name"), "nodes": acc}
 
+    # 요청한 노드가 하나라도 빠지면 쓰지 않고 멈춘다.
+    #
+    # 예전엔 경고만 찍고 나머지로 파일을 썼다. 그 raw 덤프는 사람이 STEP 2 에서 lock 으로
+    # 옮기는 입력이라, 빠진 프레임이 조용히 lock 밖으로 나가고 커버리지가 좁아진다.
+    # "대조했다"고 믿는 범위와 실제 범위가 갈라지는 게 이 도구가 막으려는 실패 그 자체다.
+    #
+    # 노드 id 가 낡았거나(프레임 삭제·재생성) 다른 파일의 id 를 준 경우다. 사람이 직접
+    # 돌리는 스크립트니 여기서 멈추고 id 를 고쳐 다시 부르는 게 맞다.
     if missing_ids:
-        print("  경고: 응답에 없는 노드 — {}".format(", ".join(missing_ids)), file=sys.stderr)
+        print("응답에 없는 노드 — {}".format(", ".join(missing_ids)), file=sys.stderr)
+        print("  노드 id 가 낡았거나 다른 파일의 id 다. 프레임을 우클릭 > Copy link 해서"
+              " URL 을 다시 받아라.", file=sys.stderr)
+        print("  부분 결과는 쓰지 않았다 — lock 커버리지가 조용히 좁아지는 걸 막는다.",
+              file=sys.stderr)
+        return 1
 
     result = {
         "fileKey": file_key,

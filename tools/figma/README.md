@@ -40,6 +40,11 @@ python3 tools/figma/extract_figma_tokens.py --file-key uQWUtLv8xzOFNrthwozXs9 --
 기본값을 두면 엉뚱한 파일을 보고도 정상 동작한 것처럼 보인다. URL 을 통째로 주면 거기서
 읽으므로 어긋날 일이 없다.
 
+**요청한 노드가 하나라도 응답에 없으면 아무것도 쓰지 않고 exit 1 이다.** 같은 이유다 —
+부분 결과를 써두면 빠진 프레임이 조용히 lock 밖으로 나가고, "대조했다"고 믿는 범위와
+실제 범위가 갈라진다. 노드 id 가 낡았거나(프레임 삭제·재생성) 다른 파일의 id 인 경우니
+Copy link 로 URL 을 다시 받아 부른다.
+
 결과: `tools/figma/out/figma-tokens-raw.json` (gitignore 대상 — 재생성 가능)
 
 프레임별로 모든 노드의 다음 값이 들어간다.

@@ -246,6 +246,63 @@ buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 - **실패를 조용히 넘기지 않기**: 조회 실패를 빈 목록으로 흡수하면 "데이터 없음"과 구분되지 않는다.
   등록·삭제 실패를 삼키면 사용자가 성공한 줄 알고 화면을 닫는다.
 
+## 시안대로 화면 짜기
+
+**절차는 `figma-spec-first` 스킬(`.claude/skills/figma-spec-first/`)을 따른다.** 화면을
+새로 짜거나 간격을 고칠 때 그 스킬을 먼저 읽는다. 스킬은 프로젝트 무관한 절차만 담고,
+여기는 모디에만 해당하는 값들이다.
+
+### 시안 파일
+
+```
+file key: uQWUtLv8xzOFNrthwozXs9
+https://figma.com/design/uQWUtLv8xzOFNrthwozXs9/모디-MODY--export용-
+```
+
+구 파일 `eUXrUuSsupAVdKb5xIatWW` 는 폐기됐다(PPT 페이지만 남음). `9:29`("UI" 캔버스)에
+`get_metadata` 를 통째로 부르면 응답이 감당이 안 되니 화면 단위 노드로 좁힌다.
+
+자주 쓴 노드: `251:3651`(걸음 수) · `251:2309`(챌린지 탭) · `251:3238`(연속 기록 탭) ·
+`251:3880`(주간 챌린지 상세) · `512:4543`(공용 chip)
+
+### Figma 변수명 → 코드 토큰
+
+이름이 서로 다르다. 숫자를 직접 쓰지 말고 이 표로 옮긴다.
+
+| Figma | 코드 |
+|---|---|
+| `Main0` / `Main` / `Main3` / `Main4` | `ModyColors.primary0` / `primary100` / `primary300` / `primary400` |
+| `Sub` | `ModyColors.secondary100` |
+| `Gray1` ~ `Gray10` | `ModyColors.gray01` ~ `gray10` (한 자리는 0 패딩) |
+| `H1_Bold` / `H3_Bold` | `ModyTypography.h1` / `h3` |
+| `B3_SemiBold` / `B5_Bold` / `B6_SemiBold` | `ModyTypography.b3` / `b5` / `b6` |
+| `C1_Semibold` / `C2_Medium` / `C3_SemiBold` | `ModyTypography.c1` / `c2` / `c3` |
+
+전체 매핑은 `tools/figma/figma-to-code-mapping.json`.
+
+### 토큰 검사
+
+```bash
+python3 tools/figma/check_design_tokens.py
+```
+
+`tools/figma/figma-tokens.lock.json`(시안 스냅샷)과 `Color.kt` / `Type.kt` 를 대조한다.
+Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 사람이 lock 을 갱신한다 —
+절차는 `tools/figma/README.md`.
+
+모디 시안은 타이포가 전부 `lineHeight = fontSize × 1.4` 다. 이 규칙은 lock 에 없는
+토큰까지 전부 적용된다.
+
+### 반복해서 났던 실수
+
+- **`24` 를 손이 먼저 친다.** 정정 18건 중 9건. 특히 가로 패딩 — 한 화면에 24 와 36 이
+  같이 있다(연속 기록 탭 상단 36, 버디 섹션 24).
+- **간격 값이 정수가 아니다.** `37`, `27.7`, `22.5`, `35.5`. 반올림하면 어긋난다.
+  그래서 스페이싱 토큰을 만들 수 없고 실측 + 근거 주석이 유일한 답이다.
+- **공용 컴포넌트가 없어 같은 걸 두 번 그렸다.** 시안 `chip`(512:4543)이 "완료" 배지와
+  D-N 칩 두 곳에 쓰이는데 코드엔 공용 칩이 없어 규격이 갈라졌다. `RoundedCornerShape(100.dp)`
+  가 9곳에 흩어져 있다(`docs/design-audit.md`) — `ModyChip` 추출이 남은 과제.
+
 ## 핵심 파일 위치
 
 | 역할 | 경로 |

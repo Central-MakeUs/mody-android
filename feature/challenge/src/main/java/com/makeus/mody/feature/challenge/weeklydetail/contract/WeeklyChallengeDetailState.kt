@@ -14,6 +14,13 @@ data class WeeklyChallengeDetailState(
     val deadlineDayOfWeek: String = "",
     val isLoading: Boolean = true,
     val proofs: List<WeeklyChallengeProof> = emptyList(),
+    /**
+     * 내 memberId. 인증 사진 중 내 것을 가려내는 데만 쓴다.
+     *
+     * null 이면 아직 못 읽었거나 조회에 실패한 것이다. 그때는 "아직 인증 안 함"으로 다뤄
+     * 인증하기 버튼을 띄운다 — 숨기면 인증 자체를 못 한다.
+     */
+    val myMemberId: Long? = null,
     /** 촬영 오버레이 표시 중. */
     val isCameraVisible: Boolean = false,
     /** 업로드 진행 중 — 중복 등록 방지 + 인디케이터. */

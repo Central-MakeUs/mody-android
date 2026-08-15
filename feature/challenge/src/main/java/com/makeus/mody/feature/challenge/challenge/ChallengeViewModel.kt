@@ -263,11 +263,15 @@ class ChallengeViewModel @Inject constructor(
     }
 
     /**
-     * 걸음 수를 서버에 반영하고 결과를 게이지에 즉시 옮긴다.
+     * 걸음 수를 서버에 반영하고, 서버가 재계산한 누적값을 게이지에 즉시 옮긴다.
      *
      * 실제 동기화(카운트 시작 시각 반영·날짜별 백필)는 [syncTodaySteps] 가 한다.
-     * 업로드가 성공하면 서버 누적값이 정답이므로 그걸 쓰고, 실패하면(진행 중인 챌린지가
-     * 없을 때 서버가 실패를 준다) 방금 읽은 값이라도 보여준다.
+     *
+     * 올린 날이 하나도 없으면 게이지를 건드리지 않는다. 누적값은 upsert 응답에만 실려
+     * 오므로 그때 `currentStepCount` 가 null 인데, 이걸 0 으로 대신 채우면 방금 조회한
+     * 서버 값이 0 으로 덮인다. 업로드가 안 일어나는 건 예외 상황이 아니라 일상이다 —
+     * 목표를 이미 달성해 서버가 upsert 를 거부하거나, 오늘·어제 걸음이 0 이면 늘 이
+     * 경로다.
      */
     private suspend fun uploadTodaySteps(groupId: Long, challenge: StepChallengeStatus? = null) {
         setState { copy(isSyncingSteps = true) }
@@ -279,13 +283,15 @@ class ChallengeViewModel @Inject constructor(
         } catch (_: Exception) {
             null
         }
-        if (result != null) {
+        val serverTotal = result?.currentStepCount
+        val serverTarget = result?.targetStepCount
+        if (serverTotal != null) {
             setState {
                 copy(
-                    stepChallenge = stepChallenge?.let { challenge ->
-                        challenge.copy(
-                            currentStepCount = result.currentStepCount ?: result.readStepCount,
-                            targetStepCount = result.targetStepCount ?: challenge.targetStepCount,
+                    stepChallenge = stepChallenge?.let { current ->
+                        current.copy(
+                            currentStepCount = serverTotal,
+                            targetStepCount = serverTarget ?: current.targetStepCount,
                         )
                     },
                 )

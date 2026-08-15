@@ -27,9 +27,18 @@ private const val RESYNC_DAYS = 2L
 data class StepSyncResult(
     /** 서버에 올린 날짜 수. 0 이면 올릴 게 없었다. */
     val uploadedDays: Int,
-    /** 이번 동기화로 읽은 걸음 수 합(올린 날짜들의 합). */
+    /**
+     * 이번 동기화로 올린 날짜들의 걸음 수 합.
+     *
+     * **누적 걸음 수가 아니다.** 최근 며칠치 증분이라 화면의 "달성 걸음수" 자리에 쓰면
+     * 안 된다. 그 값은 [currentStepCount] 뿐이고, 없으면 없는 대로 둬야 한다.
+     */
     val readStepCount: Int,
-    /** 마지막 upsert 응답의 그룹 누적값. 업로드가 없었거나 실패면 null. */
+    /**
+     * 마지막 upsert 응답의 그룹 누적값(서버 재계산). 올린 날이 하나도 없으면 null.
+     *
+     * null 을 0 으로 대신 채우면 안 된다 — "모른다"와 "0보"는 다르다.
+     */
     val currentStepCount: Int?,
     val targetStepCount: Int?,
 )

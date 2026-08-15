@@ -131,9 +131,9 @@ private fun NotificationSettingContent(
 
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(8.dp))
-            // 코멘트/챌린지 알림 토글: Phase 2 기능이 열렸을 때만 노출.
+            // 알림 토글 노출은 기능 플래그를 따른다 — 댓글과 챌린지가 서로 다른 플래그다.
             // 숨겨져도 서버 PATCH(전체 교체)엔 보관된 값을 그대로 실어 설정을 보존한다.
-            if (state.phaseTwoFeaturesEnabled) {
+            if (state.commentFeatureEnabled) {
                 ToggleRow(
                     title = "코멘트 알림",
                     description = "친구들이 내 기록에 남긴 댓글 알림을 받아요.",
@@ -144,6 +144,8 @@ private fun NotificationSettingContent(
                     },
                 )
                 RowDivider()
+            }
+            if (state.phaseTwoFeaturesEnabled) {
                 ToggleRow(
                     title = "챌린지 알림",
                     description = "챌린지와 관련된 모든 알림을 받아요.",

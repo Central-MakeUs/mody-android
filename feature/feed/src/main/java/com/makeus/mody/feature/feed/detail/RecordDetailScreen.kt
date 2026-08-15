@@ -96,8 +96,8 @@ private fun RecordDetailContent(
             )
         }
 
-        // 응원 댓글 입력바: Phase 2 기능이 열렸을 때만 노출(Phase 1 전송 차단).
-        if (state.phaseTwoFeaturesEnabled) {
+        // 응원 댓글 입력바: comment_flag 가 열렸을 때만 노출(닫히면 전송도 차단).
+        if (state.commentEnabled) {
             CommentInputBar(
                 value = state.commentInput,
                 canSend = state.canSend,
@@ -141,8 +141,8 @@ private fun DetailBody(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = headerHeightDp, bottom = 12.dp),
         ) {
-            // 응원 댓글: Phase 2 기능이 열렸을 때만 노출(빈 상태 문구 포함).
-            if (state.phaseTwoFeaturesEnabled) {
+            // 응원 댓글: comment_flag 가 열렸을 때만 노출(빈 상태 문구 포함).
+            if (state.commentEnabled) {
                 if (state.comments.isEmpty() && !state.isCommentsLoading) {
                     item { EmptyComments() }
                 } else {

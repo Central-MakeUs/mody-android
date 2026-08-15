@@ -8,6 +8,7 @@ import com.makeus.mody.core.domain.model.NotificationType
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.NotificationRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationDestination
@@ -31,6 +32,7 @@ class NotificationViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
     private val unreadNotificationStore: UnreadNotificationStore,
+    private val remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<NotificationState, NotificationIntent>(NotificationState()) {
 
     /** 다음 페이지 커서. null 이면 첫 페이지이거나 더 없음. */
@@ -42,6 +44,19 @@ class NotificationViewModel @Inject constructor(
     init {
         loadNotifications(initial = true)
     }
+
+    /**
+     * 댓글 기능이 닫혀 있으면 댓글 알림은 목록에서 뺀다.
+     *
+     * 읽음 처리는 거르기 전 원본으로 하므로(아래 [markUnreadAsRead]) 숨긴 알림 때문에
+     * 뱃지가 남지는 않는다. 서버가 계속 보내는 걸 클라가 가리는 형태다.
+     */
+    private fun List<Notification>.filterByFeatureFlags(): List<Notification> =
+        if (remoteConfigRepository.commentEnabled.value) {
+            this
+        } else {
+            filterNot { it.type == NotificationType.COMMENT || it.type == NotificationType.COMMENT_CREATED }
+        }
 
     override suspend fun processIntent(intent: NotificationIntent) {
         when (intent) {
@@ -82,7 +97,7 @@ class NotificationViewModel @Inject constructor(
                 nextCursor = page.nextCursor
                 hasNext = page.hasNext
                 val now = Instant.now()
-                val newItems = page.notifications.map { it.toUiModel(now) }
+                val newItems = page.notifications.filterByFeatureFlags().map { it.toUiModel(now) }
                 setState {
                     copy(
                         notifications = if (initial) newItems else notifications + newItems,

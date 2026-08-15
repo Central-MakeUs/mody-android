@@ -432,8 +432,13 @@ private fun RankRow(ranking: StepRanking) {
             text = ranking.nickname,
             style = ModyTheme.typography.b6,
             color = ModyTheme.colors.gray10,
+            // 이름이 길면 남은 폭 안에서 줄바꿈돼 행 높이가 커지고, 등수·아바타·걸음 수의
+            // 세로 정렬이 그 행만 어긋난다.
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        Spacer(modifier = Modifier.width(8.dp))
         StepCountText(ranking.stepCount)
     }
 }

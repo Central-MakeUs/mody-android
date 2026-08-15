@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -268,6 +269,9 @@ private fun BuddyRow(
                 text = buddy.nickname,
                 style = ModyTheme.typography.b6,
                 color = ModyTheme.colors.gray10,
+                // 이름이 길면 줄바꿈돼 행 높이가 커지고 아바타·버튼 정렬이 어긋난다.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = if (buddy.recordedToday) "오늘 기록을 완료했어요." else "연속기록을 위해 불러주세요!",

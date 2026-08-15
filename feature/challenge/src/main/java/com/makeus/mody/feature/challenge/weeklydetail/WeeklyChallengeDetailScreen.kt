@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -323,6 +324,10 @@ private fun ProofCell(proof: WeeklyChallengeProof) {
                 text = proof.nickname,
                 style = ModyTheme.typography.c2,
                 color = ModyTheme.colors.white,
+                // 셀 폭(172)이 좁아 이름이 길면 줄바꿈되고, 사진 위 그라데이션 밖으로
+                // 넘어가 읽히지 않는다.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

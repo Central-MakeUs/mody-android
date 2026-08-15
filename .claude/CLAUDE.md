@@ -288,7 +288,11 @@ python3 tools/figma/check_design_tokens.py
 
 `tools/figma/figma-tokens.lock.json`(시안 스냅샷)과 `Color.kt` / `Type.kt` 를 대조한다.
 Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 사람이 lock 을 갱신한다 —
-절차는 `tools/figma/README.md`.
+절차는 `tools/figma/README.md`. CI(`.github/workflows/ci.yml`)가 PR 마다 돌린다.
+
+**초록불을 "시안대로다"로 읽으면 안 된다.** 이 검사는 토큰 *선언부*만 본다. `gray07`
+자리에 `gray08` 을 써도 통과하고, 간격은 아예 범위 밖이다. 실제로 이 CI 를 붙인 다음 날
+간격 14건이 틀렸다. 간격은 스킬의 스펙 시트로만 잡힌다.
 
 모디 시안은 타이포가 전부 `lineHeight = fontSize × 1.4` 다. 이 규칙은 lock 에 없는
 토큰까지 전부 적용된다.
@@ -300,8 +304,14 @@ Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 �
 - **간격 값이 정수가 아니다.** `37`, `27.7`, `22.5`, `35.5`. 반올림하면 어긋난다.
   그래서 스페이싱 토큰을 만들 수 없고 실측 + 근거 주석이 유일한 답이다.
 - **공용 컴포넌트가 없어 같은 걸 두 번 그렸다.** 시안 `chip`(512:4543)이 "완료" 배지와
-  D-N 칩 두 곳에 쓰이는데 코드엔 공용 칩이 없어 규격이 갈라졌다. `RoundedCornerShape(100.dp)`
-  가 9곳에 흩어져 있다(`docs/design-audit.md`) — `ModyChip` 추출이 남은 과제.
+  D-N 칩 두 곳에 쓰이는데 코드엔 공용 칩이 없어 규격이 갈라졌다. `ModyChip` 으로 추출했다
+  (`core/designsystem/.../component/ModyChip.kt`). 칩 모양이 필요하면 새로 그리지 말고
+  이걸 쓴다 — `RoundedCornerShape(100.dp)` 가 아직 7곳에 남아 있어 또 갈라질 수 있다.
+
+### 공용 컴포넌트 카탈로그
+
+`core/designsystem/.../catalog/ModyCatalog.kt` 의 `@Preview` 를 Android Studio 에서 열면
+공용 컴포넌트를 한눈에 볼 수 있다. **새로 그리기 전에 여기부터 본다.**
 
 ## 핵심 파일 위치
 

@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -337,11 +338,18 @@ private fun RankingSection(rankings: List<StepRanking>) {
 
         if (top3.isNotEmpty()) {
             Spacer(modifier = Modifier.height(28.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(52.dp, Alignment.CenterHorizontally),
-            ) {
-                top3.forEach { TopRankColumn(it) }
+            // 폭을 인원수대로 등분한다. 3명이면 3등분, 2명이면 2등분, 1명이면 전체 폭에
+            // 가운데 정렬 — 그룹 인원이 적어도 자연스럽게 놓인다.
+            //
+            // 간격을 고정하면(예전: spacedBy(52)) 열 폭을 내용이 정하게 돼, 닉네임이나
+            // 걸음 수 자릿수가 다르면 아바타 사이 거리가 제각각이 되고 2등이 화면
+            // 중앙에서 벗어난다. 1등만 왕관이 붙는 것도 열 폭을 키운다.
+            //
+            // 시안(251:2567)도 간격 52 에 열 폭은 내용이 정하는 구조라 목업 데이터에서만
+            // 성립한다. 등분하면 아바타 중심이 83·201·319 로 시안(83·203·321) 대비 최대
+            // 2 차이다 — 시안 자체 간격도 120/118 로 균등하지 않다.
+            Row(modifier = Modifier.fillMaxWidth()) {
+                top3.forEach { TopRankColumn(ranking = it, modifier = Modifier.weight(1f)) }
             }
         }
         if (rest.isNotEmpty()) {
@@ -356,8 +364,8 @@ private fun RankingSection(rankings: List<StepRanking>) {
 }
 
 @Composable
-private fun TopRankColumn(ranking: StepRanking) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun TopRankColumn(ranking: StepRanking, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (ranking.rank == 1) {
                 Icon(
@@ -388,6 +396,9 @@ private fun TopRankColumn(ranking: StepRanking) {
             text = ranking.nickname,
             style = ModyTheme.typography.b6,
             color = ModyTheme.colors.gray10,
+            // 이름이 길면 줄바꿈돼 그 열만 키가 커지고 아래 걸음 수 줄이 어긋난다.
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Spacer(modifier = Modifier.height(4.dp))
         StepCountText(ranking.stepCount)

@@ -62,29 +62,26 @@ fun AdjustLayer(
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val density = LocalDensity.current
-        val screenW = constraints.maxWidth.toFloat()
         val screenH = constraints.maxHeight.toFloat()
 
-        val frameW = screenW
-        val frameH = frameW * frameRatio
-        val baseFrameTop = (screenH - frameH) / 2f
-
-        // 사진은 화면 중앙 고정. 프레임(사각형)이 위아래로 움직인다.
-        val scale = screenW / image.width
-        val dispH = image.height * scale
-        val imageTop = (screenH - dispH) / 2f
-        val imageBottom = imageTop + dispH
-
-        // 프레임은 화면·사진 안에 머문다.
-        val minFrameTop = maxOf(0f, imageTop)
-        val maxFrameTop = minOf(screenH - frameH, imageBottom - frameH)
-        val hasRoom = maxFrameTop >= minFrameTop
-        val minOff = minFrameTop - baseFrameTop
-        val maxOff = maxFrameTop - baseFrameTop
+        // 배치·크롭 계산은 CropGeometry 의 순수 함수에 있다(화면 크기·사진 비율 조합이
+        // 많아 손으로 확인이 안 돼 테스트로 고정했다).
+        val layout = remember(constraints, image.width, image.height, frameRatio) {
+            cropLayout(
+                screenWidth = constraints.maxWidth.toFloat(),
+                screenHeight = screenH,
+                imageWidth = image.width,
+                imageHeight = image.height,
+                frameRatio = frameRatio,
+            )
+        }
+        val frameH = layout.frameHeight
+        val imageTop = layout.imageTop
+        val dispH = image.height * layout.imageScale
+        val hasRoom = layout.hasRoom
 
         var frameOffset by remember { mutableFloatStateOf(0f) }
-        val frameTop =
-            if (hasRoom) (baseFrameTop + frameOffset).coerceIn(minFrameTop, maxFrameTop) else baseFrameTop
+        val frameTop = layout.frameTopAt(frameOffset)
         val frameBottom = frameTop + frameH
 
         Box(
@@ -93,7 +90,8 @@ fun AdjustLayer(
                 .pointerInput(image.uri, hasRoom) {
                     if (!hasRoom) return@pointerInput
                     detectDragGestures { _, drag ->
-                        frameOffset = (frameOffset + drag.y).coerceIn(minOff, maxOff)
+                        frameOffset =
+                            (frameOffset + drag.y).coerceIn(layout.minOffset, layout.maxOffset)
                     }
                 },
         ) {
@@ -170,14 +168,7 @@ fun AdjustLayer(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             RetakeButton(onClick = onRetake)
-            UploadButton(onClick = {
-                // 프레임(표시 좌표)을 원본 픽셀 기준으로 환산 후 원본 높이로 정규화.
-                val topInImage = (frameTop - imageTop) / scale
-                val heightInImage = frameH / scale
-                val y = (topInImage / image.height).coerceIn(0f, 1f)
-                val h = (heightInImage / image.height).coerceIn(0f, 1f - y)
-                onConfirm(image.uri, CropRegion(x = 0f, y = y, width = 1f, height = h))
-            })
+            UploadButton(onClick = { onConfirm(image.uri, layout.cropRegionAt(frameTop)) })
         }
     }
 }

@@ -22,6 +22,11 @@ jobs:
       - name: Build Debug
         run: ./gradlew assembleDebug
 
+      # 유닛 테스트 + 아키텍처 규칙(konsist). 후자는 CLAUDE.md 에 글로만 있던 규칙을
+      # 코드로 옮긴 것이라, 규칙을 벗어난 코드가 컴파일되더라도 여기서 걸린다.
+      - name: Unit Test
+        run: ./gradlew testDebugUnitTest
+
       - name: Lint
         run: ./gradlew lint
 

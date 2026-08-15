@@ -110,6 +110,10 @@ data class StepChallengeStatus(
 
 /**
  * 챌린지 변경 화면에서 고를 수 있는 걸음 수 챌린지 한 줄.
+ *
+ * [selected] 와 [completed] 는 둘 다 "고를 수 없음"을 뜻한다 — 진행 중이면 바꿀 게 없고,
+ * 이미 달성했으면 다시 골라봐야 기록만 초기화되고 얻는 게 없다.
+ *
  * @param selected 현재 그룹이 진행 중인 챌린지.
  * @param completed 이미 달성한 챌린지.
  */
@@ -121,7 +125,6 @@ data class StepChallengeOption(
     val distanceKm: Double,
     val targetStepCount: Int,
     val selected: Boolean,
-    /** 이미 달성한 챌린지. 서버가 아직 안 주므로 현재는 항상 false. */
     val completed: Boolean = false,
 )
 

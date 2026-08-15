@@ -33,8 +33,15 @@ class StepChallengeChangeViewModel @Inject constructor(
             is StepChallengeChangeIntent.ScreenEntered -> load()
             is StepChallengeChangeIntent.BackClicked ->
                 navigationHelper.navigate(NavigationEvent.Up)
+            // 고를 수 없는 챌린지는 확인 다이얼로그까지 가지 않는다. 화면이 탭을 막고
+            // 있지만 규칙 자체는 여기 둔다 — 화면만 믿으면 목록이 다른 경로로 열릴 때
+            // (딥링크·재사용) 그대로 새어 나간다.
+            //   selected  이미 진행 중 — 바꿀 게 없다
+            //   completed 이미 달성함 — 다시 고르면 기록이 초기화되는데 얻는 게 없다
             is StepChallengeChangeIntent.OptionClicked -> setState {
-                copy(pendingOption = options.firstOrNull { it.challengeId == intent.challengeId })
+                val target = options.firstOrNull { it.challengeId == intent.challengeId }
+                if (target == null || target.selected || target.completed) this
+                else copy(pendingOption = target)
             }
             is StepChallengeChangeIntent.ChangeCancelled -> setState { copy(pendingOption = null) }
             is StepChallengeChangeIntent.ChangeConfirmed -> change()

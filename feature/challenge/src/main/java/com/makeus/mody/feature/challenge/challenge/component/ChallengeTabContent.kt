@@ -61,6 +61,9 @@ private const val ParticipantAvatarMax = 3
 private val ParticipantAvatarSize = 24.dp
 private val ParticipantAvatarOverlap = 6.dp
 
+/** 1등 왕관 아이콘 크기(시안 251:2571). 반대쪽 여백도 같은 값을 쓴다. */
+private val CrownSize = 20.dp
+
 /** 게이지 좌우 여백 — 섹션 패딩(24) 안쪽으로 더 들어가는 값. 시안 left 54 기준. */
 private val GaugeInset = 30.dp
 
@@ -366,13 +369,18 @@ private fun RankingSection(rankings: List<StepRanking>) {
 @Composable
 private fun TopRankColumn(ranking: StepRanking, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        // 1등만 왕관이 붙는다. 아이콘을 왼쪽에만 두면 [왕관 + 글자] 묶음이 가운데 정렬돼
+        // "1등" 글자가 아이콘 폭의 절반(10)만큼 오른쪽으로 밀리고, 2·3등 글자와 좌우가
+        // 어긋나 보인다. 시안(251:2570)도 이 상태다 — 1등 글자 중심 45 vs 아바타 중심 35.
+        // 반대쪽에 같은 폭을 비워 글자 자체가 열 중앙에 오게 한다.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (ranking.rank == 1) {
+            val hasCrown = ranking.rank == 1
+            if (hasCrown) {
                 Icon(
                     painter = painterResource(ModyIcons.Crown),
                     contentDescription = null,
                     tint = ModyTheme.colors.primary100,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(CrownSize),
                 )
             }
             Text(
@@ -380,6 +388,7 @@ private fun TopRankColumn(ranking: StepRanking, modifier: Modifier = Modifier) {
                 style = ModyTheme.typography.b6,
                 color = ModyTheme.colors.gray10,
             )
+            if (hasCrown) Spacer(modifier = Modifier.width(CrownSize))
         }
         Spacer(modifier = Modifier.height(8.dp))
         ModyAvatar(

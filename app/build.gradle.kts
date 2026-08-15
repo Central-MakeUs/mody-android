@@ -110,6 +110,8 @@ dependencies {
 
 
     testImplementation(libs.junit)
+    // 아키텍처 규칙 검사. :app 이 모든 모듈을 보므로 여기서 전체 소스를 스캔한다.
+    testImplementation(libs.konsist)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

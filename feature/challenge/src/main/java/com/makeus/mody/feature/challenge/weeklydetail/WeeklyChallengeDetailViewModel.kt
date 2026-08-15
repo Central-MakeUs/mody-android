@@ -9,6 +9,7 @@ import com.makeus.mody.core.domain.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.ImageShareRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
+import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.navigation.ChallengeGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -24,6 +25,7 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val imageUploadRepository: ImageUploadRepository,
     private val imageShareRepository: ImageShareRepository,
+    private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<WeeklyChallengeDetailState, WeeklyChallengeDetailIntent>(
@@ -40,7 +42,10 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: WeeklyChallengeDetailIntent) {
         when (intent) {
-            is WeeklyChallengeDetailIntent.ScreenEntered -> loadProofs()
+            is WeeklyChallengeDetailIntent.ScreenEntered -> {
+                loadMyMemberId()
+                loadProofs()
+            }
             is WeeklyChallengeDetailIntent.BackClicked ->
                 navigationHelper.navigate(NavigationEvent.Up)
             is WeeklyChallengeDetailIntent.AddProofClicked ->
@@ -54,6 +59,18 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
             is WeeklyChallengeDetailIntent.ToastShown -> setState { copy(toastMessage = null) }
             is WeeklyChallengeDetailIntent.ErrorShown -> setState { copy(error = null) }
         }
+    }
+
+    /**
+     * 내 memberId 조회 — 인증 사진 중 내 것을 가려내는 판별값.
+     *
+     * 서버가 인증 사진에 isMine 을 주지 않아 직접 비교해야 한다(피드가 신고 메뉴를 가릴 때
+     * 쓰는 것과 같은 방식). 실패하면 null 로 남고, 화면은 "아직 인증 안 함"으로 다뤄
+     * 인증하기 버튼을 그대로 띄운다 — 버튼을 숨기면 인증 자체를 못 하게 된다.
+     */
+    private fun loadMyMemberId() = viewModelScope.launch {
+        runCatching { myPageRepository.getProfile() }
+            .onSuccess { setState { copy(myMemberId = it.memberId) } }
     }
 
     /**

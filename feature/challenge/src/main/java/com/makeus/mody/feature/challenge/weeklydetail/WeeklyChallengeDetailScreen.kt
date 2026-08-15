@@ -141,6 +141,7 @@ private fun WeeklyChallengeDetailContent(
                 Spacer(modifier = Modifier.height(13.dp))
                 ProofGrid(
                     proofs = state.proofs,
+                    myMemberId = state.myMemberId,
                     isUploading = state.isUploading,
                     onAddClick = { onIntent(WeeklyChallengeDetailIntent.AddProofClicked) },
                 )
@@ -212,11 +213,19 @@ private fun ChallengeHeader(title: String, description: String, deadlineDayOfWee
 @Composable
 private fun ProofGrid(
     proofs: List<WeeklyChallengeProof>,
+    myMemberId: Long?,
     isUploading: Boolean,
     onAddClick: () -> Unit,
 ) {
-    // 첫 칸(추가 버튼) + 사진들을 한 줄에 두 칸씩.
-    val cells: List<WeeklyChallengeProof?> = listOf(null) + proofs
+    // 첫 칸은 "내 자리"다. 아직 인증 전이면 추가 버튼(null), 인증했으면 내 사진이 들어가고
+    // 버튼은 사라진다 — 이미 올렸는데 버튼이 남아 있으면 또 올려야 하는 것처럼 보인다.
+    //
+    // myMemberId 가 null(미조회·조회 실패)이면 인증 전으로 다룬다. 버튼을 숨기는 쪽으로
+    // 잘못 판단하면 인증 자체를 못 하게 되므로, 틀릴 때 덜 나쁜 방향을 고른다.
+    val myProof = myMemberId?.let { id -> proofs.firstOrNull { it.memberId == id } }
+    val cells: List<WeeklyChallengeProof?> =
+        if (myProof == null) listOf(null) + proofs
+        else listOf(myProof) + proofs.filterNot { it.proofId == myProof.proofId }
     Column(verticalArrangement = Arrangement.spacedBy(ProofGridGap)) {
         cells.chunked(ProofColumns).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(ProofGridGap)) {
@@ -320,7 +329,14 @@ private fun ProofCell(proof: WeeklyChallengeProof) {
     }
 }
 
-@Preview(showBackground = true, heightDp = 900)
+private val previewProofs = listOf(
+    WeeklyChallengeProof(1, "", null, 1, "모나", null),
+    WeeklyChallengeProof(2, "", null, 2, "키드", null),
+    WeeklyChallengeProof(3, "", null, 3, "도모", null),
+)
+
+/** 아직 인증 전 — 첫 칸이 "인증하기" 버튼. */
+@Preview(name = "인증 전", showBackground = true, heightDp = 900)
 @Composable
 private fun WeeklyChallengeDetailContentPreview() {
     ModyTheme {
@@ -330,11 +346,26 @@ private fun WeeklyChallengeDetailContentPreview() {
                 description = "집까지 계단으로 이동한 사진을 인증해주세요!",
                 deadlineDayOfWeek = "SUNDAY",
                 isLoading = false,
-                proofs = listOf(
-                    WeeklyChallengeProof(1, "", null, 1, "모나", null),
-                    WeeklyChallengeProof(2, "", null, 2, "키드", null),
-                    WeeklyChallengeProof(3, "", null, 3, "도모", null),
-                ),
+                proofs = previewProofs,
+            ),
+            onIntent = {},
+        )
+    }
+}
+
+/** 인증 완료 — 첫 칸이 내 사진(도모)으로 바뀌고 버튼이 사라진다. */
+@Preview(name = "인증 후", showBackground = true, heightDp = 900)
+@Composable
+private fun WeeklyChallengeDetailContentDonePreview() {
+    ModyTheme {
+        WeeklyChallengeDetailContent(
+            state = WeeklyChallengeDetailState(
+                title = "엘레베이터 안 타고 집가기",
+                description = "집까지 계단으로 이동한 사진을 인증해주세요!",
+                deadlineDayOfWeek = "SUNDAY",
+                isLoading = false,
+                proofs = previewProofs,
+                myMemberId = 3,
             ),
             onIntent = {},
         )

@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyChip
+import com.makeus.mody.core.designsystem.component.ModyChipStyle
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -515,18 +517,12 @@ private fun WeeklyChallengeRow(
             .padding(horizontal = 16.dp, vertical = 20.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(ModyTheme.colors.gray09)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = dDayLabel(challenge.deadlineDayOfWeek),
-                    style = ModyTheme.typography.c2,
-                    color = ModyTheme.colors.white,
-                )
-            }
+            // 같은 D-N 칩인데 주간 챌린지 상세는 Primary(노랑)다. 시안 대조로 어느 쪽이
+            // 맞는지 확인이 필요하다 — 지금은 각 화면의 기존 색을 그대로 유지한다.
+            ModyChip(
+                text = dDayLabel(challenge.deadlineDayOfWeek),
+                style = ModyChipStyle.Dark,
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = challenge.title,

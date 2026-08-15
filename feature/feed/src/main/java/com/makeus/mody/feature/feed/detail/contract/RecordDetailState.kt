@@ -24,6 +24,8 @@ data class RecordDetailState(
     val isSending: Boolean = false,
     /** Phase 2 기능(응원 댓글) 노출. Phase 1 에선 댓글 목록·입력바 숨김 + 전송 차단. */
     val phaseTwoFeaturesEnabled: Boolean = false,
+    /** 응원 댓글 노출 여부. 별도 원격 플래그(comment_flag) — 챌린지와 따로 여닫는다. */
+    val commentEnabled: Boolean = false,
 ) : UiState {
     /** 전송 가능: 공백 아님 + 전송 중 아님. */
     val canSend: Boolean get() = commentInput.isNotBlank() && !isSending

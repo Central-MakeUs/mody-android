@@ -35,10 +35,15 @@ class NotificationSettingViewModel @Inject constructor(
 ) : BaseViewModel<NotificationSettingState, NotificationSettingIntent>(NotificationSettingState()) {
 
     init {
-        // 챌린지 기능 플래그 — Phase 1 에선 챌린지 알림 토글 행 숨김(서버 전송값은 그대로 유지).
+        // 기능 플래그 — 닫힌 기능의 알림 토글 행은 숨긴다(서버 전송값은 그대로 유지).
         viewModelScope.launch {
             remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
+            }
+        }
+        viewModelScope.launch {
+            remoteConfigRepository.commentEnabled.collect { enabled ->
+                setState { copy(commentFeatureEnabled = enabled) }
             }
         }
     }

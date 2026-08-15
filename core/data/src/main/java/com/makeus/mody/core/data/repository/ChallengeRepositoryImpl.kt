@@ -132,6 +132,9 @@ class ChallengeRepositoryImpl @Inject constructor(
                 deadlineDayOfWeek = it.deadlineDayOfWeek,
                 participantCount = it.participantCount,
                 randomParticipantNickname = it.randomParticipantNickname,
+                // 필드를 안 주는 서버에서는 완료가 아닌 것으로 본다 — 진행 중인 챌린지에
+                // "완료" 가 뜨는 쪽이 반대보다 나쁘다(인증할 게 남았는데 끝난 줄 안다).
+                isComplete = it.isComplete ?: false,
                 participants = it.participants.map { p ->
                     WeeklyChallengeParticipant(
                         memberId = p.memberId,

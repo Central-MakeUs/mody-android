@@ -41,6 +41,7 @@ import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
+import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
@@ -195,19 +196,10 @@ private fun ChallengeHeader(title: String, description: String, deadlineDayOfWee
                 )
             }
         }
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .clip(RoundedCornerShape(100.dp))
-                .background(ModyTheme.colors.primary100)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-        ) {
-            Text(
-                text = dDayLabel(deadlineDayOfWeek),
-                style = ModyTheme.typography.c2,
-                color = ModyTheme.colors.gray10,
-            )
-        }
+        ModyChip(
+            text = dDayLabel(deadlineDayOfWeek),
+            modifier = Modifier.align(Alignment.TopEnd),
+        )
     }
 }
 

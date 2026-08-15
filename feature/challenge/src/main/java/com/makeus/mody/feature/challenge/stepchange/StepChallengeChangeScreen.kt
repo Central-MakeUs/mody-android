@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.stepchange
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,9 +35,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.foundation.Canvas
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
@@ -218,29 +219,10 @@ private fun StepChallengeOptionCard(
     }
 }
 
-/**
- * "완료" 배지 — 이미 달성한 챌린지.
- *
- * 시안의 `chip` 컴포넌트와 같은 규격이다: padding 8×2, radius 100, Main 배경,
- * C2_Medium 텍스트. 주간 챌린지 상세의 D-N 칩도 같은 컴포넌트다.
- * 코드에는 아직 공용 칩이 없어 화면마다 따로 그리고 있다.
- */
+/** "완료" 배지 — 이미 달성한 챌린지. 시안 `chip` 컴포넌트. */
 @Composable
 private fun CompletedBadge() {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(ModyTheme.colors.primary100)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "완료",
-            style = ModyTheme.typography.c2,
-            color = ModyTheme.colors.gray10,
-            maxLines = 1,
-        )
-    }
+    ModyChip(text = "완료")
 }
 
 /** 60dp 원형 배지 — 점선 링 + 신발 일러스트 + 목표 걸음수. 시안 좌표 그대로 배치. */

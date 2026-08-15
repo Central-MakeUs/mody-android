@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyChip
+import com.makeus.mody.core.designsystem.component.ModyChipStyle
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -521,16 +523,18 @@ private fun WeeklyChallengeRow(
             .padding(horizontal = 16.dp, vertical = 20.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(ModyTheme.colors.gray09)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-            ) {
-                Text(
+            // 완료돼도 목록에서 안 빠지므로, 마감까지 남은 날 대신 완료를 알린다.
+            // 끝난 챌린지에 "D-1" 이 떠 있으면 아직 인증할 게 남은 줄 안다.
+            //
+            // 진행 중 칩이 Dark 인 건 이 화면뿐이다(주간 챌린지 상세는 Primary). 어느 쪽이
+            // 시안인지 확인이 필요한데, 완료 칩까지 Dark 로 두면 노란 배경이 사라져
+            // 상태 구분이 약해진다.
+            if (challenge.isComplete) {
+                ModyChip(text = "완료")
+            } else {
+                ModyChip(
                     text = dDayLabel(challenge.deadlineDayOfWeek),
-                    style = ModyTheme.typography.c2,
-                    color = ModyTheme.colors.white,
+                    style = ModyChipStyle.Dark,
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -656,8 +660,9 @@ private fun ChallengeTabContentPreview() {
                 StepRanking(5, 5, "민석", null, 4000),
             ),
             weeklyChallenges = listOf(
-                WeeklyChallenge(1, "이번주의 고해성사하기", "SUNDAY", 5, "버디1", previewParticipants),
-                WeeklyChallenge(2, "하루에 줄넘기 15분 하기", "FRIDAY", 5, "버디1", previewParticipants),
+                // 진행 중 / 완료 두 칩을 한 화면에서 확인.
+                WeeklyChallenge(1, "이번주의 고해성사하기", "SUNDAY", 5, "버디1", false, previewParticipants),
+                WeeklyChallenge(2, "하루에 줄넘기 15분 하기", "FRIDAY", 5, "버디1", true, previewParticipants),
             ),
             weeklyLoaded = true,
             onStepRefreshClick = {},

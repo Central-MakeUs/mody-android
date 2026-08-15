@@ -168,6 +168,11 @@ data class WeeklyChallenge(
     val deadlineDayOfWeek: String,
     val participantCount: Int,
     val randomParticipantNickname: String?,
+    /**
+     * 그룹원이 모두 인증해 완료됐는지. 완료돼도 목록에서 빠지지 않으므로 카드가 계속
+     * 보인다 — 마감 D-N 대신 "완료" 를 띄워 구분한다.
+     */
+    val isComplete: Boolean = false,
     /** 참여자 목록. [participantCount] 보다 짧을 수 있어 "+N" 은 count 기준으로 센다. */
     val participants: List<WeeklyChallengeParticipant> = emptyList(),
 )

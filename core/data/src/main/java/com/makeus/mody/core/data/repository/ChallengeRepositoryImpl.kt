@@ -5,6 +5,7 @@ import com.makeus.mody.core.domain.model.CropRegion
 import com.makeus.mody.core.domain.model.NudgeButtonStatus
 import com.makeus.mody.core.domain.model.NudgeTarget
 import com.makeus.mody.core.domain.model.StepChallengeOption
+import com.makeus.mody.core.domain.model.StepChallengeProgress
 import com.makeus.mody.core.domain.model.StepChallengeStatus
 import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.StepRecordResult
@@ -75,6 +76,7 @@ class ChallengeRepositoryImpl @Inject constructor(
             targetStepCount = s.targetStepCount,
             currentStepCount = s.currentStepCount,
             fetchFromAt = s.fetchFromAt.toServerInstantOrNull(),
+            progress = StepChallengeProgress.from(s.challengeStatus),
         )
     }
 
@@ -106,6 +108,8 @@ class ChallengeRepositoryImpl @Inject constructor(
             targetStepCount = r.targetStepCount,
             currentStepCount = r.currentStepCount,
             fetchFromAt = r.fetchFromAt.toServerInstantOrNull(),
+            // 교체 응답엔 상태 필드가 없다. 방금 시작한 챌린지라 진행 중이 확정이다.
+            progress = StepChallengeProgress.IN_PROGRESS,
         )
     }
 

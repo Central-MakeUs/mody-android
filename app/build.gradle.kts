@@ -44,6 +44,24 @@ android {
         System.getenv(key) ?: localProperties.getProperty(key, default)
 
     signingConfigs {
+        /**
+         * debug 를 레포에 커밋된 키스토어로 고정한다.
+         *
+         * 지정하지 않으면 AGP 가 `~/.android/debug.keystore` 를 쓰는데, CI 러너에는 그
+         * 파일이 없어 매 빌드마다 랜덤 키로 새로 만든다. 그러면 서명이 빌드마다 달라져
+         *   - 카카오 로그인이 안 된다(키 해시를 콘솔에 등록할 수가 없다)
+         *   - 이전 빌드 위에 설치가 거부된다(INSTALL_FAILED_UPDATE_INCOMPATIBLE)
+         *
+         * 팀원과 CI 가 같은 키를 쓰므로 키 해시는 q9knJdxCQQrnHKBcHoFOu36Xbk4= 하나다.
+         * 비밀번호는 안드로이드 debug 키스토어 기본값이라 비밀이 아니다. 릴리스 서명키와는
+         * 완전히 별개다(그쪽은 local.properties/CI 시크릿).
+         */
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             storeFile = file(signingProp("SIGNING_STORE_FILE", "keystore.jks"))
             storePassword = signingProp("SIGNING_STORE_PASSWORD")

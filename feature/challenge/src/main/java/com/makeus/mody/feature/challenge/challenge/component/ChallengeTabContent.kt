@@ -140,7 +140,13 @@ private fun StepChallengeSection(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (step != null) "모디그룹, 목표까지 얼마 안 남았어요!" else "챌린지를 선택해보세요!",
+                    // 완료된 챌린지도 현황·순위가 계속 조회된다(서버가 404 를 안 준다).
+                    // 목표를 넘긴 뒤에도 "얼마 안 남았어요!" 가 떠 있으면 안 끝난 것처럼 보인다.
+                    text = when {
+                        step == null -> "챌린지를 선택해보세요!"
+                        step.isCompleted -> "챌린지를 완료했어요! 챌린지를 변경해주세요"
+                        else -> "모디그룹, 목표까지 얼마 안 남았어요!"
+                    },
                     style = ModyTheme.typography.c2,
                     color = ModyTheme.colors.gray07,
                 )

@@ -49,6 +49,13 @@ data class StepChallengeStatusResponse(
     val targetStepCount: Int = 0,
     val currentStepCount: Int = 0,
     /**
+     * 진행 상태. 서버 enum: `IN_PROGRESS` / `COMPLETED` / `RESET` / `CANCELED`.
+     *
+     * nullable 로 둔다 — 필드가 없는 응답과 서버가 실제로 보낸 값을 구분해야 한다.
+     * 기본값을 "IN_PROGRESS" 로 박으면 둘이 뭉개진다.
+     */
+    val challengeStatus: String? = null,
+    /**
      * 이 챌린지의 걸음 수를 세기 시작할 시각. 챌린지를 바꾼 날은 리셋 시각(예: 14:40)이라
      * 그날 0시부터 세면 리셋 전 걸음이 새 챌린지에 섞인다.
      *

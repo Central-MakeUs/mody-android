@@ -59,6 +59,28 @@ enum class NudgeButtonStatus {
     }
 }
 
+/**
+ * 걸음 수 챌린지 진행 상태. 서버 enum 과 1:1.
+ *
+ * 모르는 값은 [UNKNOWN] 으로 받는다 — 서버가 상태를 추가해도 앱이 죽지 않고, 화면은
+ * 진행 중과 같이 다뤄 최소한 값은 보인다.
+ */
+enum class StepChallengeProgress {
+    IN_PROGRESS,
+    COMPLETED,
+    RESET,
+    CANCELED,
+
+    /** 서버가 안 줬거나(구버전) 모르는 값. */
+    UNKNOWN,
+    ;
+
+    companion object {
+        fun from(raw: String?): StepChallengeProgress =
+            entries.firstOrNull { it.name == raw } ?: UNKNOWN
+    }
+}
+
 /** 그룹 필수(걸음 수) 챌린지 현황. */
 data class StepChallengeStatus(
     val groupChallengeId: Long,
@@ -70,11 +92,20 @@ data class StepChallengeStatus(
      * 그날 0시부터 세면 리셋 전 걸음이 섞인다. null 이면 오늘 0시부터로 본다.
      */
     val fetchFromAt: Instant? = null,
+    val progress: StepChallengeProgress = StepChallengeProgress.UNKNOWN,
 ) {
-    /** 달성률(0~100). 목표 0이면 0. */
+    /**
+     * 달성률(0~100). 목표 0이면 0.
+     *
+     * 목표를 넘겨도 100 에서 멈춘다 — 완료 뒤에도 걸음 수는 계속 쌓이므로 그대로 두면
+     * 게이지가 한 바퀴를 넘어간다.
+     */
     val progressPercent: Int
         get() = if (targetStepCount <= 0) 0
         else (currentStepCount * 100 / targetStepCount).coerceIn(0, 100)
+
+    /** 목표를 달성해 끝난 챌린지. 화면은 "변경해달라"는 안내로 바뀐다. */
+    val isCompleted: Boolean get() = progress == StepChallengeProgress.COMPLETED
 }
 
 /**

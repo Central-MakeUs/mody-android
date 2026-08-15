@@ -152,6 +152,12 @@ data class WeeklyChallengeSummaryResponse(
     val deadlineDayOfWeek: String = "",
     val participantCount: Int = 0,
     val randomParticipantNickname: String? = null,
+    /**
+     * 그룹원이 모두 인증해 완료된 챌린지인지. 완료돼도 목록에서 빠지지 않고 계속 내려온다.
+     *
+     * nullable 로 둔다 — 필드가 없는 응답(구버전 서버)과 서버가 명시한 false 를 구분한다.
+     */
+    val isComplete: Boolean? = null,
     /** 참여자 목록. 카드의 겹침 아바타에 쓴다. participantCount 보다 짧을 수 있다. */
     val participants: List<WeeklyChallengeParticipantResponse> = emptyList(),
 )

@@ -52,6 +52,7 @@ import com.makeus.mody.core.domain.model.StepRanking
 import com.makeus.mody.core.domain.model.WeeklyChallenge
 import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
 import com.makeus.mody.feature.challenge.util.dDayLabel
+import com.makeus.mody.feature.challenge.util.stepChallengeTitle
 
 /** 달성 걸음수 강조 컬러(시안 지정 — 팔레트 외 값). */
 private val StepYellow = Color(0xFFF3D42F)
@@ -136,7 +137,7 @@ private fun StepChallengeSection(
                 SectionChip(text = "그룹 필수 챌린지")
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = step?.title ?: "진행 중인 챌린지가 없어요",
+                    text = step?.let { stepChallengeTitle(it.title) } ?: "진행 중인 챌린지가 없어요",
                     style = ModyTheme.typography.h3,
                     color = ModyTheme.colors.gray10,
                 )

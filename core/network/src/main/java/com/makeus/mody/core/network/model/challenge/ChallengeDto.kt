@@ -118,11 +118,7 @@ data class StepChallengeOptionResponse(
     val targetStepCount: Int = 0,
     /** 현재 그룹이 진행 중인 챌린지인지. */
     val selected: Boolean = false,
-    /**
-     * 이미 달성한 챌린지인지("완료" 배지).
-     * TODO(challenge): 서버 미제공 — StepChallengeOptionResponse 에 추가 요청함.
-     *  필드가 없으면 항상 false 라 배지가 안 뜬다(화면은 준비돼 있음).
-     */
+    /** 이미 달성한 챌린지인지("완료" 배지 + 선택 차단). */
     val completed: Boolean = false,
 )
 

@@ -188,8 +188,9 @@ private fun StepChallengeOptionCard(
                     Modifier
                 },
             )
-            // 이미 진행 중인 챌린지는 바꿀 게 없어 탭을 받지 않는다.
-            .clickable(enabled = !option.selected, onClick = onClick)
+            // 진행 중(바꿀 게 없다)·완료(다시 골라도 기록만 초기화된다)는 탭을 받지 않는다.
+            // 이유는 배경색과 "완료" 배지가 이미 화면에 말해주고 있다.
+            .clickable(enabled = !option.selected && !option.completed, onClick = onClick)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,

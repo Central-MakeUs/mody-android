@@ -1,6 +1,8 @@
 package com.makeus.mody.feature.onboarding.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -83,9 +85,28 @@ fun OnboardingScaffold(
         val contentSpacing = titleContentSpacing ?: if (subtitle != null) 60.dp else 48.dp
         Spacer(modifier = Modifier.height(contentSpacing))
 
-        content()
+        /*
+         * content 를 스크롤 영역에 가둔다. 예전엔 Column 에 그대로 놓고 아래를
+         * Spacer(weight(1f)) 로 밀었는데, content 가 남은 높이보다 커지면 그 Spacer 가 0 이 되고
+         * 버튼이 화면 밖으로 밀려 누를 수 없었다. 알림 스텝에서 운동 요일을 여러 개 고르면
+         * 요일마다 행이 늘어 이 상태가 된다.
+         *
+         * weight(1f) 라 content 가 짧을 때는 예전처럼 위쪽 정렬 + 버튼 하단 고정 그대로다.
+         * 길어지면 이 영역만 스크롤되고 버튼은 항상 제자리에 남는다.
+         *
+         * 주의: 여기 들어오는 content 는 ColumnScope.weight 를 쓰면 안 된다. 스크롤은 높이를
+         * 무한대로 재기 때문에 남는 공간이라는 게 없어서 크래시한다.
+         */
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            content()
+        }
 
-        Spacer(modifier = Modifier.weight(1f))
+        // 스크롤을 끝까지 내렸을 때 마지막 항목이 버튼에 붙지 않게.
+        Spacer(modifier = Modifier.height(16.dp))
 
         ModyButton(
             text = nextText,

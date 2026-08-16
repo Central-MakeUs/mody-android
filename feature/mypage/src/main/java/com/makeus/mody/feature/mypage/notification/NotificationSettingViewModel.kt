@@ -41,11 +41,6 @@ class NotificationSettingViewModel @Inject constructor(
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
-        viewModelScope.launch {
-            remoteConfigRepository.commentEnabled.collect { enabled ->
-                setState { copy(commentFeatureEnabled = enabled) }
-            }
-        }
     }
 
     // 토글 디바운스 job. 새 토글마다 리셋.

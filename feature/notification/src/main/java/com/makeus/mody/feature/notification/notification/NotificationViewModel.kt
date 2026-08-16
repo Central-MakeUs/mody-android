@@ -3,12 +3,12 @@ package com.makeus.mody.feature.notification.notification
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.designsystem.R
+import com.makeus.mody.core.domain.feature.CommentFeature
 import com.makeus.mody.core.domain.model.Notification
 import com.makeus.mody.core.domain.model.NotificationType
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.NotificationRepository
-import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.NotificationDestination
@@ -32,7 +32,6 @@ class NotificationViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,
     private val unreadNotificationStore: UnreadNotificationStore,
-    private val remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<NotificationState, NotificationIntent>(NotificationState()) {
 
     /** 다음 페이지 커서. null 이면 첫 페이지이거나 더 없음. */
@@ -52,7 +51,7 @@ class NotificationViewModel @Inject constructor(
      * 뱃지가 남지는 않는다. 서버가 계속 보내는 걸 클라가 가리는 형태다.
      */
     private fun List<Notification>.filterByFeatureFlags(): List<Notification> =
-        if (remoteConfigRepository.commentEnabled.value) {
+        if (CommentFeature.ENABLED) {
             this
         } else {
             filterNot { it.type == NotificationType.COMMENT || it.type == NotificationType.COMMENT_CREATED }

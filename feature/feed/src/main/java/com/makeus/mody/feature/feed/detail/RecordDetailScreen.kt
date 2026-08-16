@@ -96,7 +96,7 @@ private fun RecordDetailContent(
             )
         }
 
-        // 응원 댓글 입력바: comment_flag 가 열렸을 때만 노출(닫히면 전송도 차단).
+        // 응원 댓글 입력바: 기능이 열렸을 때만 노출(닫히면 전송도 차단).
         if (state.commentEnabled) {
             CommentInputBar(
                 value = state.commentInput,
@@ -141,7 +141,7 @@ private fun DetailBody(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = headerHeightDp, bottom = 12.dp),
         ) {
-            // 응원 댓글: comment_flag 가 열렸을 때만 노출(빈 상태 문구 포함).
+            // 응원 댓글: 기능이 열렸을 때만 노출(빈 상태 문구 포함).
             if (state.commentEnabled) {
                 if (state.comments.isEmpty() && !state.isCommentsLoading) {
                     item { EmptyComments() }
@@ -169,7 +169,7 @@ private fun DetailBody(
                     .padding(top = 8.dp),
             ) { page ->
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                    FeedCard(card = state.records[page], onClick = {}, showHeader = false, showArrow = false)
+                    FeedCard(card = state.records[page], onClick = null, showHeader = false)
                 }
             }
             if (state.records.size > 1) {

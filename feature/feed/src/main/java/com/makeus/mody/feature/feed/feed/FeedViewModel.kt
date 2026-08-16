@@ -155,6 +155,9 @@ class FeedViewModel @Inject constructor(
             // 챌린지 탭(연속 기록)으로. 탭 전환은 MainScreenViewModel, 서브탭은 ChallengeViewModel 이 처리.
             is FeedIntent.PokeClicked -> pendingStreakTabHolder.set()
             is FeedIntent.FeedCardClicked -> {
+                // 화면에서 이미 탭을 막지만 여기서도 한 번 더 — 화살표만 되살리고 이쪽을
+                // 빠뜨리면 댓글 화면이 열린다. 되돌릴 땐 FeedState.commentEnabled 하나만 바꾼다.
+                if (!currentState.commentEnabled) return
                 val groupId = currentGroupId ?: return
                 navigationHelper.navigate(
                     NavigationEvent.To(

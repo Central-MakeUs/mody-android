@@ -28,8 +28,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         setDefaultsAsync(
             mapOf(
                 KEY_IS_PHASE_ONE to true,
-                // 댓글은 신고 경로가 생길 때까지 닫아둔다(심사 안전).
-                KEY_COMMENT to false,
                 KEY_GUEST_LOGIN to false,
                 KEY_FORCE_UPDATE to false,
                 KEY_MIN_SUPPORTED_VERSION to "",
@@ -49,10 +47,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     private val _phaseTwoFeaturesEnabled = MutableStateFlow(false)
     override val phaseTwoFeaturesEnabled: StateFlow<Boolean> = _phaseTwoFeaturesEnabled.asStateFlow()
 
-    // 댓글도 같은 이유로 fetch 전엔 숨김. 잠깐이라도 노출되면 심사에서 잡힌다.
-    private val _commentEnabled = MutableStateFlow(false)
-    override val commentEnabled: StateFlow<Boolean> = _commentEnabled.asStateFlow()
-
     // 히든 로그인도 같은 이유로 fetch 전엔 하드코딩 차단(false).
     private val _guestLoginEnabled = MutableStateFlow(false)
     override val guestLoginEnabled: StateFlow<Boolean> = _guestLoginEnabled.asStateFlow()
@@ -66,7 +60,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         } finally {
             // 성공/실패/타임아웃 취소 모두 현재 활성값(캐시·기본값)으로 상태 갱신.
             _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
-            _commentEnabled.value = remoteConfig.getBoolean(KEY_COMMENT)
             _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
     }
@@ -137,7 +130,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
          * 응원 댓글 노출 — 콘솔 미설정이면 false(숨김).
          * is_phase_one_flag 와 분리해 챌린지는 열어둔 채 댓글만 닫을 수 있게 한다.
          */
-        const val KEY_COMMENT = "comment_flag"
 
         /** 심사용 히든 로그인 허용 — 심사 기간에만 콘솔에서 true 게시. */
         const val KEY_GUEST_LOGIN = "guest_login_flag"

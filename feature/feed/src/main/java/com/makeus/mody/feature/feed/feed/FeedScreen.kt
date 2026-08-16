@@ -296,7 +296,8 @@ private fun FeedList(
             val isOthers = state.myMemberId != null && card.memberId != state.myMemberId
             FeedCard(
                 card = card,
-                onClick = { onCardClick(card.id) },
+                // 댓글이 꺼져 있으면 null → 화살표도 탭도 사라진다.
+                onClick = { onCardClick(card.id) }.takeIf { state.commentEnabled },
                 onReportClick = { onReportClick(card.id) }.takeIf { isOthers },
                 onDeleteClick = { onDeleteClick(card.id) }.takeIf { isMine },
             )

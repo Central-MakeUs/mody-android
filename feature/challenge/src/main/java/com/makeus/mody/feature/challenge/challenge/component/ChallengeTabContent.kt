@@ -60,9 +60,9 @@ private val StepYellow = Color(0xFFF3D42F)
 /** 주간 챌린지 카드에 얼굴을 보여줄 참여자 수. 넘치는 인원은 "+N". */
 private const val ParticipantAvatarMax = 3
 
-/** 시안 실측: 아바타 24, 겹침 6 (가로 피치 18). */
-private val ParticipantAvatarSize = 24.dp
-private val ParticipantAvatarOverlap = 6.dp
+/** 시안 실측: 아바타 32, 겹침 14 (가로 피치 18 — 4개 묶음 폭 86). */
+private val ParticipantAvatarSize = 32.dp
+private val ParticipantAvatarOverlap = 14.dp
 
 /** 게이지 좌우 여백 — 섹션 패딩(24) 안쪽으로 더 들어가는 값. 시안 left 54 기준. */
 private val GaugeInset = 30.dp
@@ -131,7 +131,8 @@ private fun StepChallengeSection(
     onChangeClick: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-        Spacer(modifier = Modifier.height(24.dp))
+        // 시안 실측 36 (서브탭 바 끝 162 → 칩 198).
+        Spacer(modifier = Modifier.height(36.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 SectionChip(text = "그룹 필수 챌린지")
@@ -211,7 +212,8 @@ private fun StepChallengeSection(
                         .clickable(onClick = onRefreshClick),
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            // 시안 실측 2 (첫 줄 끝 531 → 둘째 줄 533).
+            Spacer(modifier = Modifier.height(2.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -362,13 +364,15 @@ private fun RankingSection(rankings: List<StepRanking>) {
             }
         }
         if (rest.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(32.dp))
+            // 시안 실측 37 (시상대 끝 780 → 4등 행 817).
+            Spacer(modifier = Modifier.height(37.dp))
             rest.forEachIndexed { index, ranking ->
                 if (index > 0) Spacer(modifier = Modifier.height(20.dp))
                 RankRow(ranking)
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        // 시안 실측 36 (마지막 행 끝 909 → 주간 챌린지 섹션 945).
+        Spacer(modifier = Modifier.height(36.dp))
     }
 }
 
@@ -501,7 +505,9 @@ private fun WeeklySection(
                     .clip(RoundedCornerShape(12.dp))
                     .background(ModyTheme.colors.white),
             ) {
-                challenges.forEach { challenge ->
+                challenges.forEachIndexed { index, challenge ->
+                    // 시안은 카드가 8 간격으로 떨어져 있다(카드 높이 117, 다음 카드 125).
+                    if (index > 0) Spacer(modifier = Modifier.height(8.dp))
                     WeeklyChallengeRow(
                         challenge = challenge,
                         onClick = { onChallengeClick(challenge.groupChallengeId) },
@@ -552,11 +558,13 @@ private fun WeeklyChallengeRow(
                 modifier = Modifier.size(24.dp),
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        // 시안 실측 20 (제목 행 끝 45 → 아바타 행 65).
+        Spacer(modifier = Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (challenge.participants.isNotEmpty()) {
                 ParticipantAvatars(challenge = challenge)
-                Spacer(modifier = Modifier.width(16.dp))
+                // 시안 실측 8 (아바타 묶음 끝 86 → 문구 94).
+                Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
                 text = participantLabel(challenge),

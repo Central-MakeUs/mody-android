@@ -80,7 +80,9 @@ android {
             }
             buildConfigField("String", "KAKAO_NATIVE_KEY", "\"$kakaoNativeKeyDev\"")
             manifestPlaceholders["KAKAO_NATIVE_KEY"] = kakaoNativeKeyDev
-            // 그룹 초대 App Links host. feature:group INVITE_BASE_URL 과 도메인 일치 필수.
+            // 그룹 초대 App Links host. 이 호스트로 오는 https 링크만 앱이 가로챈다
+            // (presentation manifest 의 intent-filter). 카카오 콘솔 템플릿의 웹 링크
+            // 도메인과 어긋나면 링크가 앱을 안 열고 브라우저로 떨어진다.
             manifestPlaceholders["inviteHost"] = "dev-mody.store"
         }
         release {

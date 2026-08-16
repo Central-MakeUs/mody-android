@@ -21,17 +21,14 @@ android {
         buildConfig = true
     }
 
-    // 그룹 초대 App Link 도메인. debug=dev, release=prod. 앱 buildType 에 맞춰 변형 선택됨.
+    // 카카오 콘솔 메시지 템플릿 id. 초대 카드의 문구·이미지·버튼 링크는 전부 콘솔에 있고
+    // 앱은 이 id 와 치환 인자(code·groupName)만 넘긴다 — KakaoInviteSharer 주석 참고.
     buildTypes {
         debug {
-            buildConfigField("String", "INVITE_BASE_URL", "\"https://dev-mody.store/invite\"")
-            // 카카오 콘솔 메시지 템플릿 (모디 DEV)
-            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135810L")
+            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135810L") // 모디 DEV
         }
         release {
-            buildConfigField("String", "INVITE_BASE_URL", "\"https://prod-mody.shop/invite\"")
-            // 카카오 콘솔 메시지 템플릿 (모디 PROD)
-            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135811L")
+            buildConfigField("long", "KAKAO_SHARE_TEMPLATE_ID", "135811L") // 모디 PROD
         }
     }
 }

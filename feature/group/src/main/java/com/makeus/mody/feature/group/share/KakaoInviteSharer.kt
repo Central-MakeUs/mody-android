@@ -14,6 +14,20 @@ import com.kakao.sdk.share.WebSharerClient
  * buildType 별 템플릿: debug=모디 DEV(135810), release=모디 PROD(135811) — BuildConfig 주입.
  * 콘솔 템플릿이 참조하는 사용자 인자: ${code}(초대 코드), ${groupName}(그룹명).
  * 콘솔에서 인자명이 바뀌면 여기 templateArgs 키도 함께 맞춰야 한다.
+ *
+ * ## 콘솔에 있어야 하는 설정 (코드로는 확인 불가)
+ *
+ * **수신자 분기(설치=앱 실행 / 미설치=마켓)는 콘솔 템플릿 버튼의 앱 실행 파라미터가 한다.**
+ * 버튼에 `code=${code}` 를 android/iOS 양쪽에 넣고, 앱 설정 > 플랫폼 > Android 에
+ * 패키지명과 **마켓 URL** 이 등록돼 있어야 한다. 마켓 URL 이 비면 미설치자가 갈 데가 없어
+ * 웹 링크로 폴백하고, 그 랜딩 페이지는 안드로이드를 분기하지 않아 App Store 로 튕긴다.
+ *
+ * 설치된 기기는 `kakao{네이티브키}://kakaolink?code=XXX` 로 앱이 열린다 — 수신부는
+ * presentation manifest 의 intent-filter 와 MainActivity.handleInviteDeepLink 에 있다.
+ *
+ * 이 설정은 원래 코드에 있었고(6405f01, `Link.androidExecutionParams`), shareCustom 전환
+ * (27b8954)에서 콘솔로 넘어갔다. 그때 콘솔에 옮겨 넣지 않아 전환 이전 동작(웹 URL 로만
+ * 이동)으로 되돌아갔다. **템플릿을 새로 만들거나 갈아탈 때 이 항목을 함께 옮겨라.**
  */
 object KakaoInviteSharer {
 

@@ -169,7 +169,7 @@ private fun DetailBody(
                     .padding(top = 8.dp),
             ) { page ->
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                    FeedCard(card = state.records[page], onClick = {}, showHeader = false, showArrow = false)
+                    FeedCard(card = state.records[page], onClick = null, showHeader = false)
                 }
             }
             if (state.records.size > 1) {

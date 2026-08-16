@@ -64,6 +64,12 @@ data class FeedState(
     val isAddGroupDialogVisible: Boolean = false,
     // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
     val phaseTwoFeaturesEnabled: Boolean = false,
+    /**
+     * 응원 댓글 노출(Remote Config comment_flag). 꺼져 있으면 카드의 상세 진입 화살표를
+     * 숨기고 탭도 막는다 — 상세 화면의 고유 콘텐츠가 댓글뿐이라(사진은 이 목록에 이미
+     * 다 있다) 댓글을 가리면 들어가도 볼 게 없다.
+     */
+    val commentEnabled: Boolean = false,
     // 상단바 알림 아이콘 뱃지(안 읽은 알림 존재).
     val hasUnreadNotification: Boolean = false,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 메뉴 자체를 숨긴다 — 판별이 뒤집히면

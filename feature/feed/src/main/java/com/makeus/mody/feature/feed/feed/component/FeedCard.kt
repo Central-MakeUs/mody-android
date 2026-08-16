@@ -42,7 +42,10 @@ private val FireOrange = Color(0xFFFF5C00)
 /**
  * 피드 카드: 작성자 헤더 + 기록 이미지 카드 (Feed2 시안).
  * showHeader=false 면 헤더(아바타·이름·N일차) 생략 — 상세 화면처럼 탑바가 이미 작성자 정보를 보일 때.
- * showArrow=false 면 우상단 화살표(→상세 이동) 생략 — 상세 화면처럼 더 들어갈 곳이 없을 때.
+ *
+ * [onClick] 이 null 이면 카드가 눌리지 않고 우상단 화살표("댓글 보기")도 안 그린다.
+ * 둘을 따로 받지 않는 이유는, 화살표가 곧 "여기 눌러 상세로" 라는 유일한 안내라서다 —
+ * 갈 곳이 없는데 화살표만 남거나 반대가 되면 누르고도 아무 일이 안 일어난다.
  *
  * 미트볼(⋯) 메뉴는 [onReportClick]/[onDeleteClick] 중 지정된 것만 항목으로 낸다.
  * 남의 글이면 신고, 내 글이면 삭제 — 둘 다 null 이면 메뉴 자체를 안 그린다.
@@ -50,9 +53,8 @@ private val FireOrange = Color(0xFFFF5C00)
 @Composable
 fun FeedCard(
     card: FeedCardUi,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     showHeader: Boolean = true,
-    showArrow: Boolean = true,
     onReportClick: (() -> Unit)? = null,
     onDeleteClick: (() -> Unit)? = null,
 ) {
@@ -67,7 +69,7 @@ fun FeedCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
-        FeedCardImage(card = card, onClick = onClick, showArrow = showArrow)
+        FeedCardImage(card = card, onClick = onClick)
     }
 }
 
@@ -201,8 +203,7 @@ private fun DayCountChip(dayCount: Int) {
 @Composable
 private fun FeedCardImage(
     card: FeedCardUi,
-    onClick: () -> Unit,
-    showArrow: Boolean = true,
+    onClick: (() -> Unit)?,
 ) {
     Box(
         modifier = Modifier
@@ -210,7 +211,9 @@ private fun FeedCardImage(
             .height(200.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(ModyTheme.colors.gray04) // 로딩 전/실패 시 플레이스홀더
-            .clickable(onClick = onClick),
+            // onClick 이 없으면 clickable 자체를 안 붙인다. 빈 람다를 넘기면 눌리는 것처럼
+            // 물결 효과가 나고 접근성 트리에도 버튼으로 남아 "눌렀는데 아무 일 없음"이 된다.
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
         // 기록 사진(원본 + 크롭 영역). url null/로딩 실패 시 gray04 배경만 보임.
         CroppedAsyncImage(
@@ -264,7 +267,7 @@ private fun FeedCardImage(
                 )
             }
         }
-        if (showArrow) {
+        if (onClick != null) {
             Icon(
                 painter = painterResource(ModyIcons.Right),
                 contentDescription = "댓글 보기",

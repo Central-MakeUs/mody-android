@@ -187,7 +187,8 @@ private fun SubTabRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier.height(44.dp),
+                    // 시안 실측: 탭 바 전체 52 = 텍스트 영역 50 + 인디케이터 2.
+                    modifier = Modifier.height(50.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(

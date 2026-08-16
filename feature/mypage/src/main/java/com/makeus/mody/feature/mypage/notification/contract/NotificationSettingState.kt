@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.mypage.notification.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.feature.CommentFeature
 
 data class NotificationSettingState(
     /** 식사 및 운동 알림(끄면 식사/운동 스케줄 편집 숨김). */
@@ -10,12 +11,12 @@ data class NotificationSettingState(
     /** 챌린지 기능 노출(Remote Config). Phase 1 에선 챌린지 알림 토글 행 자체를 숨김. */
     val phaseTwoFeaturesEnabled: Boolean = false,
     /**
-     * 응원 댓글 기능 노출(Remote Config `comment_flag`). 닫히면 "코멘트 알림" 토글 행을 숨긴다.
+     * 응원 댓글 기능 노출([CommentFeature]). 닫히면 "코멘트 알림" 토글 행을 숨긴다.
      *
      * 위 [commentEnabled] 와 다르다 — 저쪽은 사용자가 켜둔 알림 수신 여부이고,
      * 이건 기능 자체를 보여줄지다.
      */
-    val commentFeatureEnabled: Boolean = false,
+    val commentFeatureEnabled: Boolean = CommentFeature.ENABLED,
     // 식사 시각(null = 식사 안 함).
     val breakfastHour: Int? = 8,
     val lunchHour: Int? = 12,

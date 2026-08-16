@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.feed.feed.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.domain.feature.CommentFeature
 import com.makeus.mody.core.domain.model.CropRegion
 import java.time.LocalDate
 
@@ -65,11 +66,11 @@ data class FeedState(
     // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
     val phaseTwoFeaturesEnabled: Boolean = false,
     /**
-     * 응원 댓글 노출(Remote Config comment_flag). 꺼져 있으면 카드의 상세 진입 화살표를
-     * 숨기고 탭도 막는다 — 상세 화면의 고유 콘텐츠가 댓글뿐이라(사진은 이 목록에 이미
-     * 다 있다) 댓글을 가리면 들어가도 볼 게 없다.
+     * 상세(=응원 댓글) 화면 진입 허용 여부. 꺼져 있으면 카드의 우상단 화살표를 숨기고
+     * 탭도 막는다 — 상세의 고유 콘텐츠가 댓글뿐이라(사진은 이 목록에 이미 다 있다)
+     * 댓글을 가리면 들어가도 볼 게 없다. 값의 출처와 켜는 법은 [CommentFeature].
      */
-    val commentEnabled: Boolean = false,
+    val commentEnabled: Boolean = CommentFeature.ENABLED,
     // 상단바 알림 아이콘 뱃지(안 읽은 알림 존재).
     val hasUnreadNotification: Boolean = false,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 메뉴 자체를 숨긴다 — 판별이 뒤집히면

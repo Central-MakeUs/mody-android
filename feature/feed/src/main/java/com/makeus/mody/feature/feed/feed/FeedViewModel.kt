@@ -55,12 +55,6 @@ class FeedViewModel @Inject constructor(
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
-        // 응원 댓글 플래그 — 꺼져 있으면 상세(=댓글) 진입 자체를 막는다.
-        viewModelScope.launch {
-            remoteConfigRepository.commentEnabled.collect { enabled ->
-                setState { copy(commentEnabled = enabled) }
-            }
-        }
         // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
         viewModelScope.launch {
             unreadNotificationStore.hasUnread.collect { hasUnread ->
@@ -161,8 +155,8 @@ class FeedViewModel @Inject constructor(
             // 챌린지 탭(연속 기록)으로. 탭 전환은 MainScreenViewModel, 서브탭은 ChallengeViewModel 이 처리.
             is FeedIntent.PokeClicked -> pendingStreakTabHolder.set()
             is FeedIntent.FeedCardClicked -> {
-                // 화면에서 이미 탭을 막지만 여기서도 한 번 더 — 플래그가 꺼진 채로 이 intent 가
-                // 들어오면(경합·회귀) 댓글 화면이 열린다. RecordDetailViewModel 의 전송 차단과 같은 이유.
+                // 화면에서 이미 탭을 막지만 여기서도 한 번 더 — 화살표만 되살리고 이쪽을
+                // 빠뜨리면 댓글 화면이 열린다. 되돌릴 땐 FeedState.commentEnabled 하나만 바꾼다.
                 if (!currentState.commentEnabled) return
                 val groupId = currentGroupId ?: return
                 navigationHelper.navigate(

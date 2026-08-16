@@ -12,21 +12,10 @@ interface RemoteConfigRepository {
      * Phase 2 기능(챌린지 탭·콕 찌르기·관련 알림 토글) 노출 여부.
      * is_phase_one_flag 의 부정 — 기본 false(전부 숨김, 심사 안전).
      *
-     * 응원 댓글은 [commentEnabled] 로 따로 뺐다 — 심사 때 댓글만 닫고 챌린지는 열어야 한다.
+     * 응원 댓글은 여기 얹지 않는다. 원격이 아니라 코드에서 껐다 —
+     * feature:feed 의 FeedState.commentEnabled 참고.
      */
     val phaseTwoFeaturesEnabled: StateFlow<Boolean>
-
-    /**
-     * 응원 댓글 노출 여부 — comment_flag. 기본 false(숨김).
-     *
-     * [phaseTwoFeaturesEnabled] 에서 분리한 이유: 댓글에는 신고 경로가 없어 스토어 심사에서
-     * 리젝될 소지가 있는데, 그 플래그로 닫으면 챌린지 탭까지 같이 사라진다. 심사에는 챌린지를
-     * 올려야 하므로 둘을 따로 여닫을 수 있어야 한다.
-     *
-     * 끄면 댓글 목록·입력바·"코멘트 알림" 토글·알림함의 댓글 알림이 모두 숨는다.
-     * 댓글 신고 기능이 붙으면 콘솔에서 켜면 된다.
-     */
-    val commentEnabled: StateFlow<Boolean>
 
     /**
      * 스토어 심사용 히든(게스트) 로그인 허용 여부 — guest_login_flag.

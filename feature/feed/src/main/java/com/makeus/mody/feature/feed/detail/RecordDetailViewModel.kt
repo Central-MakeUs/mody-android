@@ -39,12 +39,7 @@ class RecordDetailViewModel @Inject constructor(
                 setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
-        // 댓글은 별도 플래그다 — 닫히면 목록·입력바가 숨고 전송도 막힌다.
-        viewModelScope.launch {
-            remoteConfigRepository.commentEnabled.collect { enabled ->
-                setState { copy(commentEnabled = enabled) }
-            }
-        }
+        // 댓글 노출은 원격이 아니라 RecordDetailState.commentEnabled 기본값으로 끈다.
     }
 
     override suspend fun processIntent(intent: RecordDetailIntent) {
@@ -53,7 +48,7 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.PageChanged -> onPageChanged(intent.index)
             is RecordDetailIntent.CommentInputChanged ->
                 setState { copy(commentInput = intent.text) }
-            // Phase 1 에선 UI 가 숨겨져 있지만, 만약을 위해 전송 자체도 차단.
+            // UI 는 숨겨져 있지만 만약을 위해 전송 자체도 차단.
             is RecordDetailIntent.SendCommentClicked ->
                 if (currentState.commentEnabled) sendComment()
         }

@@ -175,6 +175,13 @@ sealed interface MyPageGraph : Route {
     /** 이용약관·개인정보처리방침·문의 지원 페이지(인앱 WebView) */
     @Serializable
     data object SupportRoute : MyPageGraph
+
+    /**
+     * 건강 데이터(Health Connect) 권한 설정 가이드.
+     * 시스템 설정으로 바로 보내면 어디를 눌러야 할지 몰라 이탈해서, 3단계 안내를 먼저 보여준다.
+     */
+    @Serializable
+    data object HealthGuideRoute : MyPageGraph
 }
 
 @Serializable

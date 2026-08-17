@@ -3,6 +3,7 @@ package com.makeus.mody.feature.mypage
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
+import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
@@ -71,10 +72,20 @@ class MyPageViewModel @Inject constructor(
             is MyPageIntent.WeightRecordSubmitted -> recordWeight(intent.recordedOn, intent.weightKg)
             is MyPageIntent.WeightErrorShown -> setState { copy(weightError = null) }
 
-            // 연동 상태는 Health Connect(시스템)가 소유하므로 앱 내 화면 없이 그쪽으로 넘긴다.
-            // 기기 상태(설치/업데이트 필요)에 따라 목적지가 달라 화면이 인텐트를 만든다.
-            is MyPageIntent.HealthDataSettingClicked ->
-                setState { copy(healthSettingsRequest = healthRepository.availability()) }
+            // Health Connect 가 깔려 있으면 설정 화면에서 어디를 눌러야 할지 몰라 이탈해서,
+            // 3단계 안내를 먼저 보여준다(가이드 화면이 설정 진입까지 책임진다).
+            //
+            // 미설치·업데이트 필요면 안내할 설정 화면 자체가 없다 — 그때는 예전처럼 바로
+            // 스토어로 보낸다. 설치도 안 된 앱의 설정 화면을 안내하면 더 헷갈린다.
+            // 목적지가 기기 상태에 따라 갈려 인텐트는 화면이 만든다.
+            is MyPageIntent.HealthDataSettingClicked -> {
+                val availability = healthRepository.availability()
+                if (availability == HealthAvailability.AVAILABLE) {
+                    navigationHelper.navigate(NavigationEvent.To(MyPageGraph.HealthGuideRoute))
+                } else {
+                    setState { copy(healthSettingsRequest = availability) }
+                }
+            }
 
             is MyPageIntent.HealthSettingsLaunched -> setState { copy(healthSettingsRequest = null) }
         }

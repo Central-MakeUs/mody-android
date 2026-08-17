@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
+import com.makeus.mody.core.designsystem.component.ModyPageIndicator
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -173,7 +174,7 @@ private fun DetailBody(
                 }
             }
             if (state.records.size > 1) {
-                PageDots(
+                ModyPageIndicator(
                     current = state.currentIndex,
                     total = state.records.size,
                     modifier = Modifier
@@ -183,27 +184,6 @@ private fun DetailBody(
             } else {
                 Spacer(modifier = Modifier.height(20.dp))
             }
-        }
-    }
-}
-
-/** 페이지 점 인디케이터. 현재 = primary100 알약, 나머지 = gray02 점. */
-@Composable
-private fun PageDots(current: Int, total: Int, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(total) { i ->
-            val active = i == current
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(if (active) 16.dp else 8.dp)
-                    .clip(CircleShape)
-                    .background(if (active) ModyTheme.colors.primary100 else ModyTheme.colors.gray02),
-            )
         }
     }
 }

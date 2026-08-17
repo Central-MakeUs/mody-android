@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 
@@ -33,6 +34,18 @@ enum class ModyChipStyle {
 }
 
 /**
+ * 칩 크기. 시안이 같은 `chip` 컴포넌트를 자리마다 다른 패딩으로 쓴다 — 색과 달리
+ * 하나로 못 합쳐서 실측값을 여기 모아둔다. 새 크기가 나오면 눈대중하지 말고 실측해 추가한다.
+ */
+enum class ModyChipSize {
+    /** 시안 실측 8×2. "완료" 배지, 주간 챌린지 D-N 칩. */
+    Compact,
+
+    /** 시안 실측 12×4. 건강 데이터 연동 가이드의 STEP 배지(칩 68×28, 텍스트 44×20). */
+    Large,
+}
+
+/**
  * @param text 라벨. 한 줄로 자른다 — 칩이 두 줄이 되면 옆 요소 정렬이 무너진다.
  */
 @Composable
@@ -40,13 +53,13 @@ fun ModyChip(
     text: String,
     modifier: Modifier = Modifier,
     style: ModyChipStyle = ModyChipStyle.Primary,
+    size: ModyChipSize = ModyChipSize.Compact,
 ) {
     Box(
         modifier = modifier
             .clip(ChipShape)
             .background(style.background())
-            // 시안 실측 8×2.
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = size.horizontalPadding(), vertical = size.verticalPadding()),
     ) {
         Text(
             text = text,
@@ -56,6 +69,16 @@ fun ModyChip(
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+private fun ModyChipSize.horizontalPadding(): Dp = when (this) {
+    ModyChipSize.Compact -> 8.dp
+    ModyChipSize.Large -> 12.dp
+}
+
+private fun ModyChipSize.verticalPadding(): Dp = when (this) {
+    ModyChipSize.Compact -> 2.dp
+    ModyChipSize.Large -> 4.dp
 }
 
 private val ChipShape = RoundedCornerShape(100.dp)

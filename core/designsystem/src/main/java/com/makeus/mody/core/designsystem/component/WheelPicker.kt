@@ -30,9 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Velocity
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import kotlin.math.abs
 
@@ -126,8 +131,37 @@ fun <T> WheelPicker(
         }
     }
 
+    /*
+     * 이 휠이 못 삼킨 세로 스크롤·플링을 부모로 넘기지 않는다.
+     *
+     * 바텀시트 안에서 휠을 돌리면 시트가 따라 내려가던 문제 때문이다. ModalBottomSheet 는
+     * 안쪽 스크롤이 남긴 드래그를 받아 시트를 움직이는데, 휠은 목록 끝(loop=false 의 처음·마지막)
+     * 이나 fling 이 멎은 직후에 남는 양이 생긴다. 그래서 "한 번 멈췄다가 다시 돌리려 하면"
+     * 시트가 내려갔다.
+     *
+     * 스크롤 가능 범위를 억지로 키우는(전부 loop) 방식은 증상만 가린다 — 연도처럼 끝이 있어야
+     * 하는 휠의 의미가 깨지고, 끝에 도달하면 결국 같은 일이 난다. 전파 자체를 끊는 게 맞다.
+     */
+    val blockParentScroll = remember {
+        object : NestedScrollConnection {
+            // 세로만 삼키고 가로는 부모에게 넘긴다(시트 옆 스와이프 등 다른 제스처 보존).
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset = available.copy(x = 0f)
+
+            override suspend fun onPostFling(
+                consumed: Velocity,
+                available: Velocity,
+            ): Velocity = available.copy(x = 0f)
+        }
+    }
+
     Box(
-        modifier = modifier.height(itemHeight * visibleCount),
+        modifier = modifier
+            .height(itemHeight * visibleCount)
+            .nestedScroll(blockParentScroll),
         contentAlignment = Alignment.Center,
     ) {
         // 중앙 선택 영역 표시. matchParentSize라 picker 폭을 강제하지 않음

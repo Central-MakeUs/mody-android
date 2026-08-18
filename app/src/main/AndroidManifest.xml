@@ -19,6 +19,18 @@
     -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
 
+    <!--
+      광고 ID 미사용. firebase-analytics(play-services-measurement)가 라이브러리 매니페스트에서
+      이 권한을 선언해 자동 병합되는데, 우리가 쓰는 건 화면 조회/이벤트 집계뿐이고 광고·
+      어트리뷰션은 하지 않는다. 병합된 채로 두면 Play Console "광고 ID 사용" 선언을 '아니요'로
+      낼 수 없어 출시가 차단된다(실제로 이 사유로 반려됐다).
+
+      나중에 광고를 붙이거나 설치 기여도를 추적하게 되면 이 블록을 지우면 원복된다.
+      이벤트 집계 자체는 광고 ID 없이도 그대로 동작하므로 GA 이벤트 확장은 이유가 안 된다.
+    -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
 
     <!-- 카메라 권한이 있어도 카메라 없는 기기(일부 태블릿/ChromeOS) 설치 허용 -->
     <uses-feature
@@ -71,6 +83,15 @@
         -->
         <meta-data
             android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
+
+        <!--
+          광고 ID 수집 끄기. 위에서 AD_ID 권한을 제거했으므로 SDK 가 조회해도 0 문자열만
+          돌아오는데, 수집 시도 자체를 꺼야 Play Console 선언("광고 ID 사용: 아니요")과
+          실제 동작이 일치한다.
+        -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
             android:value="false" />
 
         <!-- 카카오 로그인 리다이렉트 처리 (scheme = kakao{네이티브키}) -->

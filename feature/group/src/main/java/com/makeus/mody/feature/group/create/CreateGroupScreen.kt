@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +38,15 @@ import com.makeus.mody.feature.group.contract.GroupState
 @Composable
 fun CreateGroupScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // 생성이 시작되면 키보드를 내린다. 안 내리면 대기 오버레이 위로 키보드가 그대로 남아
+    // 카드를 가린다(입력은 이미 끝난 상태라 띄워둘 이유도 없다).
+    // 포커스 해제 방식은 레포 공통 동작(Modifier.clearFocusOnTap)과 같다.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.isLoading) {
+        if (state.isLoading) focusManager.clearFocus()
+    }
+
     // 생성 실패(GROUP304 등) → 공용 에러 다이얼로그. 확인 시 상태 소비.
     state.createError?.let { error ->
         ModyErrorDialog(

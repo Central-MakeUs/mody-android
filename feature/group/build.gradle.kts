@@ -48,4 +48,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kakao.share)
+    // 그룹 생성 대기 다이얼로그의 캐릭터 로티(loading_group_create).
+    // 공용 로딩(ModyLoadingIndicator)과 다른 전용 애니메이션이라 이 모듈에 둔다.
+    implementation(libs.lottie.compose)
+    // GroupCreatingOverlay 의 @Preview.
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
 }

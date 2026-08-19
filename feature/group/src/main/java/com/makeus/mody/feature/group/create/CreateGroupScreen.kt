@@ -2,9 +2,11 @@ package com.makeus.mody.feature.group.create
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,31 +45,39 @@ fun CreateGroupScreen(viewModel: GroupViewModel) {
         )
     }
 
-    GroupScaffold(
-        title = "그룹 이름을 정해볼까요?",
-        subtitle = buildAnnotatedString {
-            append("친구들과 함께할 그룹의 이름이에요.\n")
-            withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) {
-                append("최대 ${GroupState.MAX_MEMBERS}명")
-            }
-            append("까지 초대할 수 있어요!")
-        },
-        onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
-    ) {
-        GroupNameField(
-            value = state.groupName,
-            onValueChange = { viewModel.onIntent(GroupIntent.GroupNameChanged(it)) },
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        GroupScaffold(
+            title = "그룹 이름을 정해볼까요?",
+            subtitle = buildAnnotatedString {
+                append("친구들과 함께할 그룹의 이름이에요.\n")
+                withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) {
+                    append("최대 ${GroupState.MAX_MEMBERS}명")
+                }
+                append("까지 초대할 수 있어요!")
+            },
+            onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
+        ) {
+            GroupNameField(
+                value = state.groupName,
+                onValueChange = { viewModel.onIntent(GroupIntent.GroupNameChanged(it)) },
+            )
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        ModyButton(
-            text = "다음으로",
-            onClick = { viewModel.onIntent(GroupIntent.GroupNameNext) },
-            variant = ModyButtonVariant.Primary,
-            enabled = state.isGroupNameValid,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            ModyButton(
+                text = "다음으로",
+                onClick = { viewModel.onIntent(GroupIntent.GroupNameNext) },
+                variant = ModyButtonVariant.Primary,
+                enabled = state.isGroupNameValid,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // 생성 API 대기. 예전엔 isLoading 을 세팅만 하고 화면이 읽지 않아, 응답이 올 때까지
+        // 아무 표시도 없이 멈춘 것처럼 보였다(그 사이 버튼 재탭도 가능했다).
+        if (state.isLoading) {
+            GroupCreatingOverlay()
+        }
     }
 }
 

@@ -51,6 +51,8 @@ dependencies {
     // 그룹 생성 대기 다이얼로그의 캐릭터 로티(loading_group_create).
     // 공용 로딩(ModyLoadingIndicator)과 다른 전용 애니메이션이라 이 모듈에 둔다.
     implementation(libs.lottie.compose)
+    // 그룹 생성 중 시스템 뒤로가기 차단(BackHandler).
+    implementation(libs.androidx.activity.compose)
     // GroupCreatingOverlay 의 @Preview.
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)

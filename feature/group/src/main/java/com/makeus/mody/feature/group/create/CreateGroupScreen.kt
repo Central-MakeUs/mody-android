@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.group.create
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +49,12 @@ fun CreateGroupScreen(viewModel: GroupViewModel) {
         if (state.isLoading) focusManager.clearFocus()
     }
 
+    // 생성 중 시스템 뒤로가기 차단. 오버레이는 탭만 삼켜서 뒤로가기는 그대로 살아 있었다.
+    // ViewModel 이 그룹 그래프에 scope 되어 화면을 떠나도 죽지 않으므로, 나간 뒤 요청이
+    // 성공하면 GroupShareRoute 로 끌려간다. (ViewModel 의 BackClicked 가드는 스캐폴드
+    // 버튼용이고, 시스템 백은 Intent 를 거치지 않아 여기서 막아야 한다.)
+    BackHandler(enabled = state.isLoading) {}
+
     // 생성 실패(GROUP304 등) → 공용 에러 다이얼로그. 확인 시 상태 소비.
     state.createError?.let { error ->
         ModyErrorDialog(
@@ -58,6 +66,9 @@ fun CreateGroupScreen(viewModel: GroupViewModel) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         GroupScaffold(
+            // 생성 중에는 아래 화면을 스크린리더에서 감춘다. 오버레이가 시각적으로는 덮지만
+            // 시맨틱 트리에는 그대로 남아, 탭으로 못 누르는 입력 필드·버튼에 포커스가 간다.
+            modifier = if (state.isLoading) Modifier.clearAndSetSemantics {} else Modifier,
             title = "그룹 이름을 정해볼까요?",
             subtitle = buildAnnotatedString {
                 append("친구들과 함께할 그룹의 이름이에요.\n")

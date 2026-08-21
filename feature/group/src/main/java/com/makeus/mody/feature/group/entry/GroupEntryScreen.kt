@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +45,14 @@ fun GroupEntryScreen(
     source: GroupEntrySource = GroupEntrySource.Onboarding,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // 참여 요청이 시작되면 키보드를 내린다. 코드 입력은 이미 끝났고, 키보드가 남아 있으면
+    // 버튼 자리를 대체한 로딩 인디케이터가 화면 아래쪽으로 밀려 잘 안 보인다.
+    // 해제 방식은 레포 공통 동작(Modifier.clearFocusOnTap)과 같다.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.isLoading) {
+        if (state.isLoading) focusManager.clearFocus()
+    }
 
     val title = when (source) {
         GroupEntrySource.Onboarding -> "회원가입 완료!"

@@ -1,17 +1,23 @@
 package com.makeus.mody.feature.group.create
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +40,21 @@ import com.makeus.mody.feature.group.contract.GroupState
 @Composable
 fun CreateGroupScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // 생성이 시작되면 키보드를 내린다. 안 내리면 대기 오버레이 위로 키보드가 그대로 남아
+    // 카드를 가린다(입력은 이미 끝난 상태라 띄워둘 이유도 없다).
+    // 포커스 해제 방식은 레포 공통 동작(Modifier.clearFocusOnTap)과 같다.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.isLoading) {
+        if (state.isLoading) focusManager.clearFocus()
+    }
+
+    // 생성 중 시스템 뒤로가기 차단. 오버레이는 탭만 삼켜서 뒤로가기는 그대로 살아 있었다.
+    // ViewModel 이 그룹 그래프에 scope 되어 화면을 떠나도 죽지 않으므로, 나간 뒤 요청이
+    // 성공하면 GroupShareRoute 로 끌려간다. (ViewModel 의 BackClicked 가드는 스캐폴드
+    // 버튼용이고, 시스템 백은 Intent 를 거치지 않아 여기서 막아야 한다.)
+    BackHandler(enabled = state.isLoading) {}
+
     // 생성 실패(GROUP304 등) → 공용 에러 다이얼로그. 확인 시 상태 소비.
     state.createError?.let { error ->
         ModyErrorDialog(
@@ -43,31 +64,42 @@ fun CreateGroupScreen(viewModel: GroupViewModel) {
         )
     }
 
-    GroupScaffold(
-        title = "그룹 이름을 정해볼까요?",
-        subtitle = buildAnnotatedString {
-            append("친구들과 함께할 그룹의 이름이에요.\n")
-            withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) {
-                append("최대 ${GroupState.MAX_MEMBERS}명")
-            }
-            append("까지 초대할 수 있어요!")
-        },
-        onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
-    ) {
-        GroupNameField(
-            value = state.groupName,
-            onValueChange = { viewModel.onIntent(GroupIntent.GroupNameChanged(it)) },
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        GroupScaffold(
+            // 생성 중에는 아래 화면을 스크린리더에서 감춘다. 오버레이가 시각적으로는 덮지만
+            // 시맨틱 트리에는 그대로 남아, 탭으로 못 누르는 입력 필드·버튼에 포커스가 간다.
+            modifier = if (state.isLoading) Modifier.clearAndSetSemantics {} else Modifier,
+            title = "그룹 이름을 정해볼까요?",
+            subtitle = buildAnnotatedString {
+                append("친구들과 함께할 그룹의 이름이에요.\n")
+                withStyle(SpanStyle(color = HighlightGold, fontWeight = FontWeight.Bold)) {
+                    append("최대 ${GroupState.MAX_MEMBERS}명")
+                }
+                append("까지 초대할 수 있어요!")
+            },
+            onBackClick = { viewModel.onIntent(GroupIntent.BackClicked) },
+        ) {
+            GroupNameField(
+                value = state.groupName,
+                onValueChange = { viewModel.onIntent(GroupIntent.GroupNameChanged(it)) },
+            )
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        ModyButton(
-            text = "다음으로",
-            onClick = { viewModel.onIntent(GroupIntent.GroupNameNext) },
-            variant = ModyButtonVariant.Primary,
-            enabled = state.isGroupNameValid,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            ModyButton(
+                text = "다음으로",
+                onClick = { viewModel.onIntent(GroupIntent.GroupNameNext) },
+                variant = ModyButtonVariant.Primary,
+                enabled = state.isGroupNameValid,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // 생성 API 대기. 예전엔 isLoading 을 세팅만 하고 화면이 읽지 않아, 응답이 올 때까지
+        // 아무 표시도 없이 멈춘 것처럼 보였다(그 사이 버튼 재탭도 가능했다).
+        if (state.isLoading) {
+            GroupCreatingOverlay()
+        }
     }
 }
 

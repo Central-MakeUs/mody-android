@@ -310,7 +310,9 @@ private fun FeedList(
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    ModyLoadingIndicator(modifier = Modifier.size(24.dp))
+                    // 목록 하단 더보기 자리라 기본 50 은 과하다. 크기는 size 인자로 준다
+                    // (modifier 로 걸면 컴포넌트 내부 size 와 겹친다).
+                    ModyLoadingIndicator(size = 24.dp)
                 }
             }
         }

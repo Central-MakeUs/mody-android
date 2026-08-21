@@ -63,7 +63,11 @@ class GroupViewModel @Inject constructor(
                 navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))
 
             is GroupIntent.BackClicked ->
-                navigationHelper.navigate(NavigationEvent.Up)
+                // 생성/참여 요청 중에는 화면을 떠나지 않는다. ViewModel 이 그룹 그래프
+                // 백스택 엔트리에 scope 되어 있어(GroupNavigation.sharedViewModel) 화면을
+                // 벗어나도 살아남고, 진행 중이던 코루틴이 뒤늦게 성공하면 사용자가 이미
+                // 떠난 뒤에 GroupShareRoute 로 끌고 간다.
+                if (!currentState.isLoading) navigationHelper.navigate(NavigationEvent.Up)
         }
     }
 

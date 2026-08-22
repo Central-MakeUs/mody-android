@@ -31,6 +31,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     // 권한 요청(rememberLauncherForActivityResult / ActivityResultContracts)
     implementation(libs.androidx.activity.compose)
+    // 걸음 수 권한 요청 계약(PermissionController). 일반 런타임 권한 계약으로는 요청 불가.
+    implementation(libs.androidx.health.connect)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)

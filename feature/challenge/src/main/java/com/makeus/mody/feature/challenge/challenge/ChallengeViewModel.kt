@@ -220,6 +220,8 @@ class ChallengeViewModel @Inject constructor(
      *
      * 권한이 없을 때: [askPermission] 이 true 면 무조건, false 면 아직 물어본 적 없을 때만
      * 시스템 권한 요청을 띄운다(탭 재진입마다 팝업이 뜨는 것 방지).
+     *
+     * 단, 나 혼자인 그룹에선 권한을 묻지 않는다 — 아래 [ChallengeState.isSoloGroup] 주석 참고.
      */
     private suspend fun syncSteps(
         groupId: Long,
@@ -231,6 +233,11 @@ class ChallengeViewModel @Inject constructor(
             uploadTodaySteps(groupId, challenge)
             return
         }
+        // 나 혼자인 그룹이면 화면이 통째로 SoloGroupEmpty 라 걸음 수 UI 가 하나도 없다.
+        // 그 상태에서 권한만 띄우면 "보여주는 기능 없이 건강 데이터만 가져가는 앱"이 된다
+        // — 실제로 이 사유로 스토어 심사에서 반려됐다(헬스 커넥트 '최소 범위' 위반).
+        // 이미 허용된 경우(위 분기)는 그대로 올린다 — 버디가 들어오는 순간 기록이 이어져야 한다.
+        if (currentState.isSoloGroup) return
         val alreadyAsked = runCatching { sessionRepository.getHealthPermissionAsked() }
             .getOrDefault(false)
         if (!askPermission && alreadyAsked) return

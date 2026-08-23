@@ -71,7 +71,13 @@ class ChallengeViewModel @Inject constructor(
                 // 알림함을 보고 돌아온 경우가 있어 진입마다 뱃지도 재조회.
                 viewModelScope.launch { unreadNotificationStore.refresh() }
             }
-            is ChallengeIntent.SubTabSelected -> setState { copy(selectedSubTab = intent.tab) }
+            is ChallengeIntent.SubTabSelected -> {
+                setState { copy(selectedSubTab = intent.tab) }
+                // 걸음 수 UI 가 실제로 보이는 시점 — 여기서 권한을 묻는다.
+                if (intent.tab == ChallengeSubTab.CHALLENGE) {
+                    currentGroupId?.let { syncSteps(it, askPermission = false) }
+                }
+            }
             is ChallengeIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             is ChallengeIntent.NudgeClicked -> nudge(intent.memberId)
@@ -221,7 +227,7 @@ class ChallengeViewModel @Inject constructor(
      * 권한이 없을 때: [askPermission] 이 true 면 무조건, false 면 아직 물어본 적 없을 때만
      * 시스템 권한 요청을 띄운다(탭 재진입마다 팝업이 뜨는 것 방지).
      *
-     * 단, 나 혼자인 그룹에선 권한을 묻지 않는다 — 아래 [ChallengeState.isSoloGroup] 주석 참고.
+     * 단, 걸음 수 UI 가 화면에 없을 때(연속 기록 서브탭·나 혼자인 그룹)는 묻지 않는다.
      */
     private suspend fun syncSteps(
         groupId: Long,
@@ -233,10 +239,14 @@ class ChallengeViewModel @Inject constructor(
             uploadTodaySteps(groupId, challenge)
             return
         }
+        // 아래 두 가드는 같은 이유다 — 걸음 수 UI 가 화면에 없는데 권한만 띄우면
+        // "보여주는 기능 없이 건강 데이터만 가져가는 앱"이 된다. 실제로 이 사유로 스토어
+        // 심사에서 반려됐다(헬스 커넥트 '최소 범위' 위반).
+        // 이미 허용된 경우(위 분기)는 그대로 올린다 — 화면과 무관하게 기록이 이어져야 한다.
+
+        // 걸음 수 게이지·기여도 순위는 챌린지 서브탭에만 있다. 연속 기록 탭에는 없다.
+        if (currentState.selectedSubTab != ChallengeSubTab.CHALLENGE) return
         // 나 혼자인 그룹이면 화면이 통째로 SoloGroupEmpty 라 걸음 수 UI 가 하나도 없다.
-        // 그 상태에서 권한만 띄우면 "보여주는 기능 없이 건강 데이터만 가져가는 앱"이 된다
-        // — 실제로 이 사유로 스토어 심사에서 반려됐다(헬스 커넥트 '최소 범위' 위반).
-        // 이미 허용된 경우(위 분기)는 그대로 올린다 — 버디가 들어오는 순간 기록이 이어져야 한다.
         if (currentState.isSoloGroup) return
         val alreadyAsked = runCatching { sessionRepository.getHealthPermissionAsked() }
             .getOrDefault(false)

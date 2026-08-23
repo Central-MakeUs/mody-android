@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,7 +86,11 @@ fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     // Health Connect 권한 요청. 허용 집합을 그대로 돌려주므로 요청한 권한이 전부 포함됐는지로 판정.
     // 요청 집합은 화면 로컬에 따로 붙든다 — 런처 콜백은 항상 최신 값을 읽으므로,
     // 런처를 띄운 직후 비우는 state 를 그대로 참조하면 결과가 늘 '거부'로 판정된다.
-    var pendingHealthPermissions by remember { mutableStateOf<Set<String>?>(null) }
+    //
+    // rememberSaveable 이어야 한다 — Health Connect 권한 화면이 떠 있는 동안 액티비티가
+    // 재생성되면 remember 는 null 로 돌아와, 허용했는데도 '거부'로 서버에 보고된다.
+    // Bundle 에 담기도록 Set 이 아니라 ArrayList 로 들고 있는다. (ChallengeScreen 과 동일)
+    var pendingHealthPermissions by rememberSaveable { mutableStateOf<ArrayList<String>?>(null) }
     val healthPermissionLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract(),
     ) { grantedPermissions ->
@@ -100,7 +105,7 @@ fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     LaunchedEffect(state.healthPermissionRequest) {
         val permissions = state.healthPermissionRequest
         if (permissions.isNullOrEmpty()) return@LaunchedEffect
-        pendingHealthPermissions = permissions
+        pendingHealthPermissions = ArrayList(permissions)
         // 권한 화면을 못 여는 기기가 있다. 던지면 온보딩이 이 화면에 갇히므로 거부로 이어간다.
         val launched = runCatching { healthPermissionLauncher.launch(permissions) }.isSuccess
         viewModel.onIntent(PermissionIntent.HealthPermissionRequestLaunched)

@@ -5,7 +5,7 @@ import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
-import com.makeus.mody.core.domain.repository.SessionRepository
+import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 class PermissionViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val healthRepository: HealthRepository,
-    private val sessionRepository: SessionRepository,
     private val onboardingRepository: OnboardingRepository,
 ) : BaseViewModel<PermissionState, PermissionIntent>(PermissionState()) {
 
@@ -53,9 +52,9 @@ class PermissionViewModel @Inject constructor(
             navigateToGroup()
             return
         }
-        // 챌린지 탭이 "탭 진입마다 팝업"을 막는 데 쓰는 플래그와 같은 것. 여기서 물어봤으면
-        // 탭 진입 때 또 묻지 않는다(수동 새로고침은 그대로 다시 묻는다).
-        runCatching { sessionRepository.saveHealthPermissionAsked() }
+        // 여기선 "물어봤음" 플래그를 남기지 않는다. 남기면 온보딩에서 거부한 사용자가
+        // 정작 걸음 수 챌린지를 처음 본 시점(챌린지 탭)에 자동 요청을 못 받는다 —
+        // 걸음 수가 뭔지 모르는 시점의 거부가 기능을 이해한 시점의 기회를 먹는다.
         setState { copy(healthPermissionRequest = healthRepository.stepPermissions) }
     }
 

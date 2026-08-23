@@ -117,7 +117,6 @@ private fun FeedContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     FeedEmptyContent(
-                        showPoke = state.phaseTwoFeaturesEnabled,
                         onPokeClick = { onIntent(FeedIntent.PokeClicked) },
                     )
                 }
@@ -490,8 +489,6 @@ private fun GroupSelectRow(group: GroupUi, onClick: () -> Unit) {
 /** 선택한 날짜에 올라온 피드가 없을 때 (Feed_존재 안 함 시안). */
 @Composable
 private fun FeedEmptyContent(
-    // 챌린지 기능 플래그. Phase 1 에선 콕 찌르기(그룹홈/챌린지 기능) 문구·버튼 숨김.
-    showPoke: Boolean,
     onPokeClick: () -> Unit,
 ) {
     Column(
@@ -508,31 +505,27 @@ private fun FeedEmptyContent(
                 style = ModyTheme.typography.b3,
                 color = ModyTheme.colors.gray10,
             )
-            if (showPoke) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "콕찌르기를 통해 알려주세요!",
-                    style = ModyTheme.typography.b7,
-                    color = ModyTheme.colors.gray06,
-                )
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "콕찌르기를 통해 알려주세요!",
+                style = ModyTheme.typography.b7,
+                color = ModyTheme.colors.gray06,
+            )
         }
-        if (showPoke) {
-            Box(
-                modifier = Modifier
-                    .width(140.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(ModyTheme.colors.primary100)
-                    .clickable(onClick = onPokeClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "콕 찌르기 하러 가기",
-                    style = ModyTheme.typography.b6,
-                    color = ModyTheme.colors.gray10,
-                )
-            }
+        Box(
+            modifier = Modifier
+                .width(140.dp)
+                .height(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(ModyTheme.colors.primary100)
+                .clickable(onClick = onPokeClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "콕 찌르기 하러 가기",
+                style = ModyTheme.typography.b6,
+                color = ModyTheme.colors.gray10,
+            )
         }
     }
 }

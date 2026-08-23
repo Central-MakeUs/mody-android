@@ -23,8 +23,6 @@ data class RecordDetailState(
     val isCommentsLoading: Boolean = false,
     val commentInput: String = "",
     val isSending: Boolean = false,
-    /** Phase 2 기능(응원 댓글) 노출. Phase 1 에선 댓글 목록·입력바 숨김 + 전송 차단. */
-    val phaseTwoFeaturesEnabled: Boolean = false,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
 ) : UiState {

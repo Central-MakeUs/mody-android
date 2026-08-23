@@ -6,7 +6,6 @@ import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.Comment
 import com.makeus.mody.core.domain.repository.FeedRepository
-import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -24,7 +23,6 @@ import kotlinx.coroutines.launch
 class RecordDetailViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
-    remoteConfigRepository: RemoteConfigRepository,
     savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<RecordDetailState, RecordDetailIntent>(RecordDetailState()) {
 
@@ -34,11 +32,6 @@ class RecordDetailViewModel @Inject constructor(
 
     init {
         loadDetail()
-        viewModelScope.launch {
-            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
-                setState { copy(phaseTwoFeaturesEnabled = enabled) }
-            }
-        }
         // 댓글 노출은 원격이 아니라 RecordDetailState.commentEnabled 기본값으로 끈다.
     }
 

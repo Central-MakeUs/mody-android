@@ -145,18 +145,16 @@ private fun NotificationSettingContent(
                 )
                 RowDivider()
             }
-            if (state.phaseTwoFeaturesEnabled) {
-                ToggleRow(
-                    title = "챌린지 알림",
-                    description = "챌린지와 관련된 모든 알림을 받아요.",
-                    checked = state.challengeEnabled,
-                    onCheckedChange = {
-                        if (it) onNotificationEnabled()
-                        onIntent(NotificationSettingIntent.ChallengeToggled(it))
-                    },
-                )
-                RowDivider()
-            }
+            ToggleRow(
+                title = "챌린지 알림",
+                description = "챌린지와 관련된 모든 알림을 받아요.",
+                checked = state.challengeEnabled,
+                onCheckedChange = {
+                    if (it) onNotificationEnabled()
+                    onIntent(NotificationSettingIntent.ChallengeToggled(it))
+                },
+            )
+            RowDivider()
             ToggleRow(
                 title = "식사 및 운동 알림",
                 description = null,

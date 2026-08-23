@@ -5,7 +5,6 @@ import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
-import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.NavigationEvent
@@ -22,16 +21,9 @@ class PermissionViewModel @Inject constructor(
     private val healthRepository: HealthRepository,
     private val sessionRepository: SessionRepository,
     private val onboardingRepository: OnboardingRepository,
-    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<PermissionState, PermissionIntent>(PermissionState()) {
 
     init {
-        // Phase 2 기능 플래그 — Phase 1 에선 건강 정보(걸음 수 챌린지) 항목·권한 요청 제외.
-        viewModelScope.launch {
-            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
-                setState { copy(phaseTwoFeaturesEnabled = enabled) }
-            }
-        }
         // 기기 지원 여부는 바뀌지 않으므로 진입 시 한 번만 읽는다.
         setState {
             copy(healthAvailable = healthRepository.availability() == HealthAvailability.AVAILABLE)

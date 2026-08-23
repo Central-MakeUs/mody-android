@@ -63,8 +63,6 @@ data class FeedState(
     val isGroupSheetVisible: Boolean = false,
     // 그룹 추가 방식(참여/생성) 선택 다이얼로그
     val isAddGroupDialogVisible: Boolean = false,
-    // 챌린지 기능 노출(Remote Config is_phase_one_flag). Phase 1 에선 콕 찌르기 등 숨김.
-    val phaseTwoFeaturesEnabled: Boolean = false,
     /**
      * 상세(=응원 댓글) 화면 진입 허용 여부. 꺼져 있으면 카드의 우상단 화살표를 숨기고
      * 탭도 막는다 — 상세의 고유 콘텐츠가 댓글뿐이라(사진은 이 목록에 이미 다 있다)

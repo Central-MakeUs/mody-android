@@ -24,12 +24,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.PermissionController
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -57,9 +62,10 @@ private val HealthPermissionItem = PermissionItem(ModyIcons.Exercise, "건강 �
 /**
  * "확인" 시 실제로 요청할 런타임 권한. 전부 선택(거부해도 진행).
  *
- * 사진은 Photo Picker(PickVisualMedia)라 권한 불요, 걸음 수(ACTIVITY_RECOGNITION)는
- * Phase 2 미구현이라 Manifest 에서 제거됨 → 여기서도 요청 안 함(미선언 권한 요청 방지).
- * Phase 2 배포 시 Manifest 재선언과 함께 걸음 수 권한 요청을 되살린다.
+ * 사진은 Photo Picker(PickVisualMedia)라 권한 불요.
+ * 걸음 수는 Health Connect 권한이라 여기 못 넣는다 — 일반 런타임 권한이 아니라
+ * [PermissionController.createRequestPermissionResultContract] 로 따로 요청해야 하고,
+ * 화면도 별개라 알림·카메라 요청이 끝난 뒤 순차로 띄운다.
  */
 private fun requestedPermissions(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -71,14 +77,42 @@ private fun requestedPermissions(): Array<String> = buildList {
 @Composable
 fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // 결과(허용/거부)와 무관하게 다음(그룹)으로 진입 — 전부 선택 권한.
+    // 결과(허용/거부)와 무관하게 다음 단계로 — 전부 선택 권한.
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
-    ) { viewModel.onIntent(PermissionIntent.Continue) }
+    ) { viewModel.onIntent(PermissionIntent.BasePermissionsHandled) }
+
+    // Health Connect 권한 요청. 허용 집합을 그대로 돌려주므로 요청한 권한이 전부 포함됐는지로 판정.
+    // 요청 집합은 화면 로컬에 따로 붙든다 — 런처 콜백은 항상 최신 값을 읽으므로,
+    // 런처를 띄운 직후 비우는 state 를 그대로 참조하면 결과가 늘 '거부'로 판정된다.
+    var pendingHealthPermissions by remember { mutableStateOf<Set<String>?>(null) }
+    val healthPermissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract(),
+    ) { grantedPermissions ->
+        val requested = pendingHealthPermissions
+        pendingHealthPermissions = null
+        viewModel.onIntent(
+            PermissionIntent.HealthPermissionResult(
+                granted = requested != null && grantedPermissions.containsAll(requested),
+            ),
+        )
+    }
+    LaunchedEffect(state.healthPermissionRequest) {
+        val permissions = state.healthPermissionRequest
+        if (permissions.isNullOrEmpty()) return@LaunchedEffect
+        pendingHealthPermissions = permissions
+        // 권한 화면을 못 여는 기기가 있다. 던지면 온보딩이 이 화면에 갇히므로 거부로 이어간다.
+        val launched = runCatching { healthPermissionLauncher.launch(permissions) }.isSuccess
+        viewModel.onIntent(PermissionIntent.HealthPermissionRequestLaunched)
+        if (!launched) {
+            pendingHealthPermissions = null
+            viewModel.onIntent(PermissionIntent.HealthPermissionResult(granted = false))
+        }
+    }
 
     PermissionContent(
-        // 건강 정보 항목은 Phase 2 플래그가 열렸을 때만 노출.
-        showHealth = state.phaseTwoFeaturesEnabled,
+        // 표기 조건 = 실제 요청 조건(Phase 2 플래그 + 기기 지원). ViewModel 이 같은 값으로 분기한다.
+        showHealth = state.showHealth,
         onConfirm = { permissionLauncher.launch(requestedPermissions()) },
     )
 }

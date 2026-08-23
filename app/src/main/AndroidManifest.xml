@@ -32,6 +32,24 @@
         android:name="com.google.android.gms.permission.AD_ID"
         tools:node="remove" />
 
+    <!--
+      Privacy Sandbox 광고 권한도 같이 제거한다. AD_ID 하나만 막으면
+      play-services-measurement-api 가 아래 둘을 따로 병합해 넣어서, Play Console 이
+      여전히 "광고 ID 사용"으로 판정한다(AD_ID 만 지웠는데 제출이 막히던 이유).
+
+      ACCESS_ADSERVICES_AD_ID    : Privacy Sandbox 광고 ID 조회
+      ACCESS_ADSERVICES_ATTRIBUTION : 설치 기여도(어트리뷰션) 보고
+
+      둘 다 광고·어트리뷰션용이고 우리는 화면 조회/이벤트 집계만 한다. 광고를 붙이게 되면
+      이 블록을 지우면 원복된다.
+    -->
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
+
     <!-- 카메라 권한이 있어도 카메라 없는 기기(일부 태블릿/ChromeOS) 설치 허용 -->
     <uses-feature
         android:name="android.hardware.camera"

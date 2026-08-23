@@ -10,7 +10,6 @@ import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.domain.repository.RecordRepository
-import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.GroupEntrySource
@@ -45,16 +44,9 @@ class FeedViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val recordRepository: RecordRepository,
     private val unreadNotificationStore: UnreadNotificationStore,
-    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
     init {
-        // 챌린지 기능 플래그 반영 — Phase 1 에선 콕 찌르기 등 챌린지 접점 숨김.
-        viewModelScope.launch {
-            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
-                setState { copy(phaseTwoFeaturesEnabled = enabled) }
-            }
-        }
         // 상단바 알림 뱃지 — 값은 앱 전역 단일 소스(다른 탭·푸시 수신과 표시가 어긋나지 않게).
         viewModelScope.launch {
             unreadNotificationStore.hasUnread.collect { hasUnread ->

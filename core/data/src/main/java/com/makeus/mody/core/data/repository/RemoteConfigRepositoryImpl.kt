@@ -24,14 +24,13 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         setConfigSettingsAsync(
             remoteConfigSettings { minimumFetchIntervalInSeconds = MIN_FETCH_INTERVAL },
         )
-        // 원격값 없거나 fetch 전 기본값 — 심사 안전 방향(챌린지 숨김·게이트 미발동).
+        // 원격값 없거나 fetch 전 기본값 — 심사 안전 방향(게이트 미발동).
         setDefaultsAsync(
             mapOf(
-                KEY_IS_PHASE_ONE to true,
                 KEY_GUEST_LOGIN to false,
                 KEY_FORCE_UPDATE to false,
                 KEY_MIN_SUPPORTED_VERSION to "",
-                KEY_APP_STORE_URL to "",
+                KEY_PLAY_STORE_URL to "",
                 KEY_NOTICE to "",
                 // 빈 값 = 히든 로그인 비활성. 콘솔에 값이 있어야만 열린다.
                 KEY_REVIEW_LOGIN_PASSWORD to "",
@@ -41,13 +40,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         )
     }
 
-    // 초기값은 하드코딩 안전 기본(Phase 2 숨김). 생성 시점에 getBoolean 을 읽으면
-    // setDefaultsAsync 가 아직 적용 전이라 내장 기본(false)이 나와 !false = true 로
-    // Phase 2 가 잠깐 노출될 수 있다 → 원격/캐시값은 refresh 이후에만 반영.
-    private val _phaseTwoFeaturesEnabled = MutableStateFlow(false)
-    override val phaseTwoFeaturesEnabled: StateFlow<Boolean> = _phaseTwoFeaturesEnabled.asStateFlow()
-
-    // 히든 로그인도 같은 이유로 fetch 전엔 하드코딩 차단(false).
+    // 히든 로그인은 fetch 전엔 하드코딩 차단(false) — 원격/캐시값은 refresh 이후에만 반영.
     private val _guestLoginEnabled = MutableStateFlow(false)
     override val guestLoginEnabled: StateFlow<Boolean> = _guestLoginEnabled.asStateFlow()
 
@@ -59,7 +52,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
             }
         } finally {
             // 성공/실패/타임아웃 취소 모두 현재 활성값(캐시·기본값)으로 상태 갱신.
-            _phaseTwoFeaturesEnabled.value = readPhaseTwoEnabled()
             _guestLoginEnabled.value = remoteConfig.getBoolean(KEY_GUEST_LOGIN)
         }
     }
@@ -92,14 +84,10 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         }.getOrDefault(default)
     }
 
-    // iOS 와 공유하는 콘솔 파라미터(플랫폼 조건 분리됨): is_phase_one_flag.
-    // Phase 1 = 챌린지 미노출 단계 → Phase 2 기능 노출은 그 부정.
-    private fun readPhaseTwoEnabled(): Boolean = !remoteConfig.getBoolean(KEY_IS_PHASE_ONE)
-
     override fun splashGate(): SplashGate = SplashGate(
         forceUpdate = remoteConfig.getBoolean(KEY_FORCE_UPDATE),
         minimumSupportedVersion = remoteConfig.getString(KEY_MIN_SUPPORTED_VERSION).ifBlank { null },
-        appStoreUrl = remoteConfig.getString(KEY_APP_STORE_URL).ifBlank { null },
+        playStoreUrl = remoteConfig.getString(KEY_PLAY_STORE_URL).ifBlank { null },
         notice = parseNotice(remoteConfig.getString(KEY_NOTICE)),
     )
 
@@ -123,14 +111,6 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     }
 
     private companion object {
-        /** [Phase 1.0] Visible 플래그 — true 면 Phase 1(챌린지 숨김). iOS/Android 공용 키. */
-        const val KEY_IS_PHASE_ONE = "is_phase_one_flag"
-
-        /**
-         * 응원 댓글 노출 — 콘솔 미설정이면 false(숨김).
-         * is_phase_one_flag 와 분리해 챌린지는 열어둔 채 댓글만 닫을 수 있게 한다.
-         */
-
         /** 심사용 히든 로그인 허용 — 심사 기간에만 콘솔에서 true 게시. */
         const val KEY_GUEST_LOGIN = "guest_login_flag"
 
@@ -139,7 +119,14 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
 
         const val KEY_FORCE_UPDATE = "force_update_flag"
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
-        const val KEY_APP_STORE_URL = "app_store_url"
+        /**
+         * 안드로이드 스토어 이동 URL.
+         *
+         * iOS 는 같은 콘솔의 `app_store_url`(앱스토어 링크)을 읽는다. 한 키를 같이 쓰면
+         * 한쪽 플랫폼이 반드시 남의 스토어로 간다 — 실제로 안드로이드가 `app_store_url`
+         * 기본값(애플 링크)을 받고 있었다. 플랫폼별로 키를 나눈다.
+         */
+        const val KEY_PLAY_STORE_URL = "play_store_url"
         const val KEY_NOTICE = "notice_flag"
 
         /** 약관 상세 웹 URL. 콘솔 미설정 시 아래 기본값(GitHub Pages) 사용. */

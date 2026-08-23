@@ -20,16 +20,9 @@ class PermissionViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val healthRepository: HealthRepository,
     private val onboardingRepository: OnboardingRepository,
-    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<PermissionState, PermissionIntent>(PermissionState()) {
 
     init {
-        // Phase 2 기능 플래그 — Phase 1 에선 건강 정보(걸음 수 챌린지) 항목·권한 요청 제외.
-        viewModelScope.launch {
-            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
-                setState { copy(phaseTwoFeaturesEnabled = enabled) }
-            }
-        }
         // 기기 지원 여부는 바뀌지 않으므로 진입 시 한 번만 읽는다.
         setState {
             copy(healthAvailable = healthRepository.availability() == HealthAvailability.AVAILABLE)

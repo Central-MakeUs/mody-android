@@ -8,8 +8,6 @@ data class NotificationSettingState(
     val recordReminderEnabled: Boolean = false,
     val commentEnabled: Boolean = false,
     val challengeEnabled: Boolean = false,
-    /** 챌린지 기능 노출(Remote Config). Phase 1 에선 챌린지 알림 토글 행 자체를 숨김. */
-    val phaseTwoFeaturesEnabled: Boolean = false,
     /**
      * 응원 댓글 기능 노출([CommentFeature]). 닫히면 "코멘트 알림" 토글 행을 숨긴다.
      *

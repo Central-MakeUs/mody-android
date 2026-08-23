@@ -9,15 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface RemoteConfigRepository {
     /**
-     * Phase 2 기능(챌린지 탭·콕 찌르기·관련 알림 토글) 노출 여부.
-     * is_phase_one_flag 의 부정 — 기본 false(전부 숨김, 심사 안전).
-     *
-     * 응원 댓글은 여기 얹지 않는다. 원격이 아니라 코드에서 껐다 —
-     * feature:feed 의 FeedState.commentEnabled 참고.
-     */
-    val phaseTwoFeaturesEnabled: StateFlow<Boolean>
-
-    /**
      * 스토어 심사용 히든(게스트) 로그인 허용 여부 — guest_login_flag.
      * 기본 false(차단). 심사 기간에만 콘솔에서 PRD true 로 열어둔다.
      */

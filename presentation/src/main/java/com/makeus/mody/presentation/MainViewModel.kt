@@ -141,9 +141,9 @@ class MainViewModel @Inject constructor(
         val gate = remoteConfigRepository.splashGate()
         val notice = gate.notice
         _splashGate.value = when {
-            gate.forceUpdate -> SplashGateState.UpdateRequired(gate.appStoreUrl)
+            gate.forceUpdate -> SplashGateState.UpdateRequired(gate.playStoreUrl)
             isBelowMinimum(currentVersionName(), gate.minimumSupportedVersion) ->
-                SplashGateState.UpdateRequired(gate.appStoreUrl)
+                SplashGateState.UpdateRequired(gate.playStoreUrl)
             notice != null -> SplashGateState.Notice(notice)
             else -> SplashGateState.Passed
         }

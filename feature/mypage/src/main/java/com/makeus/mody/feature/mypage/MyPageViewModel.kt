@@ -6,7 +6,6 @@ import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
-import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
@@ -26,7 +25,6 @@ class MyPageViewModel @Inject constructor(
     private val healthRepository: HealthRepository,
     private val navigationHelper: NavigationHelper,
     private val unreadNotificationStore: UnreadNotificationStore,
-    remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<MyPageState, MyPageIntent>(MyPageState()) {
 
     init {
@@ -35,12 +33,6 @@ class MyPageViewModel @Inject constructor(
         viewModelScope.launch {
             unreadNotificationStore.hasUnread.collect { hasUnread ->
                 setState { copy(hasUnreadNotification = hasUnread) }
-            }
-        }
-        // Phase 2 기능 플래그 — Phase 1 에선 건강 데이터 연동 설정 메뉴 숨김.
-        viewModelScope.launch {
-            remoteConfigRepository.phaseTwoFeaturesEnabled.collect { enabled ->
-                setState { copy(phaseTwoFeaturesEnabled = enabled) }
             }
         }
     }

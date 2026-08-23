@@ -8,11 +8,8 @@ import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.navigation.PendingStreakTabHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,26 +24,13 @@ class MainScreenViewModel @Inject constructor(
     private val _selectedTab = MutableStateFlow(MainTab.FEED)
     val selectedTab: StateFlow<MainTab> = _selectedTab.asStateFlow()
 
-    /** 노출할 하단 탭. 챌린지는 Remote Config 플래그가 켜졌을 때만 포함. */
-    val visibleTabs: StateFlow<List<MainTab>> = remoteConfigRepository.phaseTwoFeaturesEnabled
-        .map { phaseTwoEnabled ->
-            MainTab.entries.filter { it != MainTab.CHALLENGE || phaseTwoEnabled }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = MainTab.entries.filter { it != MainTab.CHALLENGE },
-        )
+    /** 노출할 하단 탭. */
+    val visibleTabs: StateFlow<List<MainTab>> =
+        MutableStateFlow(MainTab.entries.toList()).asStateFlow()
 
     init {
-        // 원격 플래그 fetch(실패해도 기본 숨김 유지).
+        // 원격 플래그 fetch(강제 업데이트·공지·심사용 히든 로그인).
         viewModelScope.launch { runCatching { remoteConfigRepository.refresh() } }
-        // 챌린지가 숨겨졌는데 선택돼 있으면 피드로 복귀.
-        viewModelScope.launch {
-            visibleTabs.collect { tabs ->
-                if (_selectedTab.value !in tabs) _selectedTab.value = MainTab.FEED
-            }
-        }
         // 그룹홈 알림으로 진입 시 Feed 탭으로 전환(그룹 선택은 FeedViewModel 이 소비).
         // 다른 탭에 있어도 그룹홈이 보이도록. consume 은 FeedViewModel 담당이라 여기선 peek 만.
         viewModelScope.launch {
@@ -59,13 +43,7 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch {
             pendingStreakTabHolder.pending.collect { pending ->
                 if (!pending) return@collect
-                // 챌린지 탭이 숨겨진 상태(Phase 1)면 갈 곳이 없다. 요청이 남아 다음 진입에
-                // 엉뚱하게 소비되지 않도록 여기서 버린다.
-                if (MainTab.CHALLENGE in visibleTabs.value) {
-                    _selectedTab.value = MainTab.CHALLENGE
-                } else {
-                    pendingStreakTabHolder.consume()
-                }
+                _selectedTab.value = MainTab.CHALLENGE
             }
         }
     }

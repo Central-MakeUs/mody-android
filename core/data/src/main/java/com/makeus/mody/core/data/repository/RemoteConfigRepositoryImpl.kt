@@ -30,7 +30,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
                 KEY_GUEST_LOGIN to false,
                 KEY_FORCE_UPDATE to false,
                 KEY_MIN_SUPPORTED_VERSION to "",
-                KEY_APP_STORE_URL to "",
+                KEY_PLAY_STORE_URL to "",
                 KEY_NOTICE to "",
                 // 빈 값 = 히든 로그인 비활성. 콘솔에 값이 있어야만 열린다.
                 KEY_REVIEW_LOGIN_PASSWORD to "",
@@ -87,7 +87,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
     override fun splashGate(): SplashGate = SplashGate(
         forceUpdate = remoteConfig.getBoolean(KEY_FORCE_UPDATE),
         minimumSupportedVersion = remoteConfig.getString(KEY_MIN_SUPPORTED_VERSION).ifBlank { null },
-        appStoreUrl = remoteConfig.getString(KEY_APP_STORE_URL).ifBlank { null },
+        playStoreUrl = remoteConfig.getString(KEY_PLAY_STORE_URL).ifBlank { null },
         notice = parseNotice(remoteConfig.getString(KEY_NOTICE)),
     )
 
@@ -119,7 +119,14 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
 
         const val KEY_FORCE_UPDATE = "force_update_flag"
         const val KEY_MIN_SUPPORTED_VERSION = "minimum_supported_version"
-        const val KEY_APP_STORE_URL = "app_store_url"
+        /**
+         * 안드로이드 스토어 이동 URL.
+         *
+         * iOS 는 같은 콘솔의 `app_store_url`(앱스토어 링크)을 읽는다. 한 키를 같이 쓰면
+         * 한쪽 플랫폼이 반드시 남의 스토어로 간다 — 실제로 안드로이드가 `app_store_url`
+         * 기본값(애플 링크)을 받고 있었다. 플랫폼별로 키를 나눈다.
+         */
+        const val KEY_PLAY_STORE_URL = "play_store_url"
         const val KEY_NOTICE = "notice_flag"
 
         /** 약관 상세 웹 URL. 콘솔 미설정 시 아래 기본값(GitHub Pages) 사용. */

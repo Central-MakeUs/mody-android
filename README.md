@@ -5,35 +5,35 @@
 
 ## Tech Stack
 
-- Kotlin
-
-- Jetpack Compose
-
-- Hilt
-
-- Coroutine / Flow
-
-- Retrofit / OkHttp
-
-- DataStore
+| 분류 | 사용 기술 |
+| --- | --- |
+| Language | Kotlin |
+| UI | Jetpack Compose, Coil, Lottie |
+| Architecture | Clean Architecture + MVI, 멀티모듈 |
+| DI | Hilt |
+| Async | Coroutine / Flow |
+| Network | Retrofit, OkHttp |
+| Local | DataStore, EncryptedSharedPreferences(토큰) |
+| Navigation | Type-safe Navigation + NavigationHelper |
+| Auth | Kakao SDK, Google Sign-In |
+| Camera | CameraX (촬영·크롭·EXIF 정규화) |
+| Health | Health Connect (걸음 수 읽기) |
+| Firebase | Cloud Messaging, Crashlytics, Analytics, Remote Config |
+| Test | JUnit, Konsist (아키텍처 규칙 검증) |
 
 ## Architecture
 
 MODY Android는 멀티모듈 기반으로 구성되어 있으며, Feature와 Core Layer를 분리하여 유지보수성과 확장성을 높였습니다.
 
-- UI: Jetpack Compose
+화면은 단방향으로 흐릅니다. 사용자 액션은 `Intent` 로만 ViewModel 에 들어가고, 상태 변경은
+`setState { copy(...) }` 한 곳으로 모입니다. `Screen` 은 렌더링만 맡아 비즈니스 로직·화면 이동을
+직접 다루지 않습니다.
 
-- Architecture: MVI
-
-- Dependency Injection: Hilt
-
-- Asynchronous: Coroutine / Flow
-
-- Network: Retrofit / OkHttp
-
-- Local Storage: DataStore
-
-- Navigation: Type-safe Navigation + NavigationHelper
+```text
+Screen ──onIntent(Intent)──> ViewModel ──> Repository(:core:domain 인터페이스)
+   ^                             │
+   └────── StateFlow<State> ─────┘
+```
 
 ## Project Structure
 
@@ -47,7 +47,7 @@ mody
 
 ├── core
 
-│   ├── common-ui       # MVI Base(ViewModel, State, Intent, SideEffect)
+│   ├── common-ui       # MVI Base(BaseViewModel, UiState, UiIntent)
 
 │   ├── designsystem    # Theme, Typography, Components
 
@@ -99,6 +99,9 @@ graph TD
 
     app --> pres
     app --> data
+    app --> cui
+    app --> nav
+    app --> dom
     pres --> feat
     pres --> cui
     pres --> ds
@@ -113,6 +116,8 @@ graph TD
 
     cam --> ds
     cam --> dom
+
+    cui --> dom
 
     data --> dom
     data --> net
@@ -138,4 +143,52 @@ graph TD
 공유가 발생하는 순간 `core` 로 승격합니다. `:core:camera` 는 `:feature:challenge` 와
 `:feature:record` 가 함께 쓰게 되면서, feature 간 의존을 만들지 않기 위해 분리한 모듈입니다.
 
+### 모듈 경계가 못 잡는 것은 테스트로 잡습니다
+
+Gradle 은 **모듈 사이**만 막습니다. 같은 모듈 안에서 State 에 `var` 를 넣거나 Screen 이
+NavController 를 직접 만지는 것은 컴파일이 통과하므로, [Konsist](https://docs.konsist.lemonappdev.com/)
+로 검사해 CI 에서 실패시킵니다 (`app/src/test/.../ArchitectureRuleTest.kt`, 10개 규칙).
+
+```kotlin
+@Test
+fun `State 에 var 프로퍼티가 없다`() { /* ... */ }
+
+@Test
+fun `Screen 은 NavController 를 직접 다루지 않는다`() { /* ... */ }
+```
+
+| 검사 대상 | 규칙 |
+| --- | --- |
+| State / Intent | State 는 `data class : UiState`, Intent 는 `sealed : UiIntent`, State 에 `var` 금지 |
+| ViewModel | `BaseViewModel` 상속, `@HiltViewModel` 주입 |
+| Screen | `NavController` 직접 조작 금지, Repository 직접 참조 금지 |
+| 레이어 | feature·presentation 이 data/network 구현체 미참조, domain 이 Android 프레임워크 미의존 |
+| 네이밍 | Repository 구현체는 `Impl` 로 끝나고 `@Singleton` |
+
+```bash
+./gradlew :app:testDebugUnitTest   # 아키텍처 규칙 검사 포함
+```
+
 > 현재 Feature 모듈을 지속적으로 분리 및 확장하며 아키텍처를 개선하고 있습니다.
+
+## Build & Run
+
+```bash
+./gradlew assembleDebug     # debug 빌드
+./gradlew installDebug      # 기기에 설치
+./gradlew test              # unit test (아키텍처 규칙 검사 포함)
+./gradlew lint              # lint
+```
+
+| buildType | applicationId | 용도 |
+| --- | --- | --- |
+| debug | `com.makeus.mody.dev` | 개발 — release 와 동시 설치 가능 |
+| release | `com.makeus.mody` | 배포 |
+
+카카오 네이티브 키는 `local.properties` 에서 읽습니다(미설정 시 빈 값으로 빌드되며 카카오
+로그인·공유가 동작하지 않습니다).
+
+```properties
+KAKAO_NATIVE_KEY_DEV=...
+KAKAO_NATIVE_KEY_PROD=...
+```

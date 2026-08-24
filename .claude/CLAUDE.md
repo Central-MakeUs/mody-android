@@ -19,23 +19,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 :app                        ← ModyApplication(@HiltAndroidApp)만, 의존성 조립
 :presentation               ← MainActivity, NavHost, 최상위 Compose 진입점
-:core:common-ui             ← BaseViewModel, UiState, UiIntent
-:core:designsystem          ← ModyTheme, 공용 Compose 컴포넌트, 색상/타이포
+:core:common-ui             ← BaseViewModel, UiState, UiIntent, CurrentActivityHolder,
+                              HealthConnectLauncher(건강 데이터 설정 진입)
+:core:designsystem          ← ModyTheme, 공용 Compose 컴포넌트, 색상/타이포, ModyCatalog
 :core:navigation            ← Route 정의, NavigationHelper, NavigationEvent
-:core:domain                ← Repository 인터페이스, 도메인 모델 (비즈니스 로직)
+:core:camera                ← 촬영/크롭 Compose 레이어(CameraX). record·challenge 가 공유
+:core:domain                ← Repository 인터페이스, 도메인 모델, UseCase (비즈니스 로직)
 :core:data                  ← Repository 구현체, DataSource 구현체
 :core:network               ← Retrofit, OkHttp, API 인터페이스, Interceptor
-:feature:*                  ← 기능별 화면 (아직 없음, Phase 2에서 추가)
+:feature:auth               ← 로그인(카카오·구글, 심사용 히든 로그인)
+:feature:onboarding         ← 약관·권한·프로필 온보딩
+:feature:group              ← 그룹 생성/참여/초대
+:feature:feed               ← 피드, 기록 상세
+:feature:challenge          ← 챌린지 탭(연속 기록·걸음 수 챌린지)
+:feature:record             ← 기록 작성(촬영)
+:feature:notification       ← 알림함
+:feature:mypage             ← 마이페이지, 알림 설정, 건강 연동 안내
 ```
+
+모듈을 새로 추가/제거하면 `settings.gradle.kts` 와 이 표를 같이 고친다. 디렉터리만 남고
+`include` 가 빠지면 빌드에서 조용히 사라진다(`core/health/` 가 그 상태로 남아 있었다).
 
 ### 의존성 방향 (절대 역방향 금지)
 
 ```
-:app → :presentation → :feature:* → :core:common-ui, :core:designsystem, :core:navigation, :core:domain
-:core:data → :core:domain
+:app          → :presentation, :core:data, :core:common-ui, :core:domain, :core:navigation
+:presentation → :feature:*, :core:common-ui, :core:designsystem, :core:navigation, :core:domain
+:feature:*    → :core:common-ui, :core:designsystem, :core:navigation, :core:domain
+                (record·challenge 만 추가로 :core:camera)
+:core:camera  → :core:designsystem, :core:domain
+:core:common-ui → :core:domain
+:core:data    → :core:domain, :core:network
 :core:network → :core:domain
-:core:domain → (아무것도 없음)
+:core:domain  → (아무것도 없음)
+:core:designsystem, :core:navigation → (아무것도 없음)
 ```
+
+Repository 구현 바인딩(`:core:data`)은 `:app` 에서만 조립한다 — feature 는 `:core:domain`
+인터페이스만 본다.
 
 ## 아키텍처: Clean Architecture + MVI
 
@@ -193,18 +214,81 @@ abstract class DataModule {
 buildConfigField("String", "BASE_URL", "\"https://api.mody.makeus.in/\"")
 ```
 
+### 릴리스 산출물 — 빌드 성공이 "맞다"는 뜻이 아니다
+
+아래 셋은 전부 `BUILD SUCCESSFUL` 로 끝나고 Play 업로드/제출 단계에서야 막힌다.
+
+- **`--no-daemon` 없이는 `VERSION_CODE` env 가 무시된다.** `app/build.gradle.kts` 가
+  `System.getenv()` 로 읽는데 이건 **Gradle 데몬 프로세스**의 환경을 본다. Studio 가 띄워둔
+  데몬을 재사용하면 커맨드라인 env 가 닿지 않아 조용히 기본값으로 빌드된다.
+  ```bash
+  VERSION_CODE=<N> VERSION_NAME=<X.Y.Z> ./gradlew --no-daemon :app:bundleRelease
+  ```
+- **광고 권한이 저절로 들어온다.** `firebase-analytics` → `play-services-measurement-api` 가
+  광고 권한을 **여러 이름으로** 선언한다. `com.google.android.gms.permission.AD_ID` 하나만
+  막아두면 `ACCESS_ADSERVICES_AD_ID` / `ACCESS_ADSERVICES_ATTRIBUTION` 이 그대로 병합돼
+  "광고 ID 사용: 아니요" 제출이 막힌다. 셋 다 `tools:node="remove"` 로 제거돼 있다
+  (`app/src/main/AndroidManifest.xml`). 라이브러리를 올린 뒤엔 다시 확인할 것.
+- **versionCode 는 되돌릴 수 없다.** 기기/Play 모두 더 낮은 값 설치·업로드를 거부한다.
+  올리기 전 Play Console 의 최고 versionCode 를 확인한다.
+
+업로드 전 산출물을 직접 뜯어 확인한다. `app/build/intermediates/**` 는 믿지 마라 —
+Studio 백그라운드 빌드가 나중에 덮어써서 AAB 내용과 어긋난다.
+```bash
+# 권한 (APK) — uses-permission 만 정확히 나온다. 이걸 1순위로 본다.
+~/Library/Android/sdk/build-tools/36.0.0/aapt2 dump permissions \
+  app/build/outputs/apk/release/app-release.apk
+
+# AAB 는 매니페스트가 protobuf 라 문자열로 확인한다
+unzip -p app/build/outputs/bundle/release/app-release.aab base/manifest/AndroidManifest.xml \
+  | strings | grep -iE 'permission\.(AD_ID|ACCESS_ADSERVICES)|READ_STEPS'
+```
+
+AAB 쪽 grep 패턴에 `permission\.` 을 반드시 붙인다. 그냥 `adservices` 로 훑으면
+`android.adservices.AD_SERVICES_CONFIG`(`<property>`)와 `android.ext.adservices`(라이브러리)가
+같이 걸리는데 **둘 다 권한이 아니고 지울 필요도 없다.** 문제가 되는 건
+`android.permission.ACCESS_ADSERVICES_*` 와 `com.google.android.gms.permission.AD_ID` 뿐이다.
+
+**Play 자동 배포는 아직 없다.** `.github/workflows/cd.yml` 의 `playstore` 잡은 미구성 상태로
+`exit 1` 한다 — `v1.2.3` 같은 릴리스 태그를 밀면 CI 가 실패한다. 동작하는 건 `-dev` 태그
+(Firebase App Distribution, debug APK)뿐이고, Play 제출은 위 명령으로 로컬 AAB 를 말아
+콘솔에 수동 업로드한다. CD 의 versionCode 는 `v*` 태그 개수로 매긴다(태그를 지우면 값이
+되돌아가므로 배포한 태그는 지우지 않는다).
+
+release 서명은 **Android Studio JBR 21** 로만 된다. Homebrew JDK 17 이면 keystore 비번을
+틀렸다는 에러가 난다(PKCS12 non-ASCII 처리 차이). `~/.gradle/gradle.properties` 의
+`org.gradle.java.home` 설정을 먼저 본다.
+
+### Remote Config (Firebase `mody-df59e`, iOS 와 공용)
+
+조건은 앱 ID 기준 4개(`iOS DEV` / `iOS PROD` / `Android DEV` / `Android PRD`)다.
+**플랫폼별로 값이 갈리므로 조건값을 빠뜨리면 default 를 받는다** — 안드로이드가
+`app_store_url`(애플 링크) 기본값을 받고 있던 게 그 사례다. 그래서 스토어 URL 은
+`play_store_url`(Android) / `app_store_url`(iOS) 로 키를 나눴다. iOS 가 읽는 키를
+rename 하면 iOS 가 깨지므로 **이름을 바꾸지 말고 추가**한다.
+
+`guest_login_flag` + `review_login_password` 는 심사용 히든 로그인(로그인 화면 로고 20연타)을
+연다. **심사 기간에만** PRD 를 켜고 끝나면 되돌린다. 콘솔 값 확인·게시는 CLI 로도 된다.
+```bash
+firebase remoteconfig:get --project mody-df59e -o rc.json
+```
+
 ## 브랜치 / 병렬 개발 규칙
 
 - **기능별 브랜치에서 개발**: `main`에 직접 커밋 금지. 새 작업은 항상 기능 브랜치를 파서 진행하고 PR로 머지한다. 브랜치명은 `feat/xxx`, `fix/xxx` 형태(작업 성격 + 짧은 요약).
 - **스택 PR**: 연쇄 의존 작업은 이전 브랜치를 base로 쌓고(P1→P2→…), 낮은 번호부터 순서대로 머지한다. 하나 머지되면 GitHub이 다음 PR base를 `main`으로 자동 재타겟한다.
-- **여러 인스턴스 동시 개발 = git worktree 필수**: 같은 작업 트리(폴더)에서 Claude Code/에디터를 2개 이상 띄워 서로 다른 브랜치를 만지면 index·`HEAD`·파일이 공유돼 충돌·덮어쓰기가 난다. 브랜치마다 별도 폴더로 분리한다.
+- **워크트리 분리 금지 — 본문 단일 체크아웃에서만 작업**: 예전엔 브랜치마다 `git worktree` 로
+  폴더를 나눴는데, 사용자가 에디터에서 직접 머지·전환하는 흐름과 겹쳐 오히려 어긋남을 만들었다
+  (PR #53 머지 후 push 커밋이 main 에서 누락 → cherry-pick + 충돌 수동 해소). 본문
+  `/Users/jeongdoyun/Project/mody` 하나에서 브랜치 전환으로만 작업한다.
   ```bash
-  git worktree add ../mody-feed  feat/feed      # 폴더 A: 피드 작업
-  git worktree add ../mody-record feat/record   # 폴더 B: 기록 작업
-  # 작업 끝나면
-  git worktree remove ../mody-feed
+  git switch -c feat/xxx origin/main   # 새 작업은 항상 origin/main 기준
   ```
-  각 worktree는 독립 작업 트리, `.git` 만 공유(디스크 효율). 인스턴스마다 다른 worktree 폴더를 열면 서로 안 건드린다.
+- **작업 시작 전 현재 브랜치를 확인한다**: 사용자가 에디터에서 브랜치를 바꿔둔 채일 수 있다.
+  확인 없이 커밋하면 `main` 에 직접 올라간다(실제로 발생). 커밋 직후 `git branch --show-current`
+  로 한 번 더 본다.
+- **기존 PR 브랜치에 push 하기 전 머지 여부 확인**: `gh pr view N --json state`. 사용자가 작업
+  중간에 수시로 머지한다. 머지된 브랜치에 이어 커밋하면 고아 커밋이 된다 — 새 브랜치로 뗀다.
 
 ## PR / 커밋 규칙
 
@@ -325,3 +409,9 @@ Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 �
 | 타이포 | `core/designsystem/.../theme/Type.kt` |
 | NavHost | `presentation/.../navigation/AppNavHost.kt` |
 | Hilt 진입점 | `app/.../ModyApplication.kt` |
+| 스플래시 게이트·딥링크 | `presentation/.../MainViewModel.kt`, `MainActivity.kt` |
+| 하단 탭 구성 | `presentation/.../main/MainScreenViewModel.kt` |
+| Remote Config | `core/data/.../repository/RemoteConfigRepositoryImpl.kt` |
+| 걸음 수(Health Connect) | `core/data/.../repository/HealthRepositoryImpl.kt`, `core/domain/.../usecase/SyncTodayStepsUseCase.kt` |
+| 매니페스트(권한 선언) | `app/src/main/AndroidManifest.xml`, `presentation/src/main/AndroidManifest.xml` |
+| CI / CD | `.github/workflows/ci.yml`, `cd.yml` |

@@ -48,7 +48,8 @@
             <!--
               Health Connect 권한 사용 근거 화면(Android 13 이하). 선언이 없으면 일부 기기에서
               권한 요청 자체가 거절된다.
-              TODO(health): 현재는 앱만 열린다 — 개인정보처리방침/사용 목적 화면으로 연결 필요.
+              MainActivity.handleHealthRationaleIntent 가 받아 HealthRationaleRoute 로 보낸다 —
+              액션 문자열을 여기서 바꾸면 그쪽 상수도 같이 고칠 것.
             -->
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />

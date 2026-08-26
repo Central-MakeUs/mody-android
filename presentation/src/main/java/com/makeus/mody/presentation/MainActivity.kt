@@ -29,6 +29,7 @@ import com.makeus.mody.core.domain.notification.NotificationDeepLink
 import com.makeus.mody.core.domain.notification.NotificationDeepLinkHolder
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.navigation.MainRoute
+import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
@@ -82,6 +83,9 @@ class MainActivity : ComponentActivity() {
         handleInviteDeepLink(intent)
         // 알림 탭으로 실행된 경우 딥링크 보관 → NavHost 준비 후 소비.
         handleNotificationIntent(intent)
+        // Health Connect "이 앱이 데이터를 사용하는 방법" 진입.
+        // savedInstanceState 가 있으면 회전 등 재생성이라 이미 이동했다 — 다시 밀지 않는다.
+        if (savedInstanceState == null) handleHealthRationaleIntent(intent)
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
@@ -191,8 +195,31 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         handleInviteDeepLink(intent)
         handleNotificationIntent(intent)
+        handleHealthRationaleIntent(intent)
         // 앱 실행 중 알림 탭: 이미 NavHost 준비됨 → 즉시 소비.
         consumeNotificationDeepLink()
+    }
+
+    /**
+     * Health Connect 권한 사용 근거 화면 요청 처리.
+     *
+     * Health Connect 앱/시스템 설정의 "이 앱이 데이터를 사용하는 방법"이 이 액션으로 앱을 연다
+     * (Android 14+ 는 `VIEW_PERMISSION_USAGE`, 그 이하는 androidx 액션). 매니페스트에 필터만
+     * 있고 이동이 없으면 앱 홈이 열려, 어떤 데이터를 왜 쓰는지 확인할 수가 없다.
+     *
+     * NavHost 가 아직 안 붙었어도 된다 — NavigationHelper 의 Channel(BUFFERED)이 들고 있다가
+     * 준비된 뒤 전달한다. 로그인 여부와 무관하게 보여준다(근거 안내는 세션과 상관없다).
+     */
+    private fun handleHealthRationaleIntent(intent: Intent?) {
+        val action = intent?.action ?: return
+        if (action != ACTION_SHOW_PERMISSIONS_RATIONALE &&
+            action != ACTION_VIEW_PERMISSION_USAGE
+        ) {
+            return
+        }
+        // 액션을 지운다 — 남겨두면 Activity 재생성 시 같은 인텐트를 다시 읽어 또 이동한다.
+        intent.action = null
+        navigationHelper.navigate(NavigationEvent.To(MyPageGraph.HealthRationaleRoute))
     }
 
     /** 알림 PendingIntent extra 에서 딥링크 정보 추출 → 홀더 보관(1회성). */
@@ -268,5 +295,16 @@ class MainActivity : ComponentActivity() {
         const val INVITE_PATH_PREFIX = "/invite"
         const val KAKAO_SCHEME_PREFIX = "kakao"
         const val KAKAO_LINK_HOST = "kakaolink"
+
+        /**
+         * Health Connect 권한 근거 화면 진입 액션. presentation manifest 의 intent-filter 와
+         * 같은 값을 유지할 것.
+         *
+         * 문자열로 둔다 — `Intent.ACTION_VIEW_PERMISSION_USAGE` 는 API 29 상수라 minSdk 26 에서
+         * 참조하면 lint 가 걸고, androidx 쪽 액션은 아예 상수가 없다.
+         */
+        const val ACTION_SHOW_PERMISSIONS_RATIONALE =
+            "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
+        const val ACTION_VIEW_PERMISSION_USAGE = "android.intent.action.VIEW_PERMISSION_USAGE"
     }
 }

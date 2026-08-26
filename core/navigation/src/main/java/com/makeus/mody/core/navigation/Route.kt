@@ -182,6 +182,19 @@ sealed interface MyPageGraph : Route {
      */
     @Serializable
     data object HealthGuideRoute : MyPageGraph
+
+    /**
+     * 건강 데이터(Health Connect) 권한 사용 근거 화면.
+     *
+     * Health Connect 앱/시스템 설정에서 "이 앱이 데이터를 사용하는 방법"을 누르면 열린다
+     * (`androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE` / Android 14+ 는
+     * `VIEW_PERMISSION_USAGE`). 매니페스트에 인텐트 필터만 있고 이 화면이 없으면 앱 홈이
+     * 열려, 어떤 데이터를 왜 쓰는지 확인할 방법이 없다 — 스토어 심사가 밟는 경로다.
+     *
+     * 로그인 전에도 열릴 수 있으므로 세션에 의존하지 않는다.
+     */
+    @Serializable
+    data object HealthRationaleRoute : MyPageGraph
 }
 
 @Serializable

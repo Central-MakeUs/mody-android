@@ -1,40 +1,12 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.mody.android.feature)
 }
 
 android {
     namespace = "com.makeus.mody.feature.mypage"
-    compileSdk = 36
-    defaultConfig { minSdk = 26 }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions { jvmTarget = "11" }
-    buildFeatures { compose = true }
 }
 
 dependencies {
-    implementation(project(":core:common-ui"))
-    implementation(project(":core:designsystem"))
-    implementation(project(":core:navigation"))
-    implementation(project(":core:domain"))
-
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.compose)
-    implementation(libs.androidx.navigation.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.ui.tooling.preview)
-    debugImplementation(libs.androidx.ui.tooling)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.coil.compose)
-    // 건강 데이터 연동 설정 진입 인텐트 액션 상수용(권한 요청은 :feature:challenge 담당).
     implementation(libs.androidx.health.connect)
+    implementation(libs.coil.compose)
 }

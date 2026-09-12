@@ -1,4 +1,6 @@
 pluginManagement {
+    // 규약 플러그인(mody.android.*) 을 제공하는 포함 빌드.
+    includeBuild("build-logic")
     repositories {
         google {
             content {

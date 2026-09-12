@@ -64,6 +64,9 @@ internal fun Project.configureCompose(
         add("implementation", libs.library("androidx-ui-graphics"))
         add("implementation", libs.library("androidx-ui-tooling-preview"))
         add("implementation", libs.library("androidx-material3"))
+        // collectAsStateWithLifecycle. 9개 모듈이 쓰면서 아무도 선언하지 않아
+        // hilt-navigation-compose 의 전이 의존에 얹혀 있었다 — 그쪽이 끊으면 한꺼번에 깨진다.
+        add("implementation", libs.library("androidx-lifecycle-runtime-compose"))
         add("debugImplementation", libs.library("androidx-ui-tooling"))
     }
 }

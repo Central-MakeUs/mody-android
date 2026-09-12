@@ -55,7 +55,8 @@ mody
 
 │   ├── model           # 값 타입(순수 Kotlin, 의존성 없음)
 
-│   ├── domain          # Repository 인터페이스, UseCase (순수 Kotlin)
+│   ├── domain          # Repository·Logger·Reporter 인터페이스, UseCase,
+│                       #   프로세스 수명 상태 홀더 (순수 Kotlin)
 
 │   ├── data            # Repository 구현, DataStore
 
@@ -96,7 +97,7 @@ graph TD
     nav[":core:navigation"]
     cam[":core:camera"]
     model[":core:model<br/>순수 Kotlin · 의존성 없음"]
-    dom[":core:domain<br/>순수 Kotlin"]
+    dom[":core:domain<br/>인터페이스 · UseCase · 홀더<br/>순수 Kotlin"]
     data[":core:data"]
     net[":core:network"]
 
@@ -166,6 +167,15 @@ graph TD
 두 모듈은 안드로이드 라이브러리가 아니라 **순수 Kotlin JVM 모듈**입니다. Android SDK 가
 클래스패스에 아예 없어서 프레임워크 타입을 쓰려 해도 컴파일이 되지 않습니다 — 규칙을
 테스트가 아니라 빌드가 강제합니다.
+
+`:core:domain` 에는 Repository 인터페이스와 UseCase 외에 두 가지가 더 있습니다.
+
+- **바깥으로 나가는 포트** — `AnalyticsLogger`, `ErrorReporter`, `PushTokenSynchronizer`.
+  구현은 `:core:data` 에 있고 도메인은 인터페이스만 압니다.
+- **프로세스 수명 상태 홀더** — `InviteCodeHolder`, `NotificationDeepLinkHolder`,
+  `UnreadNotificationStore`, `SessionExpiredNotifier`. 딥링크로 들어온 초대 코드처럼
+  화면 사이를 건너야 하지만 저장할 것은 아닌 값을 들고 있습니다. feature 끼리 직접
+  의존하지 않고 값을 넘기는 통로이기도 합니다.
 
 ### 모듈 경계가 못 잡는 것은 테스트로 잡습니다
 

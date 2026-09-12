@@ -25,7 +25,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :core:navigation            ← Route 정의, NavigationHelper, NavigationEvent
 :core:camera                ← 촬영/크롭 Compose 레이어(CameraX). record·challenge 가 공유
 :core:model                 ← 값 타입만. 순수 Kotlin JVM(의존성 없음)
-:core:domain                ← Repository 인터페이스, UseCase (비즈니스 로직). 순수 Kotlin JVM
+:core:domain                ← Repository/Logger/Reporter 인터페이스, UseCase,
+                              프로세스 수명 상태 홀더(InviteCodeHolder 등). 순수 Kotlin JVM
 :core:data                  ← Repository 구현체, DataSource 구현체
 :core:network               ← Retrofit, OkHttp, API 인터페이스, Interceptor
 :feature:auth               ← 로그인(카카오·구글, 심사용 히든 로그인)

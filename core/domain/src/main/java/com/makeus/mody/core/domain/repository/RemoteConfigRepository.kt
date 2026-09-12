@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.SplashGate
+import com.makeus.mody.core.model.SplashGate
 import kotlinx.coroutines.flow.StateFlow
 
 /**

@@ -1,9 +1,9 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.ActivityCalendar
-import com.makeus.mody.core.domain.model.CommentPage
-import com.makeus.mody.core.domain.model.FeedRecordPage
-import com.makeus.mody.core.domain.model.RecordDetail
+import com.makeus.mody.core.model.ActivityCalendar
+import com.makeus.mody.core.model.CommentPage
+import com.makeus.mody.core.model.FeedRecordPage
+import com.makeus.mody.core.model.RecordDetail
 import java.time.LocalDate
 
 /** 피드 화면 데이터. */

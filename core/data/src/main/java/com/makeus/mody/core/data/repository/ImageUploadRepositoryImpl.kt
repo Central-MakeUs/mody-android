@@ -2,9 +2,9 @@ package com.makeus.mody.core.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.makeus.mody.core.domain.model.error.HttpResponseException
-import com.makeus.mody.core.domain.model.error.HttpResponseStatus
-import com.makeus.mody.core.domain.model.error.ModyErrorCode
+import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.HttpResponseStatus
+import com.makeus.mody.core.model.error.ModyErrorCode
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
 import com.makeus.mody.core.network.api.UploadApi
 import com.makeus.mody.core.network.model.unwrapResult

@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.group.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.error.ErrorAlert
+import com.makeus.mody.core.model.error.ErrorAlert
 
 data class GroupState(
     // 코드로 그룹 참여

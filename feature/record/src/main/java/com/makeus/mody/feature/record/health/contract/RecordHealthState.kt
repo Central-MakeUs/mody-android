@@ -1,8 +1,8 @@
 package com.makeus.mody.feature.record.health.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.CropRegion
-import com.makeus.mody.core.domain.model.error.ErrorAlert
+import com.makeus.mody.core.model.CropRegion
+import com.makeus.mody.core.model.error.ErrorAlert
 
 data class RecordHealthState(
     /** 선택/촬영한 사진 URI 문자열(원본). null 이면 미선택 → 업로드 박스 노출. */

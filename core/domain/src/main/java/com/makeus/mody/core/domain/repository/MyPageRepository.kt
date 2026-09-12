@@ -1,11 +1,11 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.ExerciseSchedule
-import com.makeus.mody.core.domain.model.MealSchedule
-import com.makeus.mody.core.domain.model.MyProfile
-import com.makeus.mody.core.domain.model.NotificationSettings
-import com.makeus.mody.core.domain.model.ProfileDetail
-import com.makeus.mody.core.domain.model.WeightSummary
+import com.makeus.mody.core.model.ExerciseSchedule
+import com.makeus.mody.core.model.MealSchedule
+import com.makeus.mody.core.model.MyProfile
+import com.makeus.mody.core.model.NotificationSettings
+import com.makeus.mody.core.model.ProfileDetail
+import com.makeus.mody.core.model.WeightSummary
 
 /** 마이페이지 데이터. */
 interface MyPageRepository {

@@ -1,9 +1,9 @@
 package com.makeus.mody.core.network.upload
 
 import com.makeus.mody.core.domain.error.ErrorReporter
-import com.makeus.mody.core.domain.model.error.HttpResponseException
-import com.makeus.mody.core.domain.model.error.HttpResponseStatus
-import com.makeus.mody.core.domain.model.error.ModyErrorCode
+import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.HttpResponseStatus
+import com.makeus.mody.core.model.error.ModyErrorCode
 import com.makeus.mody.core.network.di.UploadClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

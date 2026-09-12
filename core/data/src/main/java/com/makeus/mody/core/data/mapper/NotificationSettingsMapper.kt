@@ -1,6 +1,6 @@
 package com.makeus.mody.core.data.mapper
 
-import com.makeus.mody.core.domain.model.NotificationSettings
+import com.makeus.mody.core.model.NotificationSettings
 import com.makeus.mody.core.network.model.mypage.NotificationSettingResponse
 
 /** 서버 응답 → 도메인 알림 설정. 스케줄 매핑은 [ScheduleMapper] 공용 사용. */

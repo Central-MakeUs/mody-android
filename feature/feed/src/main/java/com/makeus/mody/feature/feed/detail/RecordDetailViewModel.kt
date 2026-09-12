@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.Comment
+import com.makeus.mody.core.model.Comment
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent

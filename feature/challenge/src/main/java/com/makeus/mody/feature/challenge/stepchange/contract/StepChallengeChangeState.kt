@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.challenge.stepchange.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.StepChallengeOption
+import com.makeus.mody.core.model.StepChallengeOption
 
 data class StepChallengeChangeState(
     val isLoading: Boolean = true,

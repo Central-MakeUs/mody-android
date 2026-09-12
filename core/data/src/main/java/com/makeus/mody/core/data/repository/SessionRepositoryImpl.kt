@@ -9,9 +9,9 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.makeus.mody.core.data.cache.NotificationSettingsCache
-import com.makeus.mody.core.domain.model.AuthStatus
-import com.makeus.mody.core.domain.model.SocialLoginType
-import com.makeus.mody.core.domain.model.StepSyncCheckpoint
+import com.makeus.mody.core.model.AuthStatus
+import com.makeus.mody.core.model.SocialLoginType
+import com.makeus.mody.core.model.StepSyncCheckpoint
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.interceptor.TokenManager
 import kotlinx.coroutines.flow.Flow

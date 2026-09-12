@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.NotificationPage
+import com.makeus.mody.core.model.NotificationPage
 
 /** 인박스 알림 화면 데이터. */
 interface NotificationRepository {

@@ -52,7 +52,7 @@ import kotlin.math.roundToInt
  * @param frameRatio 프레임 높이/너비. 화면보다 세로로 길면 드래그 여지가 없어 1 이하만 의미가 있다.
  */
 @Composable
-fun AdjustLayer(
+internal fun AdjustLayer(
     image: UprightImage,
     frameRatio: Float,
     onRetake: () -> Unit,

@@ -19,7 +19,7 @@
 | Camera | CameraX (촬영·크롭·EXIF 정규화) |
 | Health | Health Connect (걸음 수 읽기) |
 | Firebase | Cloud Messaging, Crashlytics, Analytics, Remote Config |
-| Test | JUnit, Konsist (아키텍처 규칙 검증) |
+| Test | JUnit (순수 로직 단위 테스트), Konsist (아키텍처 규칙 검증) |
 
 ## Architecture
 
@@ -115,7 +115,7 @@ graph TD
     feat -. "challenge · record 만" .-> cam
 
     cam --> ds
-    cam --> dom
+    cam -- "api" --> dom
 
     cui --> dom
 
@@ -129,6 +129,9 @@ graph TD
     class data,net impl
 ```
 
+화살표는 기본이 `implementation` 입니다. `api` 로 표시한 곳은 공개 시그니처에 그 모듈의
+타입이 드러나 소비자에게 전이되는 의존성입니다.
+
 ### 의존성 규칙
 
 의존성 방향을 문서나 코드리뷰가 아니라 **Gradle 모듈 경계로 강제**합니다.
@@ -139,9 +142,15 @@ graph TD
 | `:feature:*` 는 `:core:data` / `:core:network` 를 모른다 | 의존성에 선언하지 않음 → DTO·Retrofit API 참조 시 **컴파일 실패** |
 | `:feature:*` 끼리 서로 의존하지 않는다 | 화면 이동은 `:core:navigation` 의 Route + `NavigationHelper` 경유 |
 | 구현체 주입은 `:app` 한 곳에서만 | `:core:data` 를 의존하는 유일한 모듈 |
+| 공개 시그니처에 드러나는 의존성만 `api` | 나머지는 `implementation` 으로 전이 차단 → 소비자가 남의 내부 타입에 기대지 못함 |
 
 공유가 발생하는 순간 `core` 로 승격합니다. `:core:camera` 는 `:feature:challenge` 와
 `:feature:record` 가 함께 쓰게 되면서, feature 간 의존을 만들지 않기 위해 분리한 모듈입니다.
+
+승격한 모듈은 **공개 표면을 최소로 유지**합니다. `:core:camera` 가 밖으로 여는 것은
+오버레이 진입점 `ModyCameraOverlay` 와 프레임 비율 상수뿐이고, 촬영·보정 단계와 파일
+정리 함수는 `internal` 입니다. 단계를 건너뛴 반쪽 호출이나 외부에서의 캐시 삭제를
+컴파일 단계에서 막습니다.
 
 ### 모듈 경계가 못 잡는 것은 테스트로 잡습니다
 
@@ -168,6 +177,18 @@ fun `Screen 은 NavController 를 직접 다루지 않는다`() { /* ... */ }
 ```bash
 ./gradlew :app:testDebugUnitTest   # 아키텍처 규칙 검사 포함
 ```
+
+### 계산이 들어간 로직은 단위 테스트로 고정합니다
+
+UI·네트워크에 묶이지 않는 계산은 순수 함수로 빼서 JVM 테스트로 덮습니다. 좌표·시간·경계값은
+기기에서 눈으로 확인하기 어려운 대신 테스트로는 싸게 잡힙니다 (36개).
+
+| 대상 | 무엇을 고정하나 |
+| --- | --- |
+| `:core:camera` `CropGeometryTest` | 크롭 프레임 위치, 드래그 경계 클램프, 세로 슬라이스 크롭 영역 |
+| `:core:domain` `StepSyncWindowTest` | 걸음 수 동기화 구간 분할 — 날짜 경계, 자정 처리, 읽기 창 초과 |
+| `:core:domain` `StepChallengeStatusTest` | 챌린지 상태 매핑, 달성률 내림·상한·0 나눗셈 |
+| `:feature:challenge` `StepChallengeTitleTest` | 챌린지 제목 파싱의 비정상 입력 처리 |
 
 > 현재 Feature 모듈을 지속적으로 분리 및 확장하며 아키텍처를 개선하고 있습니다.
 

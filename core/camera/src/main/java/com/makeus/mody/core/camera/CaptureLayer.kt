@@ -49,7 +49,7 @@ private const val CAPTURE_FAILED_MESSAGE = "사진을 찍지 못했어요. 다�
  * @param onPickGallery null 이면 갤러리 버튼을 숨긴다. 자리는 비워 둬 셔터가 가운데에 남는다.
  */
 @Composable
-fun CaptureLayer(
+internal fun CaptureLayer(
     onCaptured: (UprightImage) -> Unit,
     onPickGallery: (() -> Unit)?,
     onClose: () -> Unit,

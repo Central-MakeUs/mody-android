@@ -20,7 +20,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /** CameraX Preview + ImageCapture 를 [lifecycleOwner] 에 바인딩. 성공 시 ImageCapture 반환. */
-suspend fun bindCamera(
+internal suspend fun bindCamera(
     context: Context,
     lifecycleOwner: LifecycleOwner,
     previewView: PreviewView,
@@ -63,7 +63,7 @@ suspend fun bindCamera(
 }
 
 /** 사진 촬영 → [file] 저장. 성공 시 파일 절대경로 반환, 실패 시 예외. */
-suspend fun ImageCapture.capture(context: Context, file: File): String =
+internal suspend fun ImageCapture.capture(context: Context, file: File): String =
     suspendCoroutine { cont ->
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
         takePicture(

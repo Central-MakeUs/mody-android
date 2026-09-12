@@ -38,7 +38,7 @@ private fun fileUri(context: Context, file: File): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.camera.fileprovider", file)
 
 /** 정규화된(EXIF 회전 반영) 업라이트 이미지 정보. [uri] 는 표시용, [path] 는 크롭 디코딩용. */
-data class UprightImage(val uri: String, val path: String, val width: Int, val height: Int)
+internal data class UprightImage(val uri: String, val path: String, val width: Int, val height: Int)
 
 /**
  * 촬영 원본(EXIF 회전 가능)을 실제 픽셀 방향으로 세워서 다시 저장한다.
@@ -49,7 +49,7 @@ data class UprightImage(val uri: String, val path: String, val width: Int, val h
  *
  * 다 쓴 원본 파일은 지운다 — 여기서 만든 결과물만 이후 단계가 참조한다.
  */
-fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
+internal fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
     val rotation = readRotationDegrees(sourcePath)
     val src = decodeDownsampled(sourcePath) ?: error("이미지 디코딩 실패")
     val upright = if (rotation == 0f) {
@@ -116,11 +116,11 @@ private fun decodeDownsampled(path: String): Bitmap? {
 }
 
 /** 촬영 결과를 받을 임시 원본 파일. */
-fun createRawFile(context: Context): File =
+internal fun createRawFile(context: Context): File =
     cameraCacheFile(context, "raw_${System.currentTimeMillis()}.jpg")
 
 /** 지정 경로의 캐시 파일 삭제(재촬영으로 버려진 결과물 정리). 실패는 무시. */
-fun deleteCameraFile(path: String) {
+internal fun deleteCameraFile(path: String) {
     runCatching { File(path).delete() }
 }
 
@@ -130,7 +130,7 @@ fun deleteCameraFile(path: String) {
  * 방금 확정한 사진은 오버레이가 닫힌 뒤에 업로드된다 — 나이 조건 없이 지우면 업로드 중인
  * 파일을 지울 수 있다. [STALE_CACHE_AGE_MS] 보다 오래된 것만 지워 그 창을 피한다.
  */
-fun clearStaleCameraCache(context: Context) {
+internal fun clearStaleCameraCache(context: Context) {
     runCatching {
         val threshold = System.currentTimeMillis() - STALE_CACHE_AGE_MS
         cameraCacheDir(context).listFiles()

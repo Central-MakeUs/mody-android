@@ -1,10 +1,8 @@
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.mody.android.application)
+    alias(libs.plugins.mody.android.hilt)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
 }
@@ -22,12 +20,9 @@ val kakaoNativeKeyProd: String =
 
 android {
     namespace = "com.makeus.mody"
-    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.makeus.mody"
-        minSdk = 26
-        targetSdk = 36
         // CI(태그 push)에서 VERSION_CODE/VERSION_NAME 주입, 로컬 빌드는 아래 기본값.
         // 스토어에 올릴 AAB 를 로컬에서 빌드할 땐 이 기본값이 그대로 실리므로
         // 릴리스마다 versionCode 를 1 올리고 versionName 을 갱신할 것.
@@ -101,13 +96,6 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 dependencies {
@@ -117,8 +105,6 @@ dependencies {
     implementation(project(":core:common-ui")) // CurrentActivityHolder 등록용
     implementation(project(":core:domain")) // PushTokenRepository, NotificationDeepLinkHolder
     implementation(project(":core:navigation")) // 알림 탭 딥링크 → NavigationHelper
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     implementation(libs.kakao.user) // KakaoSdk.init
     implementation(libs.androidx.core.ktx) // NotificationCompat, getSystemService
     implementation(libs.kotlinx.coroutines.android) // FCM 토큰 등록 백그라운드 스코프

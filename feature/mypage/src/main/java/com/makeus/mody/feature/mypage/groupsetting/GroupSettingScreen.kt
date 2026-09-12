@@ -28,7 +28,7 @@ import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.model.Group
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingIntent
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingState
 

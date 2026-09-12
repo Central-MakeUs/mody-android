@@ -8,9 +8,10 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
-    // 크롭 결과를 도메인 모델(CropRegion)로 넘긴다. ModyCameraOverlay 의 공개 시그니처에
-    // CropRegion 이 드러나므로 api — implementation 이면 호출부가 타입을 볼 수 없다.
-    api(project(":core:domain"))
+    // 크롭 결과를 CropRegion 으로 넘긴다. ModyCameraOverlay 의 공개 시그니처에 드러나므로
+    // api — implementation 이면 호출부가 타입을 볼 수 없다.
+    // Repository·UseCase 는 쓰지 않으므로 :core:domain 이 아니라 :core:model 만 본다.
+    api(project(":core:model"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -1,9 +1,9 @@
 package com.makeus.mody.core.domain.usecase
 
-import com.makeus.mody.core.domain.model.HealthAvailability
-import com.makeus.mody.core.domain.model.StepChallengeStatus
-import com.makeus.mody.core.domain.model.StepRecordResult
-import com.makeus.mody.core.domain.model.StepSyncCheckpoint
+import com.makeus.mody.core.model.HealthAvailability
+import com.makeus.mody.core.model.StepChallengeStatus
+import com.makeus.mody.core.model.StepRecordResult
+import com.makeus.mody.core.model.StepSyncCheckpoint
 import com.makeus.mody.core.domain.error.ErrorReporter
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.GroupRepository

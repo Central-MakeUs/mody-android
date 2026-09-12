@@ -7,7 +7,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant

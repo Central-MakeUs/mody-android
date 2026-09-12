@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.CropRegion
-import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.model.CropRegion
+import com.makeus.mody.core.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.domain.repository.ImageShareRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository

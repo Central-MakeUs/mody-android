@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model.error
+package com.makeus.mody.core.model.error
 
 /**
  * 서버/네트워크 실패를 도메인 계층 예외로 표준화.

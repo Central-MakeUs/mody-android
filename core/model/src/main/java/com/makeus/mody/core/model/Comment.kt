@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /** 기록 댓글 한 건. isMine = 내가 쓴 댓글(삭제 등 UI 분기용). */
 data class Comment(

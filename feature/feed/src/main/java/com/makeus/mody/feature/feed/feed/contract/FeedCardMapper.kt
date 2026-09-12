@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.feed.feed.contract
 
-import com.makeus.mody.core.domain.model.FeedRecord
-import com.makeus.mody.core.domain.model.RecordType
+import com.makeus.mody.core.model.FeedRecord
+import com.makeus.mody.core.model.RecordType
 import java.time.format.DateTimeFormatter
 
 private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")

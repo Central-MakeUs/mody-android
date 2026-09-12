@@ -47,5 +47,9 @@ gradlePlugin {
             id = "mody.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
+        register("jvmLibrary") {
+            id = "mody.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
     }
 }

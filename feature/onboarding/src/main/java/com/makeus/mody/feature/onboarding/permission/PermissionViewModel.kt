@@ -2,7 +2,7 @@ package com.makeus.mody.feature.onboarding.permission
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository

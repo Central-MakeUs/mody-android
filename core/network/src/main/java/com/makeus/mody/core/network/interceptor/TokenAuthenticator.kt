@@ -1,7 +1,7 @@
 package com.makeus.mody.core.network.interceptor
 
-import com.makeus.mody.core.domain.model.error.HttpResponseException
-import com.makeus.mody.core.domain.model.error.HttpResponseStatus
+import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.HttpResponseStatus
 import com.makeus.mody.core.domain.repository.SessionReauthenticator
 import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.network.api.AuthApi

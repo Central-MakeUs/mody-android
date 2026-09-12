@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 이미지 크롭 영역. 원본 이미지 대비 정규화 비율(0~1).

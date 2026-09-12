@@ -1,19 +1,10 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.mody.android.library)
+    alias(libs.plugins.mody.android.hilt)
 }
 
 android {
     namespace = "com.makeus.mody.core.commonui"
-    compileSdk = 36
-    defaultConfig { minSdk = 26 }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions { jvmTarget = "11" }
 }
 
 dependencies {
@@ -21,8 +12,6 @@ dependencies {
     implementation(project(":core:domain"))
 
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
 
     // Health Connect 설정 화면 액션 상수만 사용.

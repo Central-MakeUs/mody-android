@@ -1,6 +1,6 @@
 package com.makeus.mody.feature.auth.social
 
-import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.SocialLoginProvider
 import javax.inject.Inject
 import javax.inject.Singleton

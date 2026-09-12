@@ -1,7 +1,7 @@
 package com.makeus.mody.core.data.repository
 
 import com.makeus.mody.core.data.mapper.toRequest
-import com.makeus.mody.core.domain.model.OnboardingProfile
+import com.makeus.mody.core.model.OnboardingProfile
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.OnboardingApi

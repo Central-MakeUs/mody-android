@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.auth.login.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.error.ErrorAlert
+import com.makeus.mody.core.model.error.ErrorAlert
 
 data class LoginState(
     val isLoading: Boolean = false,

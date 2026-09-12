@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.challenge.weeklydetail.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.WeeklyChallengeProof
+import com.makeus.mody.core.model.WeeklyChallengeProof
 
 data class WeeklyChallengeDetailState(
     val title: String = "",

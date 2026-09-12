@@ -41,7 +41,7 @@ import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.WeightSummary
+import com.makeus.mody.core.model.WeightSummary
 import com.makeus.mody.feature.mypage.contract.MyPageIntent
 import com.makeus.mody.feature.mypage.contract.MyPageState
 import com.makeus.mody.feature.mypage.weight.WeightRecordSheet

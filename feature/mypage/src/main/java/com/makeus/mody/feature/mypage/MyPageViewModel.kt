@@ -3,7 +3,7 @@ package com.makeus.mody.feature.mypage
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.navigation.MyPageGraph

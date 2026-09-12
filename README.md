@@ -53,7 +53,10 @@ mody
 
 │   ├── navigation      # Route, NavigationHelper
 
-│   ├── domain          # Model, Repository, UseCase
+│   ├── model           # 값 타입(순수 Kotlin, 의존성 없음)
+
+│   ├── domain          # Repository·Logger·Reporter 인터페이스, UseCase,
+│                       #   프로세스 수명 상태 홀더 (순수 Kotlin)
 
 │   ├── data            # Repository 구현, DataStore
 
@@ -93,7 +96,8 @@ graph TD
     ds[":core:designsystem"]
     nav[":core:navigation"]
     cam[":core:camera"]
-    dom[":core:domain<br/>의존성 없음"]
+    model[":core:model<br/>순수 Kotlin · 의존성 없음"]
+    dom[":core:domain<br/>인터페이스 · UseCase · 홀더<br/>순수 Kotlin"]
     data[":core:data"]
     net[":core:network"]
 
@@ -115,9 +119,11 @@ graph TD
     feat -. "challenge · record 만" .-> cam
 
     cam --> ds
-    cam -- "api" --> dom
+    cam -- "api" --> model
 
-    cui --> dom
+    cui -- "api" --> model
+
+    dom -- "api" --> model
 
     data --> dom
     data --> net
@@ -125,7 +131,7 @@ graph TD
 
     classDef domain fill:#2d5a3d,stroke:#4caf50,color:#fff
     classDef impl fill:#4a3a5a,stroke:#9575cd,color:#fff
-    class dom domain
+    class dom,model domain
     class data,net impl
 ```
 
@@ -138,7 +144,8 @@ graph TD
 
 | 규칙 | 강제 방식 |
 | --- | --- |
-| `:core:domain` 은 아무것도 의존하지 않는다 | 순수 Kotlin 계약 계층 (Android SDK·Retrofit 미참조) |
+| `:core:model` 은 아무것도 의존하지 않는다 | 순수 Kotlin JVM 모듈 — Android SDK 가 클래스패스에 없다 |
+| `:core:domain` 은 `:core:model` 만 의존한다 | 마찬가지로 순수 Kotlin JVM — 프레임워크 타입을 쓰면 **컴파일 실패** |
 | `:feature:*` 는 `:core:data` / `:core:network` 를 모른다 | 의존성에 선언하지 않음 → DTO·Retrofit API 참조 시 **컴파일 실패** |
 | `:feature:*` 끼리 서로 의존하지 않는다 | 화면 이동은 `:core:navigation` 의 Route + `NavigationHelper` 경유 |
 | 구현체 주입은 `:app` 한 곳에서만 | `:core:data` 를 의존하는 유일한 모듈 |
@@ -151,6 +158,24 @@ graph TD
 오버레이 진입점 `ModyCameraOverlay` 와 프레임 비율 상수뿐이고, 촬영·보정 단계와 파일
 정리 함수는 `internal` 입니다. 단계를 건너뛴 반쪽 호출이나 외부에서의 캐시 삭제를
 컴파일 단계에서 막습니다.
+
+반대로 **필요 이상으로 끌어오는 것도 막습니다.** 값 타입만 쓰는 모듈이 Repository
+인터페이스와 UseCase 까지 컴파일 클래스패스에 얹지 않도록 `:core:model` 을 따로 뒀습니다.
+`:core:camera` 는 `CropRegion` 하나, `:core:common-ui` 는 `HealthAvailability` 하나만
+쓰므로 `:core:domain` 을 보지 않습니다.
+
+두 모듈은 안드로이드 라이브러리가 아니라 **순수 Kotlin JVM 모듈**입니다. Android SDK 가
+클래스패스에 아예 없어서 프레임워크 타입을 쓰려 해도 컴파일이 되지 않습니다 — 규칙을
+테스트가 아니라 빌드가 강제합니다.
+
+`:core:domain` 에는 Repository 인터페이스와 UseCase 외에 두 가지가 더 있습니다.
+
+- **바깥으로 나가는 포트** — `AnalyticsLogger`, `ErrorReporter`, `PushTokenSynchronizer`.
+  구현은 `:core:data` 에 있고 도메인은 인터페이스만 압니다.
+- **프로세스 수명 상태 홀더** — `InviteCodeHolder`, `NotificationDeepLinkHolder`,
+  `UnreadNotificationStore`, `SessionExpiredNotifier`. 딥링크로 들어온 초대 코드처럼
+  화면 사이를 건너야 하지만 저장할 것은 아닌 값을 들고 있습니다. feature 끼리 직접
+  의존하지 않고 값을 넘기는 통로이기도 합니다.
 
 ### 모듈 경계가 못 잡는 것은 테스트로 잡습니다
 
@@ -187,7 +212,7 @@ UI·네트워크에 묶이지 않는 계산은 순수 함수로 빼서 JVM 테�
 | --- | --- |
 | `:core:camera` `CropGeometryTest` | 크롭 프레임 위치, 드래그 경계 클램프, 세로 슬라이스 크롭 영역 |
 | `:core:domain` `StepSyncWindowTest` | 걸음 수 동기화 구간 분할 — 날짜 경계, 자정 처리, 읽기 창 초과 |
-| `:core:domain` `StepChallengeStatusTest` | 챌린지 상태 매핑, 달성률 내림·상한·0 나눗셈 |
+| `:core:model` `StepChallengeStatusTest` | 챌린지 상태 매핑, 달성률 내림·상한·0 나눗셈 |
 | `:feature:challenge` `StepChallengeTitleTest` | 챌린지 제목 파싱의 비정상 입력 처리 |
 
 > 현재 Feature 모듈을 지속적으로 분리 및 확장하며 아키텍처를 개선하고 있습니다.

@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.model.SocialLoginType
 
 /**
  * 소셜 로그인/토큰 관리.

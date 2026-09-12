@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.health.connect.client.HealthConnectClient
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 
 private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
 

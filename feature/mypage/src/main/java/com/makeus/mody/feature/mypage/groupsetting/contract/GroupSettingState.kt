@@ -1,8 +1,8 @@
 package com.makeus.mody.feature.mypage.groupsetting.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.Group
-import com.makeus.mody.core.domain.model.error.ErrorAlert
+import com.makeus.mody.core.model.Group
+import com.makeus.mody.core.model.error.ErrorAlert
 
 data class GroupSettingState(
     val groups: List<Group> = emptyList(),

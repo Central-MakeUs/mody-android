@@ -1,16 +1,16 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.ChallengeSummary
-import com.makeus.mody.core.domain.model.CropRegion
-import com.makeus.mody.core.domain.model.NudgeButtonStatus
-import com.makeus.mody.core.domain.model.NudgeTarget
-import com.makeus.mody.core.domain.model.StepChallengeOption
-import com.makeus.mody.core.domain.model.StepChallengeStatus
-import com.makeus.mody.core.domain.model.StepRanking
-import com.makeus.mody.core.domain.model.StepRecordResult
-import com.makeus.mody.core.domain.model.WeeklyChallenge
-import com.makeus.mody.core.domain.model.WeeklyChallengeProof
-import com.makeus.mody.core.domain.model.WeeklyChallengeShare
+import com.makeus.mody.core.model.ChallengeSummary
+import com.makeus.mody.core.model.CropRegion
+import com.makeus.mody.core.model.NudgeButtonStatus
+import com.makeus.mody.core.model.NudgeTarget
+import com.makeus.mody.core.model.StepChallengeOption
+import com.makeus.mody.core.model.StepChallengeStatus
+import com.makeus.mody.core.model.StepRanking
+import com.makeus.mody.core.model.StepRecordResult
+import com.makeus.mody.core.model.WeeklyChallenge
+import com.makeus.mody.core.model.WeeklyChallengeProof
+import com.makeus.mody.core.model.WeeklyChallengeShare
 
 /** 챌린지 탭 — 그룹 요약 통계, 버디 신기록(콕 찌르기). */
 interface ChallengeRepository {

@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /** 마이페이지 상단 프로필. */
 data class MyProfile(

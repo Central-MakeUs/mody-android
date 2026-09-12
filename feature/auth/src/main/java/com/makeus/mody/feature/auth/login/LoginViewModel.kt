@@ -1,10 +1,10 @@
 package com.makeus.mody.feature.auth.login
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.StartDestination
-import com.makeus.mody.core.domain.model.SocialLoginType
-import com.makeus.mody.core.domain.model.error.ErrorAlert
-import com.makeus.mody.core.domain.model.error.toErrorAlert
+import com.makeus.mody.core.model.StartDestination
+import com.makeus.mody.core.model.SocialLoginType
+import com.makeus.mody.core.model.error.ErrorAlert
+import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SocialLoginProvider

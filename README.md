@@ -121,7 +121,7 @@ graph TD
     cam --> ds
     cam -- "api" --> model
 
-    cui --> model
+    cui -- "api" --> model
 
     dom -- "api" --> model
 

@@ -10,7 +10,8 @@ android {
 dependencies {
     // 건강 데이터 연동 진입 헬퍼가 HealthAvailability 로 분기한다.
     // 값 타입만 쓰므로 :core:domain 이 아니라 :core:model 만 본다.
-    implementation(project(":core:model"))
+    // openHealthConnect(context, availability) 의 공개 시그니처에 드러나므로 api.
+    api(project(":core:model"))
 
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.coroutines.android)

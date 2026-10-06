@@ -1,6 +1,6 @@
 package com.makeus.mody.core.camera
 
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 
 /**
  * 조정 화면의 프레임·사진 배치와 크롭 영역 계산.

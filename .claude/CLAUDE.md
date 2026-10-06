@@ -24,7 +24,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :core:designsystem          ← ModyTheme, 공용 Compose 컴포넌트, 색상/타이포, ModyCatalog
 :core:navigation            ← Route 정의, NavigationHelper, NavigationEvent
 :core:camera                ← 촬영/크롭 Compose 레이어(CameraX). record·challenge 가 공유
-:core:domain                ← Repository 인터페이스, 도메인 모델, UseCase (비즈니스 로직)
+:core:model                 ← 값 타입만. 순수 Kotlin JVM(의존성 없음)
+:core:domain                ← Repository/Logger/Reporter 인터페이스, UseCase,
+                              프로세스 수명 상태 홀더(InviteCodeHolder 등). 순수 Kotlin JVM
 :core:data                  ← Repository 구현체, DataSource 구현체
 :core:network               ← Retrofit, OkHttp, API 인터페이스, Interceptor
 :feature:auth               ← 로그인(카카오·구글, 심사용 히든 로그인)
@@ -47,16 +49,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :presentation → :feature:*, :core:common-ui, :core:designsystem, :core:navigation, :core:domain
 :feature:*    → :core:common-ui, :core:designsystem, :core:navigation, :core:domain
                 (record·challenge 만 추가로 :core:camera)
-:core:camera  → :core:designsystem, :core:domain
-:core:common-ui → :core:domain
+:core:camera  → :core:designsystem, :core:model        ← domain 아님. 값 타입만 쓴다
+:core:common-ui → :core:model                          ← domain 아님
 :core:data    → :core:domain, :core:network
 :core:network → :core:domain
-:core:domain  → (아무것도 없음)
+:core:domain  → :core:model (api)
+:core:model   → (아무것도 없음)
 :core:designsystem, :core:navigation → (아무것도 없음)
 ```
 
 Repository 구현 바인딩(`:core:data`)은 `:app` 에서만 조립한다 — feature 는 `:core:domain`
 인터페이스만 본다.
+
+**공개 시그니처에 드러나는 의존성만 `api`, 나머지는 전부 `implementation`.** 지금 `api` 인
+곳은 `:core:domain → :core:model`(Repository 시그니처에 모델이 나온다)과
+`:core:camera → :core:model`(`ModyCameraOverlay` 가 `CropRegion` 을 넘긴다) 둘뿐이다.
+`implementation` 인데 타입이 새면 소비자가 각자 그 모듈을 선언해 둔 덕에 우연히 컴파일될
+뿐이라, 그 선언이 빠지는 순간 깨진다(실제로 `:core:camera` 가 그 상태였다).
+
+**SDK·Java 버전·Compose·Hilt 설정은 모듈 빌드 스크립트에 쓰지 않는다.** `build-logic` 의
+규약 플러그인(`mody.android.library` / `.compose` / `mody.android.feature` /
+`mody.android.hilt` / `mody.android.application` / `mody.jvm.library`)이 잡는다. 값을 바꿀
+일이 있으면 `build-logic/convention/src/main/kotlin/com/makeus/mody/convention/KotlinAndroid.kt`
+한 곳만 고친다. 모듈에는 `namespace` 와 그 모듈 고유의 것(`buildConfig`, 서명 등)만 남긴다.
 
 ## 아키텍처: Clean Architecture + MVI
 
@@ -403,6 +418,7 @@ Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 �
 |---|---|
 | BaseViewModel | `core/common-ui/.../base/BaseViewModel.kt` |
 | Route 정의 | `core/navigation/.../Route.kt` |
+| 빌드 규약 플러그인 | `build-logic/convention/src/main/kotlin/` |
 | NavigationHelper | `core/navigation/.../NavigationHelper.kt` |
 | ModyTheme | `core/designsystem/.../theme/Theme.kt` |
 | 색상 토큰 | `core/designsystem/.../theme/Color.kt` |

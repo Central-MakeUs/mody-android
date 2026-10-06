@@ -47,10 +47,10 @@ import com.makeus.mody.core.designsystem.component.ModyChipStyle
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.StepChallengeStatus
-import com.makeus.mody.core.domain.model.StepRanking
-import com.makeus.mody.core.domain.model.WeeklyChallenge
-import com.makeus.mody.core.domain.model.WeeklyChallengeParticipant
+import com.makeus.mody.core.model.StepChallengeStatus
+import com.makeus.mody.core.model.StepRanking
+import com.makeus.mody.core.model.WeeklyChallenge
+import com.makeus.mody.core.model.WeeklyChallengeParticipant
 import com.makeus.mody.feature.challenge.util.dDayLabel
 import com.makeus.mody.feature.challenge.util.stepChallengeTitle
 

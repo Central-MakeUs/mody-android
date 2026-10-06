@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.profile
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.ImageUploadRepository
 import com.makeus.mody.core.domain.repository.MyPageRepository

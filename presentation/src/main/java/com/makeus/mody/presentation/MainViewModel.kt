@@ -5,8 +5,8 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.makeus.mody.core.domain.model.RemoteNotice
-import com.makeus.mody.core.domain.model.StartDestination
+import com.makeus.mody.core.model.RemoteNotice
+import com.makeus.mody.core.model.StartDestination
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.domain.session.SessionExpiredNotifier

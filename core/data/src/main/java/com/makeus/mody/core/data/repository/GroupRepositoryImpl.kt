@@ -1,6 +1,6 @@
 package com.makeus.mody.core.data.repository
 
-import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.model.Group
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.domain.repository.SessionRepository
 import com.makeus.mody.core.network.api.GroupApi

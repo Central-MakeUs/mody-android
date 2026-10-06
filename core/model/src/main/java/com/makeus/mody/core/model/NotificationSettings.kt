@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 알림 설정. 토글 3개 + 식사/운동 스케줄.

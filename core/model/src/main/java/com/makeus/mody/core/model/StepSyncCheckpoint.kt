@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 걸음 수 동기화가 어디까지 끝났는지. 기기 로컬 기록이다.

@@ -4,8 +4,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.firebase.Firebase
-import com.makeus.mody.core.domain.model.RemoteNotice
-import com.makeus.mody.core.domain.model.SplashGate
+import com.makeus.mody.core.model.RemoteNotice
+import com.makeus.mody.core.model.SplashGate
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
 import org.json.JSONObject
 import java.net.URI

@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.model.SocialLoginType
 
 /**
  * 소셜 SDK(Kakao/Google) 로그인으로 소셜 accessToken 을 획득하는 추상화.

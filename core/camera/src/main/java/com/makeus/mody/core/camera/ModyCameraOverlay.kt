@@ -36,7 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

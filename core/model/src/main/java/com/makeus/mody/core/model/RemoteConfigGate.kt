@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 스플래시 진입 게이트 구성값. iOS 와 공용 Firebase Remote Config 파라미터에서 읽는다.

@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.mypage.healthguide.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 
 data class HealthGuideState(
     /** 현재 보고 있는 안내 단계(0-based). 페이저 위치와 인디케이터가 함께 본다. */

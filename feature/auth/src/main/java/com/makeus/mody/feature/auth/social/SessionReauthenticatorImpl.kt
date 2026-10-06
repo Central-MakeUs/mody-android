@@ -1,6 +1,6 @@
 package com.makeus.mody.feature.auth.social
 
-import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.model.SocialLoginType
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.SessionReauthenticator
 import com.makeus.mody.core.domain.repository.SessionRepository

@@ -35,9 +35,9 @@ import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.ChallengeSummary
-import com.makeus.mody.core.domain.model.NudgeButtonStatus
-import com.makeus.mody.core.domain.model.NudgeTarget
+import com.makeus.mody.core.model.ChallengeSummary
+import com.makeus.mody.core.model.NudgeButtonStatus
+import com.makeus.mody.core.model.NudgeTarget
 
 /**
  * 연속 기록 탭: 전원 연속 기록 헤더(N일째 + 축하 캐릭터) + 그룹 통계 3종 + 버디 신기록(콕 찌르기).

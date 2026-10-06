@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 앱 시작 시 진입할 최상위 목적지(도메인 표현).

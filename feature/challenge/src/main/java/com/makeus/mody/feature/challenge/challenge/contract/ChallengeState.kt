@@ -1,12 +1,12 @@
 package com.makeus.mody.feature.challenge.challenge.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.ChallengeSummary
-import com.makeus.mody.core.domain.model.HealthAvailability
-import com.makeus.mody.core.domain.model.NudgeTarget
-import com.makeus.mody.core.domain.model.StepChallengeStatus
-import com.makeus.mody.core.domain.model.StepRanking
-import com.makeus.mody.core.domain.model.WeeklyChallenge
+import com.makeus.mody.core.model.ChallengeSummary
+import com.makeus.mody.core.model.HealthAvailability
+import com.makeus.mody.core.model.NudgeTarget
+import com.makeus.mody.core.model.StepChallengeStatus
+import com.makeus.mody.core.model.StepRanking
+import com.makeus.mody.core.model.WeeklyChallenge
 
 /** 챌린지 메인 상단 서브탭. */
 enum class ChallengeSubTab(val label: String) {

@@ -1,14 +1,14 @@
 package com.makeus.mody.core.data.repository
 
-import com.makeus.mody.core.domain.model.ActivityCalendar
-import com.makeus.mody.core.domain.model.ActivityDay
-import com.makeus.mody.core.domain.model.Comment
-import com.makeus.mody.core.domain.model.CommentPage
-import com.makeus.mody.core.domain.model.CropRegion
-import com.makeus.mody.core.domain.model.FeedRecord
-import com.makeus.mody.core.domain.model.FeedRecordPage
-import com.makeus.mody.core.domain.model.RecordDetail
-import com.makeus.mody.core.domain.model.RecordType
+import com.makeus.mody.core.model.ActivityCalendar
+import com.makeus.mody.core.model.ActivityDay
+import com.makeus.mody.core.model.Comment
+import com.makeus.mody.core.model.CommentPage
+import com.makeus.mody.core.model.CropRegion
+import com.makeus.mody.core.model.FeedRecord
+import com.makeus.mody.core.model.FeedRecordPage
+import com.makeus.mody.core.model.RecordDetail
+import com.makeus.mody.core.model.RecordType
 import com.makeus.mody.core.domain.repository.FeedRepository
 import com.makeus.mody.core.network.api.FeedApi
 import com.makeus.mody.core.network.model.feed.ActivityCalendarResponse

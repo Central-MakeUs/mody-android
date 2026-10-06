@@ -1,8 +1,8 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.AuthStatus
-import com.makeus.mody.core.domain.model.SocialLoginType
-import com.makeus.mody.core.domain.model.StepSyncCheckpoint
+import com.makeus.mody.core.model.AuthStatus
+import com.makeus.mody.core.model.SocialLoginType
+import com.makeus.mody.core.model.StepSyncCheckpoint
 
 /**
  * 로그인/온보딩 세션 상태 저장소.

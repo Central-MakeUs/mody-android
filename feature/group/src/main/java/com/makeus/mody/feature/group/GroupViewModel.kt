@@ -2,9 +2,9 @@ package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
-import com.makeus.mody.core.domain.model.error.HttpResponseException
-import com.makeus.mody.core.domain.model.error.ModyErrorCode
-import com.makeus.mody.core.domain.model.error.toErrorAlert
+import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.ModyErrorCode
+import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.MainRoute

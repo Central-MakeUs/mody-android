@@ -4,8 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.domain.feature.CommentFeature
-import com.makeus.mody.core.domain.model.Notification
-import com.makeus.mody.core.domain.model.NotificationType
+import com.makeus.mody.core.model.Notification
+import com.makeus.mody.core.model.NotificationType
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.NotificationRepository

@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 기록 상세. 탭한 기록부터 좌우로 넘겨보는 슬라이드.

@@ -44,7 +44,7 @@ import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.modifier.shimmer
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.StepChallengeOption
+import com.makeus.mody.core.model.StepChallengeOption
 import com.makeus.mody.feature.challenge.util.stepChallengeTitle
 import com.makeus.mody.feature.challenge.stepchange.contract.StepChallengeChangeIntent
 import com.makeus.mody.feature.challenge.stepchange.contract.StepChallengeChangeState

@@ -1,8 +1,8 @@
 package com.makeus.mody.core.data.repository
 
-import com.makeus.mody.core.domain.model.Notification
-import com.makeus.mody.core.domain.model.NotificationPage
-import com.makeus.mody.core.domain.model.NotificationType
+import com.makeus.mody.core.model.Notification
+import com.makeus.mody.core.model.NotificationPage
+import com.makeus.mody.core.model.NotificationType
 import com.makeus.mody.core.domain.repository.NotificationRepository
 import com.makeus.mody.core.network.api.NotificationApi
 import com.makeus.mody.core.network.model.notification.NotificationListResponse

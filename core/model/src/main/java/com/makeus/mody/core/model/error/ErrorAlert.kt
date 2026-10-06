@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model.error
+package com.makeus.mody.core.model.error
 
 import java.io.IOException
 

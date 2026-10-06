@@ -1,8 +1,8 @@
 package com.makeus.mody.core.data.mapper
 
-import com.makeus.mody.core.domain.model.ExerciseSchedule
-import com.makeus.mody.core.domain.model.MealSchedule
-import com.makeus.mody.core.domain.model.MealType
+import com.makeus.mody.core.model.ExerciseSchedule
+import com.makeus.mody.core.model.MealSchedule
+import com.makeus.mody.core.model.MealType
 import com.makeus.mody.core.network.model.schedule.ExerciseScheduleItem
 import com.makeus.mody.core.network.model.schedule.MealScheduleItem
 

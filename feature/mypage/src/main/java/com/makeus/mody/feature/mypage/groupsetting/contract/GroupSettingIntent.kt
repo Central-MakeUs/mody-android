@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.mypage.groupsetting.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
-import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.model.Group
 
 sealed class GroupSettingIntent : UiIntent {
     data object BackClicked : GroupSettingIntent()

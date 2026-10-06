@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.Group
+import com.makeus.mody.core.model.Group
 
 /**
  * 온보딩 그룹 생성/참여.

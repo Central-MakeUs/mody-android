@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.usecase
 
-import com.makeus.mody.core.domain.model.StartDestination
+import com.makeus.mody.core.model.StartDestination
 import com.makeus.mody.core.domain.repository.SessionRepository
 import javax.inject.Inject
 

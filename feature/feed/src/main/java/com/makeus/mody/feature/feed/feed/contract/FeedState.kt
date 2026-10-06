@@ -2,7 +2,7 @@ package com.makeus.mody.feature.feed.feed.contract
 
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.domain.feature.CommentFeature
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 import java.time.LocalDate
 
 /** 피드 카드 표시 모델. TODO(feed): API 연동 시 도메인 모델 매핑으로 교체. */

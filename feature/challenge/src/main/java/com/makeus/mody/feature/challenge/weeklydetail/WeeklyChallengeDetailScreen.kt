@@ -47,7 +47,7 @@ import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.WeeklyChallengeProof
+import com.makeus.mody.core.model.WeeklyChallengeProof
 import com.makeus.mody.feature.challenge.util.dDayLabel
 import com.makeus.mody.feature.challenge.weeklydetail.contract.WeeklyChallengeDetailIntent
 import com.makeus.mody.feature.challenge.weeklydetail.contract.WeeklyChallengeDetailState

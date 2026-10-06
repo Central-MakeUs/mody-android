@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /**
  * 온보딩에서 수집한 사용자 프로필. 서버 POST /onboarding/profile 제출 단위.

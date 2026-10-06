@@ -1,7 +1,7 @@
 package com.makeus.mody.core.data.repository
 
-import com.makeus.mody.core.domain.model.AuthStatus
-import com.makeus.mody.core.domain.model.SocialLoginType
+import com.makeus.mody.core.model.AuthStatus
+import com.makeus.mody.core.model.SocialLoginType
 import com.makeus.mody.core.domain.notification.PushTokenSynchronizer
 import com.makeus.mody.core.domain.repository.AuthRepository
 import com.makeus.mody.core.domain.repository.PushTokenRepository

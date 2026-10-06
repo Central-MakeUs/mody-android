@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 import java.time.LocalTime
 
 /** 기록 생성(식사/운동). 사진은 원본을 presigned 업로드하고 imageKey + 크롭 영역으로 참조된다. */

@@ -141,16 +141,24 @@ class ArchitectureRuleTest {
     }
 
     /**
-     * `:core:domain` 은 아무 데도 의존하지 않는다 — 비즈니스 규칙이 프레임워크에 묶이면
-     * 테스트할 때 기기가 필요해진다.
+     * `:core:model` 과 `:core:domain` 은 아무 데도 의존하지 않는다 — 비즈니스 규칙이
+     * 프레임워크에 묶이면 테스트할 때 기기가 필요해진다.
+     *
+     * 두 모듈은 순수 Kotlin JVM 이라 Android SDK 가 클래스패스에 없고, 프레임워크 타입을
+     * 쓰면 애초에 컴파일이 안 된다. 이 테스트는 두 모듈이 다시 안드로이드 라이브러리로
+     * 돌아가는 경우를 대비한 이중 방어다.
      *
      * `javax.inject` 는 DI 표준 애노테이션이라 예외로 둔다(런타임 의존이 아니다).
      */
     @Test
-    fun `domain 은 안드로이드 프레임워크에 의존하지 않는다`() {
+    fun `domain 과 model 은 안드로이드 프레임워크에 의존하지 않는다`() {
         Konsist.scopeFromProject()
             .files
-            .filter { it.packagee?.name?.startsWith("com.makeus.mody.core.domain") == true }
+            .filter {
+                val pkg = it.packagee?.name ?: return@filter false
+                pkg.startsWith("com.makeus.mody.core.domain") ||
+                    pkg.startsWith("com.makeus.mody.core.model")
+            }
             .assertFalse { file ->
                 file.imports.any {
                     it.name.startsWith("android.") || it.name.startsWith("androidx.")

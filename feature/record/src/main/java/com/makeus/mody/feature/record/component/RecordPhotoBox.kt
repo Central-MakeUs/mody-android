@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 
 /**
  * 기록 사진 영역(식사/운동 공용). 미선택: 점선 업로드 박스 / 선택: 사진 채움. 탭 시 사진 소스 시트.

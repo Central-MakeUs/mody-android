@@ -3,7 +3,7 @@ package com.makeus.mody.feature.mypage.groupsetting
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.error.toErrorAlert
+import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
 import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph

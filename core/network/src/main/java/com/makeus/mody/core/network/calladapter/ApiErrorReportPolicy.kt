@@ -1,8 +1,8 @@
 package com.makeus.mody.core.network.calladapter
 
-import com.makeus.mody.core.domain.model.error.HttpResponseException
-import com.makeus.mody.core.domain.model.error.HttpResponseStatus
-import com.makeus.mody.core.domain.model.error.ModyErrorCode
+import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.model.error.HttpResponseStatus
+import com.makeus.mody.core.model.error.ModyErrorCode
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 

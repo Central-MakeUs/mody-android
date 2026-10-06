@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.record.food.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
-import com.makeus.mody.core.domain.model.CropRegion
+import com.makeus.mody.core.model.CropRegion
 
 sealed class RecordFoodIntent : UiIntent {
     data object BackClicked : RecordFoodIntent()

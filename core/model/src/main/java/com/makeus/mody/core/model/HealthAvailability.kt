@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 /** 기기의 건강 데이터(Health Connect) 사용 가능 여부. */
 enum class HealthAvailability {

@@ -2,10 +2,10 @@ package com.makeus.mody.feature.mypage.notification
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.ExerciseSchedule
-import com.makeus.mody.core.domain.model.MealSchedule
-import com.makeus.mody.core.domain.model.MealType
-import com.makeus.mody.core.domain.model.NotificationSettings
+import com.makeus.mody.core.model.ExerciseSchedule
+import com.makeus.mody.core.model.MealSchedule
+import com.makeus.mody.core.model.MealType
+import com.makeus.mody.core.model.NotificationSettings
 import com.makeus.mody.core.domain.repository.MyPageRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper

@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.HealthAvailability
+import com.makeus.mody.core.model.HealthAvailability
 import java.time.Instant
 
 /**

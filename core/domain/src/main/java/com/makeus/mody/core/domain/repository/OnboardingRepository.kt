@@ -1,6 +1,6 @@
 package com.makeus.mody.core.domain.repository
 
-import com.makeus.mody.core.domain.model.OnboardingProfile
+import com.makeus.mody.core.model.OnboardingProfile
 
 /**
  * 온보딩 프로필 제출.

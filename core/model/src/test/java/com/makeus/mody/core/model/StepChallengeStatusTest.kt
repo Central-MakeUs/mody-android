@@ -1,4 +1,4 @@
-package com.makeus.mody.core.domain.model
+package com.makeus.mody.core.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

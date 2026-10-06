@@ -25,6 +25,7 @@ dependencyResolutionManagement {
 rootProject.name = "mody"
 include(":app")
 include(":presentation")
+include(":core:model")
 include(":core:domain")
 include(":core:data")
 include(":core:network")

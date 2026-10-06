@@ -1,7 +1,7 @@
 package com.makeus.mody.feature.mypage.profile.contract
 
 import com.makeus.mody.core.commonui.base.UiState
-import com.makeus.mody.core.domain.model.LoginType
+import com.makeus.mody.core.model.LoginType
 
 data class ProfileEditState(
     /** 서버 원본 프로필 이미지 URL. */

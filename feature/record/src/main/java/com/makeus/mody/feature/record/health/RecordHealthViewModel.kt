@@ -2,7 +2,7 @@ package com.makeus.mody.feature.record.health
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.error.toErrorAlert
+import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper

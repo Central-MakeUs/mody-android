@@ -55,7 +55,7 @@ import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.modifier.iconRippleClickable
 import com.makeus.mody.core.designsystem.theme.ModyTheme
-import com.makeus.mody.core.domain.model.LoginType
+import com.makeus.mody.core.model.LoginType
 import com.makeus.mody.feature.mypage.profile.contract.ProfileEditIntent
 import com.makeus.mody.feature.mypage.profile.contract.ProfileEditState
 

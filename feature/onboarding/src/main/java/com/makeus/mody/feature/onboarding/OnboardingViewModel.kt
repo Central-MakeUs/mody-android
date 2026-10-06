@@ -1,10 +1,10 @@
 package com.makeus.mody.feature.onboarding
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
-import com.makeus.mody.core.domain.model.ExerciseSchedule
-import com.makeus.mody.core.domain.model.MealSchedule
-import com.makeus.mody.core.domain.model.MealType
-import com.makeus.mody.core.domain.model.OnboardingProfile
+import com.makeus.mody.core.model.ExerciseSchedule
+import com.makeus.mody.core.model.MealSchedule
+import com.makeus.mody.core.model.MealType
+import com.makeus.mody.core.model.OnboardingProfile
 import com.makeus.mody.core.domain.repository.OnboardingRepository
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper

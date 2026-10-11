@@ -8,5 +8,4 @@ android {
 
 dependencies {
     implementation(libs.androidx.health.connect)
-    implementation(libs.coil.compose)
 }

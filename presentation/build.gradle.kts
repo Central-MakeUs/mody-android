@@ -48,8 +48,8 @@ dependencies {
     implementation(project(":feature:notification"))
     implementation(project(":feature:mypage"))
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    // MainViewModel 등이 ViewModel 을 직접 상속한다.
+    implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.activity.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)

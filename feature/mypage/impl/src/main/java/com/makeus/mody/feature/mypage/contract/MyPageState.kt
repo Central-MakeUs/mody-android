@@ -4,7 +4,7 @@ import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.HealthAvailability
 import com.makeus.mody.core.model.WeightSummary
 
-data class MyPageState(
+internal data class MyPageState(
     val nickname: String = "",
     val profileImageUrl: String? = null,
     val daysTogether: Int = 0,

@@ -33,7 +33,7 @@ import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingIntent
 import com.makeus.mody.feature.mypage.groupsetting.contract.GroupSettingState
 
 @Composable
-fun GroupSettingScreen(viewModel: GroupSettingViewModel = hiltViewModel()) {
+internal fun GroupSettingScreen(viewModel: GroupSettingViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     GroupSettingContent(state = state, onIntent = viewModel::onIntent)
 }

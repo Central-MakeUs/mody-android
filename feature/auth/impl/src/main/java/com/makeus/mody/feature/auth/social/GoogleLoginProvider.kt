@@ -27,7 +27,7 @@ import kotlin.coroutines.resumeWithException
  * 이미 인가된 계정은 UI 없이 바로 토큰을 반환한다.
  */
 @Singleton
-class GoogleLoginProvider @Inject constructor(
+internal class GoogleLoginProvider @Inject constructor(
     private val activityHolder: CurrentActivityHolder,
 ) {
     suspend fun login(): String = suspendCancellableCoroutine { continuation ->

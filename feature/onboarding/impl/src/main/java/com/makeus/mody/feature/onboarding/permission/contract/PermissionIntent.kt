@@ -2,7 +2,7 @@ package com.makeus.mody.feature.onboarding.permission.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class PermissionIntent : UiIntent {
+internal sealed class PermissionIntent : UiIntent {
     /** 알림·카메라 런타임 권한 요청이 끝났다(허용 여부 무관). 다음은 건강 권한 차례. */
     data object BasePermissionsHandled : PermissionIntent()
 

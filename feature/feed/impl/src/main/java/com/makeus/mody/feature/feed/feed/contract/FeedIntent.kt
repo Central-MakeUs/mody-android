@@ -3,7 +3,7 @@ package com.makeus.mody.feature.feed.feed.contract
 import com.makeus.mody.core.commonui.base.UiIntent
 import java.time.LocalDate
 
-sealed class FeedIntent : UiIntent {
+internal sealed class FeedIntent : UiIntent {
     /** 화면 복귀(ON_RESUME) → 기록 작성 후 등 캘린더/피드 재조회 */
     data object ScreenResumed : FeedIntent()
 

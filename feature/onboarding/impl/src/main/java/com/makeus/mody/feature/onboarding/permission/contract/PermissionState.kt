@@ -2,7 +2,7 @@ package com.makeus.mody.feature.onboarding.permission.contract
 
 import com.makeus.mody.core.commonui.base.UiState
 
-data class PermissionState(
+internal data class PermissionState(
     /**
      * 이 기기에서 Health Connect 를 쓸 수 있는지.
      * 미설치·구버전이면 권한 요청 자체가 불가능하므로 항목도 숨기고 건너뛴다.

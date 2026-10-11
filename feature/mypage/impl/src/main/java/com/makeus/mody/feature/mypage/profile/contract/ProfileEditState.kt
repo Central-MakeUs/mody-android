@@ -3,7 +3,7 @@ package com.makeus.mody.feature.mypage.profile.contract
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.LoginType
 
-data class ProfileEditState(
+internal data class ProfileEditState(
     /** 서버 원본 프로필 이미지 URL. */
     val avatarUrl: String? = null,
     /** 갤러리에서 고른 로컬 이미지 Uri(미저장). null이면 미선택. */

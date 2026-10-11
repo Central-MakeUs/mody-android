@@ -51,7 +51,7 @@ import com.makeus.mody.feature.challenge.stepchange.contract.StepChallengeChange
 
 /** 그룹 필수(걸음 수) 챌린지 변경 — 목록에서 고르면 확인 후 교체한다. */
 @Composable
-fun StepChallengeChangeScreen(
+internal fun StepChallengeChangeScreen(
     viewModel: StepChallengeChangeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

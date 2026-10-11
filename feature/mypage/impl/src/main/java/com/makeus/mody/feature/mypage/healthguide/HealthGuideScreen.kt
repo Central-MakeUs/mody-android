@@ -49,7 +49,7 @@ import com.makeus.mody.feature.mypage.healthguide.contract.HealthGuideState
  * 있지만, 눌러야 할 항목 이름(앱 권한 → 앱 액세스 → 걸음 수)은 같아 길잡이로 쓸 수 있다.
  */
 @Composable
-fun HealthGuideScreen(viewModel: HealthGuideViewModel = hiltViewModel()) {
+internal fun HealthGuideScreen(viewModel: HealthGuideViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 

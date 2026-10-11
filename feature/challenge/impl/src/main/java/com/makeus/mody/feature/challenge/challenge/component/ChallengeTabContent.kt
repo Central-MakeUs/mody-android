@@ -90,7 +90,7 @@ private val GaugeMaxLabelOffset = 6.dp
  * 챌린지 탭: 그룹 필수(걸음 수 게이지 + 기여도 순위) + 그룹 선택(주간 챌린지 목록).
  */
 @Composable
-fun ChallengeTabContent(
+internal fun ChallengeTabContent(
     isLoading: Boolean,
     stepChallenge: StepChallengeStatus?,
     stepRankings: List<StepRanking>,

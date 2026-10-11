@@ -9,7 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class SupportViewModel @Inject constructor(
+internal class SupportViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<SupportState, SupportIntent>(SupportState()) {
 

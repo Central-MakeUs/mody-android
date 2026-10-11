@@ -2,7 +2,7 @@ package com.makeus.mody.feature.challenge.challenge.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class ChallengeIntent : UiIntent {
+internal sealed class ChallengeIntent : UiIntent {
     /** 탭 진입/복귀 시 재조회. */
     data object ScreenEntered : ChallengeIntent()
 

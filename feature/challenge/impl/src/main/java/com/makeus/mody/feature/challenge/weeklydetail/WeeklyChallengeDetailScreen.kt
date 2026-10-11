@@ -66,7 +66,7 @@ private val ProofAvatarSize = 30.dp
 
 /** 주간 챌린지 상세 — 인증 사진 그리드 + SNS 공유. */
 @Composable
-fun WeeklyChallengeDetailScreen(
+internal fun WeeklyChallengeDetailScreen(
     viewModel: WeeklyChallengeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

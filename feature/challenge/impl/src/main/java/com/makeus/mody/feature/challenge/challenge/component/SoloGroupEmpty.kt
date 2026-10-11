@@ -37,7 +37,7 @@ private val ChallengeIllustrationSize = DpSize(68.dp, 60.dp)
  * 두 탭이 일러스트와 두 번째 줄만 다르고 나머지는 같아 한 컴포저블로 묶었다.
  */
 @Composable
-fun SoloGroupEmpty(
+internal fun SoloGroupEmpty(
     tab: ChallengeSubTab,
     modifier: Modifier = Modifier,
 ) {

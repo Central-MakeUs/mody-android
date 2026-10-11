@@ -16,7 +16,7 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
-class RecordFoodViewModel @Inject constructor(
+internal class RecordFoodViewModel @Inject constructor(
     private val recordRepository: RecordRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<RecordFoodState, RecordFoodIntent>(RecordFoodState()) {

@@ -9,12 +9,12 @@ import com.makeus.mody.core.model.StepRanking
 import com.makeus.mody.core.model.WeeklyChallenge
 
 /** 챌린지 메인 상단 서브탭. */
-enum class ChallengeSubTab(val label: String) {
+internal enum class ChallengeSubTab(val label: String) {
     STREAK("연속 기록"),
     CHALLENGE("챌린지"),
 }
 
-data class ChallengeState(
+internal data class ChallengeState(
     val selectedSubTab: ChallengeSubTab = ChallengeSubTab.STREAK,
     val isLoading: Boolean = false,
     /** 상단바 알림 아이콘 뱃지(안 읽은 알림 존재). */

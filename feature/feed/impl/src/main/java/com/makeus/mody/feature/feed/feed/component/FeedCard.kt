@@ -51,7 +51,7 @@ private val FireOrange = Color(0xFFFF5C00)
  * 남의 글이면 신고, 내 글이면 삭제 — 둘 다 null 이면 메뉴 자체를 안 그린다.
  */
 @Composable
-fun FeedCard(
+internal fun FeedCard(
     card: FeedCardUi,
     onClick: (() -> Unit)?,
     showHeader: Boolean = true,

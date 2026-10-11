@@ -4,7 +4,7 @@ import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.Group
 import com.makeus.mody.core.model.error.ErrorAlert
 
-data class GroupSettingState(
+internal data class GroupSettingState(
     val groups: List<Group> = emptyList(),
     val isLoading: Boolean = false,
     /** null 이 아니면 해당 그룹의 나가기 확인 다이얼로그 표시. */

@@ -2,7 +2,7 @@ package com.makeus.mody.feature.onboarding.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class OnboardingIntent : UiIntent {
+internal sealed class OnboardingIntent : UiIntent {
     // 입력 변경
     data class NicknameChanged(val value: String) : OnboardingIntent()
     data class BirthChanged(val year: Int, val month: Int, val day: Int) : OnboardingIntent()

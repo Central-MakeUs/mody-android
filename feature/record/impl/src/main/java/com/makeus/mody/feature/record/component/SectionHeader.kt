@@ -17,7 +17,7 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /** 기록 화면 섹션 라벨: 24dp 아이콘 + b7/gray08 텍스트. */
 @Composable
-fun SectionHeader(
+internal fun SectionHeader(
     @DrawableRes icon: Int,
     label: String,
     iconSpacing: Dp = 8.dp,

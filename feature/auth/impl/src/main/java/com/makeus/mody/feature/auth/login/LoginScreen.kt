@@ -35,7 +35,7 @@ import com.makeus.mody.feature.auth.R
 import com.makeus.mody.feature.auth.login.contract.LoginIntent
 
 @Composable
-fun LoginScreen(
+internal fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

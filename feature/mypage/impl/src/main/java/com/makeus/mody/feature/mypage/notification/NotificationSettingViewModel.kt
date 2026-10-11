@@ -27,7 +27,7 @@ private const val TOGGLE_DEBOUNCE_MS = 400L
 private const val SCHEDULE_DEBOUNCE_MS = 500L
 
 @HiltViewModel
-class NotificationSettingViewModel @Inject constructor(
+internal class NotificationSettingViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<NotificationSettingState, NotificationSettingIntent>(NotificationSettingState()) {

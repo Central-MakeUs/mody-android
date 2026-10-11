@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
 @HiltViewModel
-class ChallengeViewModel @Inject constructor(
+internal class ChallengeViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,

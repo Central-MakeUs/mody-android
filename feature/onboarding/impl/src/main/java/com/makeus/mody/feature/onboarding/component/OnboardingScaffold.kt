@@ -35,7 +35,7 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
  * 상단 진행바 + 타이틀(+서브) + 가변 content + 하단 "다음으로" 버튼.
  */
 @Composable
-fun OnboardingScaffold(
+internal fun OnboardingScaffold(
     stepIndex: Int,
     totalSteps: Int,
     title: String,

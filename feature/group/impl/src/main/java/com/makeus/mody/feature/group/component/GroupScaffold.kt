@@ -41,7 +41,7 @@ private val TitleTopOffset = 72.dp
  * @param titleContentSpacing null이면 자동: 서브타이틀 있으면 60dp, 없으면 48dp (온보딩과 동일).
  */
 @Composable
-fun GroupScaffold(
+internal fun GroupScaffold(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: AnnotatedString? = null,

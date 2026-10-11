@@ -33,7 +33,7 @@ import com.makeus.mody.feature.group.component.GroupScaffold
 import com.makeus.mody.feature.group.contract.GroupIntent
 
 @Composable
-fun GroupShareScreen(viewModel: GroupViewModel) {
+internal fun GroupShareScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current

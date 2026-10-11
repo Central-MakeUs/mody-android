@@ -2,7 +2,7 @@ package com.makeus.mody.feature.challenge.stepchange.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class StepChallengeChangeIntent : UiIntent {
+internal sealed class StepChallengeChangeIntent : UiIntent {
     data object ScreenEntered : StepChallengeChangeIntent()
     data object BackClicked : StepChallengeChangeIntent()
 

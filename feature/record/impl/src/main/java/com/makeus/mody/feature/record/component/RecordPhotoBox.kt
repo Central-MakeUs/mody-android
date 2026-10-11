@@ -32,7 +32,7 @@ import com.makeus.mody.core.model.CropRegion
  * [cropRegion] 이 있으면 원본에서 해당 영역만 잘라 표시(조회 화면과 동일). null 이면 원본 전체.
  */
 @Composable
-fun RecordPhotoBox(
+internal fun RecordPhotoBox(
     photoUri: String?,
     contentDescription: String,
     onClick: () -> Unit,

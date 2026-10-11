@@ -63,7 +63,7 @@ import com.makeus.mody.feature.mypage.profile.contract.ProfileEditState
 private val SaveBlue = Color(0xFF6E7CFF)
 
 @Composable
-fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
+internal fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {

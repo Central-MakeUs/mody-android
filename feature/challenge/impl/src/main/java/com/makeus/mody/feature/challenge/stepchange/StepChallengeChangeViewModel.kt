@@ -17,7 +17,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class StepChallengeChangeViewModel @Inject constructor(
+internal class StepChallengeChangeViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,

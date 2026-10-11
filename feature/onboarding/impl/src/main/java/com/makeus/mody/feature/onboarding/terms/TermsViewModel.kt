@@ -11,7 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class TermsViewModel @Inject constructor(
+internal class TermsViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<TermsState, TermsIntent>(TermsState()) {
 

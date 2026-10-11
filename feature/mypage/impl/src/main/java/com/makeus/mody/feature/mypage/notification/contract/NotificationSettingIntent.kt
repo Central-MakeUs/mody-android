@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.notification.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class NotificationSettingIntent : UiIntent {
+internal sealed class NotificationSettingIntent : UiIntent {
     data object Load : NotificationSettingIntent()
     data object BackClicked : NotificationSettingIntent()
 

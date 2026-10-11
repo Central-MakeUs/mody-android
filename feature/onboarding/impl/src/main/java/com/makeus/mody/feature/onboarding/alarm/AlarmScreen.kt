@@ -10,7 +10,7 @@ import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 import com.makeus.mody.feature.onboarding.contract.OnboardingState
 
 @Composable
-fun AlarmScreen(viewModel: OnboardingViewModel) {
+internal fun AlarmScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     OnboardingScaffold(

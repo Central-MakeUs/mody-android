@@ -15,7 +15,7 @@ import kotlin.coroutines.resumeWithException
 
 /** Kakao SDK를 사용해 카카오 access token을 획득한다. */
 @Singleton
-class KakaoLoginProvider @Inject constructor(
+internal class KakaoLoginProvider @Inject constructor(
     private val activityHolder: CurrentActivityHolder,
 ) {
     suspend fun login(): String = suspendCancellableCoroutine { continuation ->

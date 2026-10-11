@@ -65,7 +65,7 @@ private val GroupNameSkeletonWidth = 96.dp
 
 /** 실제 진입점: ViewModel 상태를 stateless [FeedContent] 로 흘려보낸다. */
 @Composable
-fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
+internal fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // 기록 작성 후 복귀 등 화면 재진입 시 캘린더/피드 재조회.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {

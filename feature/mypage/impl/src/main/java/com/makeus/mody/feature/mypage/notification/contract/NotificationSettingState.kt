@@ -3,7 +3,7 @@ package com.makeus.mody.feature.mypage.notification.contract
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.domain.feature.CommentFeature
 
-data class NotificationSettingState(
+internal data class NotificationSettingState(
     /** 식사 및 운동 알림(끄면 식사/운동 스케줄 편집 숨김). */
     val recordReminderEnabled: Boolean = false,
     val commentEnabled: Boolean = false,

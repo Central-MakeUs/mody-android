@@ -43,7 +43,7 @@ import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingI
 import com.makeus.mody.feature.mypage.notification.contract.NotificationSettingState
 
 @Composable
-fun NotificationSettingScreen(viewModel: NotificationSettingViewModel = hiltViewModel()) {
+internal fun NotificationSettingScreen(viewModel: NotificationSettingViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 

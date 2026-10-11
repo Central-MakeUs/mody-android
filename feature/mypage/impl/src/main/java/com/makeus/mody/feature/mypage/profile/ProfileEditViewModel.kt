@@ -22,7 +22,7 @@ private const val PROFILE_DOMAIN = "profile"
 private const val PROFILE_FILE_BASE = "profile"
 
 @HiltViewModel
-class ProfileEditViewModel @Inject constructor(
+internal class ProfileEditViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val imageUploadRepository: ImageUploadRepository,
     private val authRepository: AuthRepository,

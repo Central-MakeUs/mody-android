@@ -10,7 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class HealthRationaleViewModel @Inject constructor(
+internal class HealthRationaleViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val remoteConfigRepository: RemoteConfigRepository,
 ) : BaseViewModel<HealthRationaleState, HealthRationaleIntent>(HealthRationaleState()) {

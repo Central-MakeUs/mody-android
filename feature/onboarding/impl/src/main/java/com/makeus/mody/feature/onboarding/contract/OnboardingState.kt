@@ -3,13 +3,13 @@ package com.makeus.mody.feature.onboarding.contract
 import com.makeus.mody.core.commonui.base.UiState
 
 /** 시각(24h). 운동 요일별 알림 시간. */
-data class TimeOfDay(val hour: Int, val minute: Int)
+internal data class TimeOfDay(val hour: Int, val minute: Int)
 
 /**
  * 온보딩 전체 스텝에서 누적되는 단일 상태.
  * nav graph 에 scope 된 OnboardingViewModel 이 보유한다.
  */
-data class OnboardingState(
+internal data class OnboardingState(
     val nickname: String = "",
     val birthYear: Int = 2000,
     val birthMonth: Int = 1,

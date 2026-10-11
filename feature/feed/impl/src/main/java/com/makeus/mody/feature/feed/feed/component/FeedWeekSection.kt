@@ -34,7 +34,7 @@ import java.time.LocalDate
  * 하단 1dp gray02 구분선 포함.
  */
 @Composable
-fun FeedWeekSection(
+internal fun FeedWeekSection(
     weekLabel: String,
     weekDays: List<WeekDayUi>,
     canGoNextWeek: Boolean,

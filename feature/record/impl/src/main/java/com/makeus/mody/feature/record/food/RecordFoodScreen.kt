@@ -57,7 +57,7 @@ import com.makeus.mody.feature.record.food.component.PhotoSourceSheet
 import com.makeus.mody.feature.record.food.contract.RecordFoodIntent
 
 @Composable
-fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
+internal fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),

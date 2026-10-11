@@ -43,7 +43,7 @@ import com.makeus.mody.feature.mypage.healthrationale.contract.HealthRationaleSt
  * 로그인 전에도 열릴 수 있어 세션·그룹 상태에 의존하지 않는다(정적 안내 + 방침 링크뿐).
  */
 @Composable
-fun HealthRationaleScreen(viewModel: HealthRationaleViewModel = hiltViewModel()) {
+internal fun HealthRationaleScreen(viewModel: HealthRationaleViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 

@@ -3,7 +3,7 @@ package com.makeus.mody.feature.group.contract
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.error.ErrorAlert
 
-data class GroupState(
+internal data class GroupState(
     // 코드로 그룹 참여
     val joinCode: String = "",
     // 참여 실패 시 서버 message 그대로 노출. 코드 수정(JoinCodeChanged) 전까지 유지됨. null = 에러 없음.

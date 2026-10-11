@@ -34,7 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class FeedViewModel @Inject constructor(
+internal class FeedViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,

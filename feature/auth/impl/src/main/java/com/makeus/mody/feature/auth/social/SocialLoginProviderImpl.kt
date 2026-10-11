@@ -10,7 +10,7 @@ import javax.inject.Singleton
  * Provider별 SDK 세부사항은 각각의 구현체가 담당한다.
  */
 @Singleton
-class SocialLoginProviderImpl @Inject constructor(
+internal class SocialLoginProviderImpl @Inject constructor(
     private val kakaoLoginProvider: KakaoLoginProvider,
     private val googleLoginProvider: GoogleLoginProvider,
 ) : SocialLoginProvider {

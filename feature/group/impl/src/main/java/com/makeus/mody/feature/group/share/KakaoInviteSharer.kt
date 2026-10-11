@@ -29,7 +29,7 @@ import com.kakao.sdk.share.WebSharerClient
  * (27b8954)에서 콘솔로 넘어갔다. 그때 콘솔에 옮겨 넣지 않아 전환 이전 동작(웹 URL 로만
  * 이동)으로 되돌아갔다. **템플릿을 새로 만들거나 갈아탈 때 이 항목을 함께 옮겨라.**
  */
-object KakaoInviteSharer {
+internal object KakaoInviteSharer {
 
     private val TEMPLATE_ID = BuildConfig.KAKAO_SHARE_TEMPLATE_ID
 

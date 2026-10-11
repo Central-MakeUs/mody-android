@@ -3,7 +3,7 @@ package com.makeus.mody.feature.onboarding.terms.contract
 import com.makeus.mody.core.commonui.base.UiState
 
 /** 필수 약관 동의 화면 상태. 두 필수 약관 모두 체크해야 시작 가능. */
-data class TermsState(
+internal data class TermsState(
     val privacyChecked: Boolean = false,
     val serviceChecked: Boolean = false,
 ) : UiState {

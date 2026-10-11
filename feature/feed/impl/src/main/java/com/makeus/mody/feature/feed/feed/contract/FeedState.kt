@@ -6,7 +6,7 @@ import com.makeus.mody.core.model.CropRegion
 import java.time.LocalDate
 
 /** 피드 카드 표시 모델. TODO(feed): API 연동 시 도메인 모델 매핑으로 교체. */
-data class FeedCardUi(
+internal data class FeedCardUi(
     val id: Long,
     /** 작성자 memberId. 내 게시물(신고 미노출) 판별용. */
     val memberId: Long = 0,
@@ -25,7 +25,7 @@ data class FeedCardUi(
 )
 
 /** 주간 스트립 한 칸 (일~토 7개). */
-data class WeekDayUi(
+internal data class WeekDayUi(
     val date: LocalDate,
     val weekdayLabel: String, // "일" ~ "토"
     val isSelected: Boolean,
@@ -35,14 +35,14 @@ data class WeekDayUi(
 )
 
 /** 그룹 선택 시트 한 줄. */
-data class GroupUi(
+internal data class GroupUi(
     val id: Long,
     val name: String,
     val code: String,
     val isCurrent: Boolean,
 )
 
-data class FeedState(
+internal data class FeedState(
     // 상단 그룹 셀렉터 (예: "아자아자")
     val groupName: String = "",
     // 주차 라벨 (예: "7월 2주차")

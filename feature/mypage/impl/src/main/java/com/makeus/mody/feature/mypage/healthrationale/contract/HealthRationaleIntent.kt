@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.healthrationale.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class HealthRationaleIntent : UiIntent {
+internal sealed class HealthRationaleIntent : UiIntent {
     data object BackClicked : HealthRationaleIntent()
     data object PrivacyPolicyClicked : HealthRationaleIntent()
 

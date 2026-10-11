@@ -38,7 +38,7 @@ import com.makeus.mody.feature.notification.notification.contract.NotificationSt
 import com.makeus.mody.feature.notification.notification.contract.NotificationUiModel
 
 @Composable
-fun NotificationScreen(viewModel: NotificationViewModel = hiltViewModel()) {
+internal fun NotificationScreen(viewModel: NotificationViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     NotificationScreen(
         state = state,

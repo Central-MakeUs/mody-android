@@ -20,7 +20,7 @@ import com.makeus.mody.core.designsystem.modifier.shimmer
 
 /** 피드 로딩 스켈레톤. 개수를 모르므로 고정 [count]장을 shimmer 로 표시. */
 @Composable
-fun FeedSkeletonList(
+internal fun FeedSkeletonList(
     modifier: Modifier = Modifier,
     count: Int = 3,
 ) {

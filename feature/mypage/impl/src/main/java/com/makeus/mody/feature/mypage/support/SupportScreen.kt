@@ -16,7 +16,7 @@ import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.feature.mypage.support.contract.SupportIntent
 
 @Composable
-fun SupportScreen(viewModel: SupportViewModel = hiltViewModel()) {
+internal fun SupportScreen(viewModel: SupportViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // 하드웨어/제스처 뒤로가기도 상단바 뒤로와 동일하게 화면 종료.

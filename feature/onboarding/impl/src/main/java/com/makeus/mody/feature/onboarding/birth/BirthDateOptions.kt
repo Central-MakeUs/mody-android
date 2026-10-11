@@ -7,7 +7,7 @@ import java.time.YearMonth
  * 생년월일 피커에 들어가는 연/월/일 후보와 보정 로직.
  * Compose 와 무관한 순수 계산이라 화면에서 분리해 단위 테스트 가능하게 둔다.
  */
-object BirthDateOptions {
+internal object BirthDateOptions {
 
     /** 가입 가능 최소 한국나이. 14세 이상만 사용 가능. */
     const val MIN_KOREAN_AGE = 14

@@ -32,7 +32,7 @@ import kotlin.math.abs
 private val WEIGHTS = (20..150).toList()
 
 @Composable
-fun WeightScreen(viewModel: OnboardingViewModel) {
+internal fun WeightScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     OnboardingScaffold(

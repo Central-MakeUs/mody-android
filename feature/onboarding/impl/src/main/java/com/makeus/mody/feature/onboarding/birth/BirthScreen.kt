@@ -23,7 +23,7 @@ import com.makeus.mody.core.designsystem.component.WheelPicker
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
 
 @Composable
-fun BirthScreen(viewModel: OnboardingViewModel) {
+internal fun BirthScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     val years = remember { BirthDateOptions.years() }

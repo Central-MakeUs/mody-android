@@ -20,7 +20,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class RecordDetailViewModel @Inject constructor(
+internal class RecordDetailViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,

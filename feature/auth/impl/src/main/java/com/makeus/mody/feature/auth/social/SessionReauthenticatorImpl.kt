@@ -14,7 +14,7 @@ import javax.inject.Singleton
  * 성공하면 [AuthRepository.loginWithSocial] 이 새 JWT/상태를 저장한다.
  */
 @Singleton
-class SessionReauthenticatorImpl @Inject constructor(
+internal class SessionReauthenticatorImpl @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val authRepository: AuthRepository,
     private val kakaoLoginProvider: KakaoLoginProvider,

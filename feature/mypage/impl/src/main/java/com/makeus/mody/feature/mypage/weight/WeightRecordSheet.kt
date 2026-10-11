@@ -54,7 +54,7 @@ private fun parseDate(text: String): LocalDate? {
  * @param onConfirm (recordedOn=ISO yyyy-MM-dd, weightKg)
  */
 @Composable
-fun WeightRecordSheet(
+internal fun WeightRecordSheet(
     initialWeightKg: Int,
     isSaving: Boolean,
     onConfirm: (recordedOn: String, weightKg: Double) -> Unit,

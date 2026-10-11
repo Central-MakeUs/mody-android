@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class RecordHealthViewModel @Inject constructor(
+internal class RecordHealthViewModel @Inject constructor(
     private val recordRepository: RecordRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<RecordHealthState, RecordHealthIntent>(RecordHealthState()) {

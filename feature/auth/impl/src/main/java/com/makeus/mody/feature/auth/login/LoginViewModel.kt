@@ -23,7 +23,7 @@ import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(
+internal class LoginViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val authRepository: AuthRepository,
     private val socialLoginProvider: SocialLoginProvider,

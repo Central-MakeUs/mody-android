@@ -2,7 +2,7 @@ package com.makeus.mody.feature.onboarding.terms.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class TermsIntent : UiIntent {
+internal sealed class TermsIntent : UiIntent {
     /** 전체 동의 토글(현재 전체 동의면 전부 해제, 아니면 전부 체크). */
     data object AllToggled : TermsIntent()
 

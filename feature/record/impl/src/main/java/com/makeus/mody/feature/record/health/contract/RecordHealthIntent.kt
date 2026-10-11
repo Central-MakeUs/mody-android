@@ -3,7 +3,7 @@ package com.makeus.mody.feature.record.health.contract
 import com.makeus.mody.core.commonui.base.UiIntent
 import com.makeus.mody.core.model.CropRegion
 
-sealed class RecordHealthIntent : UiIntent {
+internal sealed class RecordHealthIntent : UiIntent {
     data object BackClicked : RecordHealthIntent()
 
     data object PhotoBoxClicked : RecordHealthIntent()

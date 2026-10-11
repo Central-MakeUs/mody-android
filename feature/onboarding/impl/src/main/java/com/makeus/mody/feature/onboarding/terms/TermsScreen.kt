@@ -35,7 +35,7 @@ import com.makeus.mody.feature.onboarding.terms.contract.TermsIntent
 import com.makeus.mody.feature.onboarding.terms.contract.TermsState
 
 @Composable
-fun TermsScreen(viewModel: TermsViewModel = hiltViewModel()) {
+internal fun TermsScreen(viewModel: TermsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     TermsContent(state = state, onIntent = viewModel::onIntent)
 }

@@ -39,7 +39,7 @@ import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
 
 @Composable
-fun GroupEntryScreen(
+internal fun GroupEntryScreen(
     viewModel: GroupViewModel,
     // 진입 출처. 소스별로 title/subtitle/뒤로가기 노출 분기.
     source: GroupEntrySource = GroupEntrySource.Onboarding,

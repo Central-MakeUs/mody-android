@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class GroupSettingViewModel @Inject constructor(
+internal class GroupSettingViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<GroupSettingState, GroupSettingIntent>(GroupSettingState()) {

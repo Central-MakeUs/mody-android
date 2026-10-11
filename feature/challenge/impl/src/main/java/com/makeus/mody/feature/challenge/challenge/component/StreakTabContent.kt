@@ -43,7 +43,7 @@ import com.makeus.mody.core.model.NudgeTarget
  * 연속 기록 탭: 전원 연속 기록 헤더(N일째 + 축하 캐릭터) + 그룹 통계 3종 + 버디 신기록(콕 찌르기).
  */
 @Composable
-fun StreakTabContent(
+internal fun StreakTabContent(
     isLoading: Boolean,
     summary: ChallengeSummary?,
     buddies: List<NudgeTarget>,

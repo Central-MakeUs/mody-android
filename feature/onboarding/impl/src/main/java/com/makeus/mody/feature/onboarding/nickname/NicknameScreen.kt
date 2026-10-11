@@ -25,7 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun NicknameScreen(viewModel: OnboardingViewModel) {
+internal fun NicknameScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     OnboardingScaffold(

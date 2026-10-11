@@ -43,7 +43,7 @@ import com.makeus.mody.feature.challenge.challenge.contract.ChallengeSubTab
 
 /** 실제 진입점: ViewModel 상태를 stateless [ChallengeContent] 로 흘려보낸다. */
 @Composable
-fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
+internal fun ChallengeScreen(viewModel: ChallengeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // 탭 진입/복귀 시 재조회(기록 작성 후 돌아오면 버디 상태 반영). VM은 유지되므로 재조회 필요.
     LaunchedEffect(Unit) { viewModel.onIntent(ChallengeIntent.ScreenEntered) }

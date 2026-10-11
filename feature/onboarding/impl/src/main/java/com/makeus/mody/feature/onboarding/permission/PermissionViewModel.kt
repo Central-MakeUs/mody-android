@@ -16,7 +16,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PermissionViewModel @Inject constructor(
+internal class PermissionViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val healthRepository: HealthRepository,
     private val onboardingRepository: OnboardingRepository,

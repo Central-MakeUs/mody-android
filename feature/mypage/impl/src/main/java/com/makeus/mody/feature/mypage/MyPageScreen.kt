@@ -48,7 +48,7 @@ import com.makeus.mody.feature.mypage.weight.WeightRecordSheet
 import kotlin.math.roundToInt
 
 @Composable
-fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
+internal fun MyPageScreen(viewModel: MyPageViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // 탭 진입 시 최신화(다른 화면에서 프로필/체중 변경 반영). VM은 탭 전환에도 유지되므로 재조회 필요.

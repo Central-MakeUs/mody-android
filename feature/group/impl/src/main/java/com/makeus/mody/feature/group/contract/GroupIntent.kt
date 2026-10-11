@@ -2,7 +2,7 @@ package com.makeus.mody.feature.group.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class GroupIntent : UiIntent {
+internal sealed class GroupIntent : UiIntent {
     // 코드로 그룹 참여
     data class JoinCodeChanged(val value: String) : GroupIntent()
     data object JoinClicked : GroupIntent()

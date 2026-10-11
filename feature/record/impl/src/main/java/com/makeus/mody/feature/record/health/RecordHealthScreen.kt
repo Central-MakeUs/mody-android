@@ -54,7 +54,7 @@ import com.makeus.mody.feature.record.health.contract.ExerciseType
 import com.makeus.mody.feature.record.health.contract.RecordHealthIntent
 
 @Composable
-fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
+internal fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),

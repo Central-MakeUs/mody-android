@@ -76,7 +76,7 @@ private fun requestedPermissions(): Array<String> = buildList {
 }.toTypedArray()
 
 @Composable
-fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
+internal fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // 결과(허용/거부)와 무관하게 다음 단계로 — 전부 선택 권한.
     val permissionLauncher = rememberLauncherForActivityResult(

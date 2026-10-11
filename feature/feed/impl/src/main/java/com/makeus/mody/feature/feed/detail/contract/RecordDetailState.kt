@@ -5,7 +5,7 @@ import com.makeus.mody.core.domain.feature.CommentFeature
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 
 /** 댓글 한 줄 표시 모델. */
-data class CommentUi(
+internal data class CommentUi(
     val id: Long,
     val authorName: String,
     val avatarUrl: String?,
@@ -13,7 +13,7 @@ data class CommentUi(
     val isMine: Boolean,
 )
 
-data class RecordDetailState(
+internal data class RecordDetailState(
     val isLoading: Boolean = true,
     // 좌우로 넘겨보는 기록들
     val records: List<FeedCardUi> = emptyList(),

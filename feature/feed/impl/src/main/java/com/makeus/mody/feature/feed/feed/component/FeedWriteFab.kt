@@ -34,7 +34,7 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
  * FAB 버튼/메뉴만 [fabBottomPadding] 으로 하단바 위로 띄운다.
  */
 @Composable
-fun FeedWriteFab(
+internal fun FeedWriteFab(
     expanded: Boolean,
     onFabClick: () -> Unit,
     onDismiss: () -> Unit,

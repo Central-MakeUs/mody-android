@@ -20,7 +20,7 @@ import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @HiltViewModel
-class MyPageViewModel @Inject constructor(
+internal class MyPageViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val healthRepository: HealthRepository,
     private val navigationHelper: NavigationHelper,

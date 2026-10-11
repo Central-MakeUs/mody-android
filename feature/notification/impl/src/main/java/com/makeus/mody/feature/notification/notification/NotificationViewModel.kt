@@ -27,7 +27,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class NotificationViewModel @Inject constructor(
+internal class NotificationViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val navigationHelper: NavigationHelper,
     private val pendingGroupSelectionHolder: PendingGroupSelectionHolder,

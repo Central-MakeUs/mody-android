@@ -21,7 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class WeeklyChallengeDetailViewModel @Inject constructor(
+internal class WeeklyChallengeDetailViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val imageUploadRepository: ImageUploadRepository,
     private val imageShareRepository: ImageShareRepository,

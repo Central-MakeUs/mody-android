@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.healthguide.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class HealthGuideIntent : UiIntent {
+internal sealed class HealthGuideIntent : UiIntent {
     data object BackClicked : HealthGuideIntent()
 
     /** 페이저를 넘겨 다른 단계를 보고 있다. */

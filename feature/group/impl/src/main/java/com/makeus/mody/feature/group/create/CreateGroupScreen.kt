@@ -38,7 +38,7 @@ import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
 
 @Composable
-fun CreateGroupScreen(viewModel: GroupViewModel) {
+internal fun CreateGroupScreen(viewModel: GroupViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // 생성이 시작되면 키보드를 내린다. 안 내리면 대기 오버레이 위로 키보드가 그대로 남아

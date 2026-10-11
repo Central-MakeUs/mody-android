@@ -63,7 +63,7 @@ import com.makeus.mody.feature.feed.feed.component.FeedCard
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 
 @Composable
-fun RecordDetailScreen(viewModel: RecordDetailViewModel = hiltViewModel()) {
+internal fun RecordDetailScreen(viewModel: RecordDetailViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     RecordDetailContent(state = state, onIntent = viewModel::onIntent)
 }

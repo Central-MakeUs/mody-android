@@ -14,7 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class TermsDetailViewModel @Inject constructor(
+internal class TermsDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     remoteConfigRepository: RemoteConfigRepository,
     private val navigationHelper: NavigationHelper,

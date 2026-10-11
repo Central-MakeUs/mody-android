@@ -3,7 +3,7 @@ package com.makeus.mody.feature.challenge.weeklydetail.contract
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.WeeklyChallengeProof
 
-data class WeeklyChallengeDetailState(
+internal data class WeeklyChallengeDetailState(
     val title: String = "",
     /**
      * 안내 문구("집까지 계단으로 이동한 사진을 인증해주세요!").

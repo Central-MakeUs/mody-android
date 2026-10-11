@@ -21,7 +21,7 @@ import javax.inject.Inject
  * 참여/생성/초대 화면이 같은 인스턴스를 공유한다.
  */
 @HiltViewModel
-class GroupViewModel @Inject constructor(
+internal class GroupViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val groupRepository: GroupRepository,
     inviteCodeHolder: InviteCodeHolder,

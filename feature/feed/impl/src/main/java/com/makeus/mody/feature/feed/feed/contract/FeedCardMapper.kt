@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter
 private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 /** 도메인 기록 → 카드 표시 모델. 식사/운동에 따라 라벨·값 구성. */
-fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
+internal fun FeedRecord.toFeedCardUi(): FeedCardUi = when (type) {
     RecordType.MEAL -> FeedCardUi(
         id = recordId,
         memberId = memberId,

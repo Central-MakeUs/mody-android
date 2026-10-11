@@ -3,7 +3,7 @@ package com.makeus.mody.feature.challenge.stepchange.contract
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.model.StepChallengeOption
 
-data class StepChallengeChangeState(
+internal data class StepChallengeChangeState(
     val isLoading: Boolean = true,
     /** 선택 가능한 걸음 수 챌린지 목록. */
     val options: List<StepChallengeOption> = emptyList(),

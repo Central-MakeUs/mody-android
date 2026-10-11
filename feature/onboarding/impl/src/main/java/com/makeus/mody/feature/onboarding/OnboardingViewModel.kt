@@ -17,7 +17,7 @@ import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
-class OnboardingViewModel @Inject constructor(
+internal class OnboardingViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val onboardingRepository: OnboardingRepository,
 ) : BaseViewModel<OnboardingState, OnboardingIntent>(OnboardingState()) {

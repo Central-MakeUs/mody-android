@@ -2,7 +2,7 @@ package com.makeus.mody.feature.mypage.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class MyPageIntent : UiIntent {
+internal sealed class MyPageIntent : UiIntent {
     /** 화면 진입/재개 시 데이터 로드. */
     data object Refresh : MyPageIntent()
 

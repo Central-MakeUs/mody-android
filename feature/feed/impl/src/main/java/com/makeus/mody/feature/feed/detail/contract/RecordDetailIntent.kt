@@ -2,7 +2,7 @@ package com.makeus.mody.feature.feed.detail.contract
 
 import com.makeus.mody.core.commonui.base.UiIntent
 
-sealed class RecordDetailIntent : UiIntent {
+internal sealed class RecordDetailIntent : UiIntent {
     /** 뒤로가기 */
     data object BackClicked : RecordDetailIntent()
 

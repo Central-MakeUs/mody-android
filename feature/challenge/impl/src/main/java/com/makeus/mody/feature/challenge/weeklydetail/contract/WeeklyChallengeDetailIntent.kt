@@ -3,7 +3,7 @@ package com.makeus.mody.feature.challenge.weeklydetail.contract
 import com.makeus.mody.core.commonui.base.UiIntent
 import com.makeus.mody.core.model.CropRegion
 
-sealed class WeeklyChallengeDetailIntent : UiIntent {
+internal sealed class WeeklyChallengeDetailIntent : UiIntent {
     data object ScreenEntered : WeeklyChallengeDetailIntent()
     data object BackClicked : WeeklyChallengeDetailIntent()
 

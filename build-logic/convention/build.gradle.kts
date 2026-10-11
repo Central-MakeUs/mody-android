@@ -43,6 +43,10 @@ gradlePlugin {
             id = "mody.android.feature"
             implementationClass = "AndroidFeatureConventionPlugin"
         }
+        register("androidFeatureApi") {
+            id = "mody.android.feature.api"
+            implementationClass = "AndroidFeatureApiConventionPlugin"
+        }
         register("androidHilt") {
             id = "mody.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"

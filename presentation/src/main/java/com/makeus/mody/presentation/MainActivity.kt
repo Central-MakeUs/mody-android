@@ -29,15 +29,15 @@ import com.makeus.mody.core.domain.notification.NotificationDeepLink
 import com.makeus.mody.core.domain.notification.NotificationDeepLinkHolder
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.navigation.MainRoute
-import com.makeus.mody.core.navigation.MyPageGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
+import com.makeus.mody.feature.mypage.api.MyPageGraph
+import com.makeus.mody.feature.notification.api.NotificationDestination
+import com.makeus.mody.feature.notification.api.NotificationLinkParser
 import com.makeus.mody.presentation.analytics.MainScreenName
 import com.makeus.mody.presentation.analytics.toScreenName
 import com.makeus.mody.presentation.navigation.AppNavHost
-import com.makeus.mody.core.navigation.NotificationDestination
-import com.makeus.mody.core.navigation.NotificationLinkParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

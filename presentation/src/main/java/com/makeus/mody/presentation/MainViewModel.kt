@@ -13,13 +13,13 @@ import com.makeus.mody.core.domain.session.SessionExpiredNotifier
 import com.makeus.mody.core.domain.usecase.ResolveStartDestinationUseCase
 import com.makeus.mody.core.domain.usecase.SyncTodayStepsUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
-import com.makeus.mody.core.navigation.AuthGraphBaseRoute
-import com.makeus.mody.core.navigation.GroupGraphBaseRoute
 import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
-import com.makeus.mody.core.navigation.OnboardingGraphBaseRoute
 import com.makeus.mody.core.navigation.Route
+import com.makeus.mody.feature.auth.api.AuthGraphBaseRoute
+import com.makeus.mody.feature.group.api.GroupGraphBaseRoute
+import com.makeus.mody.feature.onboarding.api.OnboardingGraphBaseRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

@@ -99,5 +99,6 @@ mody-android-application = { id = "mody.android.application" }
 mody-android-library = { id = "mody.android.library" }
 mody-android-library-compose = { id = "mody.android.library.compose" }
 mody-android-feature = { id = "mody.android.feature" }
+mody-android-feature-api = { id = "mody.android.feature.api" }
 mody-android-hilt = { id = "mody.android.hilt" }
 mody-jvm-library = { id = "mody.jvm.library" }

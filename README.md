@@ -64,7 +64,7 @@ mody
 
 │   └── camera          # CameraX 촬영/크롭 오버레이, EXIF 정규화
 
-└── feature
+└── feature             # 전부 api(Route) / impl(화면·ViewModel) 두 모듈
 
     ├── auth
 
@@ -90,7 +90,8 @@ mody
 graph TD
     app[":app<br/>Application · DI 조립"]
     pres[":presentation<br/>MainActivity · AppNavHost"]
-    feat[":feature:*<br/>auth · onboarding · group · feed<br/>challenge · record · notification · mypage"]
+    feat[":feature:*:impl<br/>auth · onboarding · group · feed<br/>challenge · record · notification · mypage"]
+    fapi[":feature:*:api<br/>Route · 인자 타입"]
 
     cui[":core:common-ui"]
     ds[":core:designsystem"]
@@ -107,11 +108,14 @@ graph TD
     app --> nav
     app --> dom
     pres --> feat
+    pres --> fapi
     pres --> cui
     pres --> ds
     pres --> nav
     pres --> dom
 
+    feat -- "자기 것 + 이동할 곳" --> fapi
+    fapi -- "api" --> nav
     feat --> cui
     feat --> ds
     feat --> nav
@@ -147,7 +151,8 @@ graph TD
 | `:core:model` 은 아무것도 의존하지 않는다 | 순수 Kotlin JVM 모듈 — Android SDK 가 클래스패스에 없다 |
 | `:core:domain` 은 `:core:model` 만 의존한다 | 마찬가지로 순수 Kotlin JVM — 프레임워크 타입을 쓰면 **컴파일 실패** |
 | `:feature:*` 는 `:core:data` / `:core:network` 를 모른다 | 의존성에 선언하지 않음 → DTO·Retrofit API 참조 시 **컴파일 실패** |
-| `:feature:*` 끼리 서로 의존하지 않는다 | 화면 이동은 `:core:navigation` 의 Route + `NavigationHelper` 경유 |
+| `:feature:*` 끼리는 상대의 `:api`(Route)로만 엮인다 | `:impl` 끼리는 의존 선언이 없어 화면·ViewModel 참조 시 **컴파일 실패**. 이동은 상대 `:api` 의 Route + `NavigationHelper` |
+| `:impl` 의 공개면은 NavGraph·탭 진입점뿐 | 나머지는 `internal` → presentation 도 ViewModel·Intent 를 직접 못 만진다 |
 | 구현체 주입은 `:app` 한 곳에서만 | `:core:data` 를 의존하는 유일한 모듈 |
 | 공개 시그니처에 드러나는 의존성만 `api` | 나머지는 `implementation` 으로 전이 차단 → 소비자가 남의 내부 타입에 기대지 못함 |
 
@@ -197,6 +202,7 @@ fun `Screen 은 NavController 를 직접 다루지 않는다`() { /* ... */ }
 | ViewModel | `BaseViewModel` 상속, `@HiltViewModel` 주입 |
 | Screen | `NavController` 직접 조작 금지, Repository 직접 참조 금지 |
 | 레이어 | feature·presentation 이 data/network 구현체 미참조, domain 이 Android 프레임워크 미의존 |
+| feature api/impl | 다른 feature 는 `.api` 패키지만 import, `:api` 에 Compose·ViewModel 없음 |
 | 네이밍 | Repository 구현체는 `Impl` 로 끝나고 `@Singleton` |
 
 ```bash
@@ -213,7 +219,7 @@ UI·네트워크에 묶이지 않는 계산은 순수 함수로 빼서 JVM 테�
 | `:core:camera` `CropGeometryTest` | 크롭 프레임 위치, 드래그 경계 클램프, 세로 슬라이스 크롭 영역 |
 | `:core:domain` `StepSyncWindowTest` | 걸음 수 동기화 구간 분할 — 날짜 경계, 자정 처리, 읽기 창 초과 |
 | `:core:model` `StepChallengeStatusTest` | 챌린지 상태 매핑, 달성률 내림·상한·0 나눗셈 |
-| `:feature:challenge` `StepChallengeTitleTest` | 챌린지 제목 파싱의 비정상 입력 처리 |
+| `:feature:challenge:impl` `StepChallengeTitleTest` | 챌린지 제목 파싱의 비정상 입력 처리 |
 
 > 현재 Feature 모듈을 지속적으로 분리 및 확장하며 아키텍처를 개선하고 있습니다.
 

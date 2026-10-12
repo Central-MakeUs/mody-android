@@ -12,7 +12,6 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.health.connect)
-    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
 }

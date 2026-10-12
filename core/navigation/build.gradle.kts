@@ -9,7 +9,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.navigation.compose)
+    // NavigationHelper 가 이벤트를 Flow 로, Route 가 @Serializable 직렬화기를 공개한다.
+    // Route 만 정의하고 NavHost 는 만지지 않으므로 navigation-compose·json 은 필요 없다.
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.serialization.core)
 }

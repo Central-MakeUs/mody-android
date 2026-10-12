@@ -13,7 +13,10 @@ dependencies {
     // openHealthConnect(context, availability) 의 공개 시그니처에 드러나므로 api.
     api(project(":core:model"))
 
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    // BaseViewModel 이 ViewModel 을 상속하고 state 를 StateFlow 로 내보낸다. 둘 다 공개
+    // 시그니처라 api — 소비자가 lifecycle·coroutines 를 각자 선언한 덕에 컴파일되던 상태였다.
+    api(libs.androidx.lifecycle.viewmodel)
+    api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
     // Health Connect 설정 화면 액션 상수만 사용.

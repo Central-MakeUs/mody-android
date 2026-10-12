@@ -62,10 +62,20 @@ Repository 구현 바인딩(`:core:data`)은 `:app` 에서만 조립한다 — f
 인터페이스만 본다.
 
 **공개 시그니처에 드러나는 의존성만 `api`, 나머지는 전부 `implementation`.** 지금 `api` 인
-곳은 `:core:domain → :core:model`(Repository 시그니처에 모델이 나온다)과
-`:core:camera → :core:model`(`ModyCameraOverlay` 가 `CropRegion` 을 넘긴다) 둘뿐이다.
+곳은 각 `build.gradle.kts` 에 이유를 주석으로 달아 뒀다 — 모듈 간으로는 `:core:domain`·
+`:core:camera`·`:core:common-ui → :core:model` 과 `:core:network → :core:domain`, 라이브러리로는
+`:core:common-ui`(ViewModel·StateFlow), `:core:navigation`(Flow·`@Serializable`),
+`:core:network`(Retrofit·OkHttp·`@Serializable`).
 `implementation` 인데 타입이 새면 소비자가 각자 그 모듈을 선언해 둔 덕에 우연히 컴파일될
 뿐이라, 그 선언이 빠지는 순간 깨진다(실제로 `:core:camera` 가 그 상태였다).
+
+점검은 [Dependency Analysis Gradle Plugin](https://github.com/autonomousapps/dependency-analysis-gradle-plugin)
+을 루트에 **임시로** 붙여 `./gradlew buildHealth --no-configuration-cache` 로 한다(서브프로젝트에도
+`apply` 해야 리포트가 나온다). 상주시키지 않은 건 권고를 그대로 따르면 안 되기 때문이다.
+- feature·`:core:data` 가 "core 를 `api` 로" 권고받는 건 ViewModel·RepositoryImpl 이 `public` 이라서다.
+  `api` 로 올리지 말고 `internal` 로 내리는 게 답이다(미착수).
+- androidx 하위 아티팩트(`ui-unit` 등)·dagger/javax.inject(Hilt 생성 코드)·ktx 파사드 대신 기반
+  아티팩트 선언 권고는 노이즈다. `camera2`·`health-connect` 의 runtimeOnly 권고도 무시한다.
 
 **SDK·Java 버전·Compose·Hilt 설정은 모듈 빌드 스크립트에 쓰지 않는다.** `build-logic` 의
 규약 플러그인(`mody.android.library` / `.compose` / `mody.android.feature` /

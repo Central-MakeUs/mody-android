@@ -127,7 +127,7 @@ graph TD
 
     data --> dom
     data --> net
-    net --> dom
+    net -- "api" --> dom
 
     classDef domain fill:#2d5a3d,stroke:#4caf50,color:#fff
     classDef impl fill:#4a3a5a,stroke:#9575cd,color:#fff

@@ -1,0 +1,32 @@
+package com.makeus.mody.feature.record.health.contract
+
+import com.makeus.mody.core.commonui.base.UiIntent
+import com.makeus.mody.core.model.CropRegion
+
+internal sealed class RecordHealthIntent : UiIntent {
+    data object BackClicked : RecordHealthIntent()
+
+    data object PhotoBoxClicked : RecordHealthIntent()
+    data object PhotoSheetDismissed : RecordHealthIntent()
+
+    /** 촬영하기 → 커스텀 카메라 오버레이 오픈. */
+    data object TakePhotoClicked : RecordHealthIntent()
+    data object CameraDismissed : RecordHealthIntent()
+    data object PickFromGalleryClicked : RecordHealthIntent()
+
+    /** 촬영/갤러리로 사진 선택. cropRegion 은 촬영(크롭) 시에만, 갤러리는 null. */
+    data class PhotoSelected(val uri: String, val cropRegion: CropRegion?) : RecordHealthIntent()
+
+    data object TypeDropdownToggled : RecordHealthIntent()
+    data object TypeDropdownDismissed : RecordHealthIntent()
+    data class TypeSelected(val type: ExerciseType) : RecordHealthIntent()
+    data class CustomExerciseChanged(val value: String) : RecordHealthIntent()
+
+    /** 기타 직접입력 X → 종류 미선택으로 되돌려 다시 선택 가능하게. */
+    data object CustomExerciseCleared : RecordHealthIntent()
+
+    data class DurationChanged(val hours: Int, val minutes: Int) : RecordHealthIntent()
+
+    data object SubmitClicked : RecordHealthIntent()
+    data object SubmitErrorShown : RecordHealthIntent()
+}

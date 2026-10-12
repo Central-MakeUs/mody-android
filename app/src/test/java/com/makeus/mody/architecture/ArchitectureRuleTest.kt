@@ -166,6 +166,46 @@ class ArchitectureRuleTest {
             }
     }
 
+    // --- feature api / impl ---
+
+    /**
+     * feature 끼리는 상대의 `:api`(Route) 로만 엮인다.
+     *
+     * `:impl` 끼리는 Gradle 의존이 없어 컴파일부터 안 되지만, 누가 빌드 스크립트에
+     * `:feature:x:impl` 을 한 줄 넣으면 열린다. 그때 이 테스트가 먼저 깨진다.
+     */
+    @Test
+    fun `feature 는 다른 feature 의 api 만 참조한다`() {
+        val featurePkg = Regex("""^com\.makeus\.mody\.feature\.(\w+)""")
+        Konsist.scopeFromProject()
+            .files
+            .filter { featurePkg.containsMatchIn(it.packagee?.name.orEmpty()) }
+            .assertFalse { file ->
+                val self = featurePkg.find(file.packagee!!.name)!!.groupValues[1]
+                file.imports.any { import ->
+                    val target = featurePkg.find(import.name)?.groupValues?.get(1)
+                    target != null && target != self &&
+                        !import.name.startsWith("com.makeus.mody.feature.$target.api.")
+                }
+            }
+    }
+
+    /**
+     * `:api` 는 이동 계약(Route·인자 타입)만 담는다. 화면이 들어가면 그 feature 로 가려는
+     * 쪽이 Compose·ViewModel 까지 끌고 오게 돼 api/impl 을 나눈 의미가 없어진다.
+     */
+    @Test
+    fun `feature api 에는 화면과 ViewModel 이 없다`() {
+        Konsist.scopeFromProject()
+            .files
+            .filter { Regex("""^com\.makeus\.mody\.feature\.\w+\.api""").containsMatchIn(it.packagee?.name.orEmpty()) }
+            .assertFalse { file ->
+                file.imports.any {
+                    it.name.startsWith("androidx.compose") || it.name.startsWith("androidx.lifecycle")
+                }
+            }
+    }
+
     // --- 네이밍 ---
 
     @Test

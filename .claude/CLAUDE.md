@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :core:common-ui             ← BaseViewModel, UiState, UiIntent, CurrentActivityHolder,
                               HealthConnectLauncher(건강 데이터 설정 진입)
 :core:designsystem          ← ModyTheme, 공용 Compose 컴포넌트, 색상/타이포, ModyCatalog
-:core:navigation            ← Route 정의, NavigationHelper, NavigationEvent
+:core:navigation            ← Route 인터페이스·MainRoute, NavigationHelper, NavigationEvent
 :core:camera                ← 촬영/크롭 Compose 레이어(CameraX). record·challenge 가 공유
 :core:model                 ← 값 타입만. 순수 Kotlin JVM(의존성 없음)
 :core:domain                ← Repository/Logger/Reporter 인터페이스, UseCase,
@@ -39,6 +39,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :feature:mypage             ← 마이페이지, 알림 설정, 건강 연동 안내
 ```
 
+**feature 는 전부 `:api` / `:impl` 두 모듈이다** (`feature/feed/api`, `feature/feed/impl`).
+
+- `:feature:x:api` — 다른 곳이 x 로 **이동할 때** 필요한 것만: Route, Route 인자 타입(enum 등).
+  화면·ViewModel·Compose 없음(Konsist 가 검사). 패키지 `com.makeus.mody.feature.x.api`.
+  예외로 `:feature:notification:api` 에 알림 link → Route 매핑(`NotificationLinkParser`)이 있다
+  — 알림 목록과 FCM 탭(MainActivity) 공용이라.
+- `:feature:x:impl` — 나머지 전부. 공개면은 `navigation` 패키지의 `xxxNavGraph()` 와 하단 탭
+  진입점(`FeedTab` 등)뿐이고 **그 밖은 전부 `internal`** 이다. 새 파일도 `internal` 로 쓴다.
+  namespace 는 분리 전 그대로(`com.makeus.mody.feature.x`)라 `R` import 는 안 바뀐다.
+
+`:impl` 끼리는 서로 볼 수 없다. feed 가 group 으로 가야 하면 feed `:impl` 이
+`:feature:group:api` 만 선언한다. 그래서 group 화면을 고쳐도 feed 는 재컴파일되지 않는다.
+
 모듈을 새로 추가/제거하면 `settings.gradle.kts` 와 이 표를 같이 고친다. 디렉터리만 남고
 `include` 가 빠지면 빌드에서 조용히 사라진다(`core/health/` 가 그 상태로 남아 있었다).
 
@@ -46,9 +59,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 :app          → :presentation, :core:data, :core:common-ui, :core:domain, :core:navigation
-:presentation → :feature:*, :core:common-ui, :core:designsystem, :core:navigation, :core:domain
-:feature:*    → :core:common-ui, :core:designsystem, :core:navigation, :core:domain
-                (record·challenge 만 추가로 :core:camera)
+:presentation → :feature:*:impl, (일부) :feature:*:api, :core:common-ui, :core:designsystem,
+                :core:navigation, :core:domain
+:feature:*:impl → 자기 :api, (이동할 곳의) 다른 :feature:*:api,
+                  :core:common-ui, :core:designsystem, :core:navigation, :core:domain
+                  (record·challenge 만 추가로 :core:camera)
+:feature:*:api  → :core:navigation (api)               ← Route 를 구현하므로
 :core:camera  → :core:designsystem, :core:model        ← domain 아님. 값 타입만 쓴다
 :core:common-ui → :core:model                          ← domain 아님
 :core:data    → :core:domain, :core:network
@@ -63,7 +79,8 @@ Repository 구현 바인딩(`:core:data`)은 `:app` 에서만 조립한다 — f
 
 **공개 시그니처에 드러나는 의존성만 `api`, 나머지는 전부 `implementation`.** 지금 `api` 인
 곳은 각 `build.gradle.kts` 에 이유를 주석으로 달아 뒀다 — 모듈 간으로는 `:core:domain`·
-`:core:camera`·`:core:common-ui → :core:model` 과 `:core:network → :core:domain`, 라이브러리로는
+`:core:camera`·`:core:common-ui → :core:model`, `:core:network → :core:domain`, `:feature:*:api → :core:navigation`,
+라이브러리로는
 `:core:common-ui`(ViewModel·StateFlow), `:core:navigation`(Flow·`@Serializable`),
 `:core:network`(Retrofit·OkHttp·`@Serializable`).
 `implementation` 인데 타입이 새면 소비자가 각자 그 모듈을 선언해 둔 덕에 우연히 컴파일될
@@ -72,14 +89,17 @@ Repository 구현 바인딩(`:core:data`)은 `:app` 에서만 조립한다 — f
 점검은 [Dependency Analysis Gradle Plugin](https://github.com/autonomousapps/dependency-analysis-gradle-plugin)
 을 루트에 **임시로** 붙여 `./gradlew buildHealth --no-configuration-cache` 로 한다(서브프로젝트에도
 `apply` 해야 리포트가 나온다). 상주시키지 않은 건 권고를 그대로 따르면 안 되기 때문이다.
-- feature·`:core:data` 가 "core 를 `api` 로" 권고받는 건 ViewModel·RepositoryImpl 이 `public` 이라서다.
-  `api` 로 올리지 말고 `internal` 로 내리는 게 답이다(미착수).
+- feature `:impl` 이 "`:core:domain`·`:core:navigation` 을 `api` 로" 권고받는 건 Hilt 가 생성하는
+  Java `XxxViewModel_Factory.newInstance(...)` 가 항상 public 이라서다. 손으로 쓴 클래스는
+  `internal` 이라 ABI 에 없다 — 무시한다. `:core:data` 의 같은 권고는 RepositoryImpl 이 아직
+  `public` 이라서다(`internal` 로 내리는 게 답, 미착수).
 - androidx 하위 아티팩트(`ui-unit` 등)·dagger/javax.inject(Hilt 생성 코드)·ktx 파사드 대신 기반
   아티팩트 선언 권고는 노이즈다. `camera2`·`health-connect` 의 runtimeOnly 권고도 무시한다.
 
 **SDK·Java 버전·Compose·Hilt 설정은 모듈 빌드 스크립트에 쓰지 않는다.** `build-logic` 의
-규약 플러그인(`mody.android.library` / `.compose` / `mody.android.feature` /
-`mody.android.hilt` / `mody.android.application` / `mody.jvm.library`)이 잡는다. 값을 바꿀
+규약 플러그인(`mody.android.library` / `.compose` / `mody.android.feature`(impl) /
+`mody.android.feature.api` / `mody.android.hilt` / `mody.android.application` /
+`mody.jvm.library`)이 잡는다. 값을 바꿀
 일이 있으면 `build-logic/convention/src/main/kotlin/com/makeus/mody/convention/KotlinAndroid.kt`
 한 곳만 고친다. 모듈에는 `namespace` 와 그 모듈 고유의 것(`buildConfig`, 서명 등)만 남긴다.
 
@@ -102,9 +122,11 @@ Screen
 
 ```
 feature/auth/
-└── src/main/java/com/makeus/mody/feature/auth/
+├── api/src/main/java/com/makeus/mody/feature/auth/api/
+│   └── AuthRoute.kt                   ← Route (다른 feature 가 보는 유일한 것)
+└── impl/src/main/java/com/makeus/mody/feature/auth/
     ├── navigation/
-    │   └── AuthNavigation.kt          ← NavGraphBuilder 확장함수
+    │   └── AuthNavigation.kt          ← NavGraphBuilder 확장함수 (public)
     ├── login/
     │   ├── LoginScreen.kt             ← @Composable, UI만
     │   ├── LoginViewModel.kt          ← @HiltViewModel, BaseViewModel 상속
@@ -123,12 +145,12 @@ feature/auth/
 
 **State + Intent:**
 ```kotlin
-data class LoginState(
+internal data class LoginState(
     val email: String = "",
     val isLoading: Boolean = false,
 ) : UiState
 
-sealed class LoginIntent : UiIntent {
+internal sealed class LoginIntent : UiIntent {
     data class EmailChanged(val email: String) : LoginIntent()
     data object LoginClicked : LoginIntent()
 }
@@ -137,7 +159,7 @@ sealed class LoginIntent : UiIntent {
 **ViewModel:**
 ```kotlin
 @HiltViewModel
-class LoginViewModel @Inject constructor(
+internal class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val navigationHelper: NavigationHelper,
 ) : BaseViewModel<LoginState, LoginIntent>(LoginState()) {
@@ -160,7 +182,7 @@ class LoginViewModel @Inject constructor(
 **Screen:**
 ```kotlin
 @Composable
-fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
+internal fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // UI 렌더링만, 로직 없음
@@ -170,7 +192,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
 }
 ```
 
-**Route 추가 (`core/navigation/Route.kt`):**
+**Route 추가 (`feature/auth/api/.../AuthRoute.kt`):**
 ```kotlin
 @Serializable data object AuthGraphRoute : Route
 
@@ -427,7 +449,7 @@ Figma 를 호출하지 않아 인증키가 필요 없다. 시안이 바뀌면 �
 | 역할 | 경로 |
 |---|---|
 | BaseViewModel | `core/common-ui/.../base/BaseViewModel.kt` |
-| Route 정의 | `core/navigation/.../Route.kt` |
+| Route 정의 | `feature/*/api/.../XxxRoute.kt` (공통 `Route`·`MainRoute` 는 `core/navigation/.../Route.kt`) |
 | 빌드 규약 플러그인 | `build-logic/convention/src/main/kotlin/` |
 | NavigationHelper | `core/navigation/.../NavigationHelper.kt` |
 | ModyTheme | `core/designsystem/.../theme/Theme.kt` |

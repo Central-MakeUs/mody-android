@@ -1,0 +1,36 @@
+package com.makeus.mody.feature.group.contract
+
+import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.model.error.ErrorAlert
+
+internal data class GroupState(
+    // 코드로 그룹 참여
+    val joinCode: String = "",
+    // 참여 실패 시 서버 message 그대로 노출. 코드 수정(JoinCodeChanged) 전까지 유지됨. null = 에러 없음.
+    val joinError: String? = null,
+    // 그룹 생성 - 이름
+    val groupName: String = "",
+    // 그룹 생성 실패 다이얼로그 문구(확인 시 null 로 소비)
+    val createError: ErrorAlert? = null,
+    // 친구 초대 - 내 그룹 초대 코드 (null = 로딩중)
+    val inviteCode: String? = null,
+    val codeCopied: Boolean = false,
+    // 생성/참여 네트워크 진행중
+    val isLoading: Boolean = false,
+) : UiState {
+
+    val isJoinEnabled: Boolean
+        get() = joinCode.length == JOIN_CODE_LENGTH && joinError == null && !isLoading
+    val isGroupNameValid: Boolean get() = groupName.isNotBlank() && groupName.length <= GROUP_NAME_MAX
+
+    companion object {
+        const val JOIN_CODE_LENGTH = 8
+        const val GROUP_NAME_MAX = 14
+
+        /**
+         * 그룹 최대 인원. 한도를 강제하는 건 서버이고(초과 참여는 서버가 거부),
+         * 이 값은 그룹 생성 화면 안내 문구에만 쓴다. 서버 설정이 바뀌면 같이 고쳐야 한다.
+         */
+        const val MAX_MEMBERS = 8
+    }
+}

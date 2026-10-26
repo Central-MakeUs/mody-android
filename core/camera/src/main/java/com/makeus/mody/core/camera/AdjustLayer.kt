@@ -52,7 +52,7 @@ import com.makeus.mody.core.model.CropRegion
 import kotlin.math.roundToInt
 
 /**
- * 조정 단계: 사진 위의 크롭 프레임을 세로로 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
+ * 조정 단계(촬영본·갤러리 사진 공용): 사진 위의 크롭 프레임을 세로로 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
  * 사진은 화면 중앙 고정, 프레임이 위아래로 움직인다. 프레임 밖은 어둡게.
  *
  * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
@@ -62,6 +62,7 @@ import kotlin.math.roundToInt
  * 크롭 영역은 회전된 사진 기준이다.
  *
  * @param frameRatio 프레임 높이/너비. 화면보다 세로로 길면 드래그 여지가 없어 1 이하만 의미가 있다.
+ * @param retakeLabel 왼쪽 아래 버튼 문구. 촬영본은 "다시 찍기", 갤러리 사진은 "다시 선택".
  * @param confirming 회전본을 굽는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
  * @param onConfirm (시계 방향 회전 횟수, 회전된 사진 기준 크롭 영역).
  */
@@ -69,6 +70,7 @@ import kotlin.math.roundToInt
 internal fun AdjustLayer(
     image: UprightImage,
     frameRatio: Float,
+    retakeLabel: String,
     confirming: Boolean,
     onRetake: () -> Unit,
     onConfirm: (quarterTurns: Int, cropRegion: CropRegion) -> Unit,
@@ -213,7 +215,7 @@ internal fun AdjustLayer(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            RetakeButton(enabled = !confirming, onClick = onRetake)
+            RetakeButton(label = retakeLabel, enabled = !confirming, onClick = onRetake)
             UploadButton(
                 enabled = !confirming,
                 onClick = { onConfirm(quarterTurns, layout.cropRegionAt(frameTop)) },
@@ -234,7 +236,7 @@ private class RotateTransformation(private val degrees: Int) : Transformation {
 }
 
 @Composable
-private fun RetakeButton(enabled: Boolean, onClick: () -> Unit) {
+private fun RetakeButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -242,7 +244,7 @@ private fun RetakeButton(enabled: Boolean, onClick: () -> Unit) {
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
-        Text(text = "다시 찍기", style = ModyTheme.typography.b6, color = Color.White)
+        Text(text = label, style = ModyTheme.typography.b6, color = Color.White)
     }
 }
 

@@ -76,14 +76,14 @@ fun WeeklyChallengeDetailScreen(
     WeeklyChallengeDetailContent(state = state, onIntent = viewModel::onIntent)
 
     // "인증하기" 는 바로 촬영으로 간다 — 인증 사진이라 그 자리에서 찍는 게 기본 흐름.
-    // 갤러리는 막는다(onPickGallery = null): 아무 사진이나 고르면 인증이 성립하지 않는다.
+    // 갤러리는 막는다(allowGallery = false): 아무 사진이나 고르면 인증이 성립하지 않는다.
     if (state.isCameraVisible) {
         ModyCameraOverlay(
             frameRatio = SQUARE_FRAME_RATIO,
             onConfirm = { uri, region ->
                 viewModel.onIntent(WeeklyChallengeDetailIntent.PhotoCaptured(uri, region))
             },
-            onPickGallery = null,
+            allowGallery = false,
             onDismiss = { viewModel.onIntent(WeeklyChallengeDetailIntent.CameraDismissed) },
         )
     }

@@ -1,13 +1,14 @@
 package com.makeus.mody.feature.record.health.contract
 
 import com.makeus.mody.core.commonui.base.UiState
+import com.makeus.mody.core.camera.CameraSource
 import com.makeus.mody.core.model.CropRegion
 import com.makeus.mody.core.model.error.ErrorAlert
 
 data class RecordHealthState(
     /** 선택/촬영한 사진 URI 문자열(원본). null 이면 미선택 → 업로드 박스 노출. */
     val photoUri: String? = null,
-    /** 촬영 크롭 영역(정규화). 갤러리 선택 시 null → 원본 전체 표시. */
+    /** 조정 화면에서 맞춘 크롭 영역(정규화). 사진 미선택이면 null. */
     val cropRegion: CropRegion? = null,
     /** 선택한 운동 종류. null 이면 미선택. */
     val exerciseType: ExerciseType? = null,
@@ -21,6 +22,8 @@ data class RecordHealthState(
     val isPhotoSheetVisible: Boolean = false,
     /** 커스텀 촬영 오버레이 표시 여부. */
     val isCameraVisible: Boolean = false,
+    /** 오버레이 시작 화면. 시트에서 무엇을 눌렀는지에 따라 촬영 / 갤러리 선택기. */
+    val cameraSource: CameraSource = CameraSource.CAMERA,
     val isSubmitting: Boolean = false,
     /** 작성 실패 다이얼로그 문구. 확인 시 소비. null = 에러 없음. */
     val submitError: ErrorAlert? = null,

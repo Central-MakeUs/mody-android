@@ -8,7 +8,9 @@ import android.media.ExifInterface
 import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 
 /**
  * 업로드본 장변 상한(px).
@@ -37,31 +39,53 @@ private fun cameraCacheFile(context: Context, name: String): File =
 private fun fileUri(context: Context, file: File): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.camera.fileprovider", file)
 
-/** 정규화된(EXIF 회전 반영) 업라이트 이미지 정보. [uri] 는 표시용, [path] 는 크롭 디코딩용. */
+/** 정규화된(EXIF 회전 반영) 업라이트 이미지 정보. [uri] 는 표시·업로드용, [path] 는 회전 디코딩·정리용. */
 internal data class UprightImage(val uri: String, val path: String, val width: Int, val height: Int)
 
 /**
  * 촬영 원본(EXIF 회전 가능)을 실제 픽셀 방향으로 세워서 다시 저장한다.
  * 이후 크롭 좌표 계산이 화면 표시와 1:1 로 맞도록 회전 애매함을 여기서 제거.
  *
- * 디코딩은 [MAX_UPLOAD_EDGE] 에 맞춰 축소해서 받는다. 원본 크기로 받으면 메모리가
- * 해상도에 그대로 비례해 터진다.
- *
  * 다 쓴 원본 파일은 지운다 — 여기서 만든 결과물만 이후 단계가 참조한다.
  */
 internal fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
-    val rotation = readRotationDegrees(sourcePath)
-    val src = decodeDownsampled(sourcePath) ?: error("이미지 디코딩 실패")
+    val image = decodeUprightAndSave(context, "capture_${sourcePath.hashCode()}") { FileInputStream(sourcePath) }
+    // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
+    runCatching { File(sourcePath).delete() }
+    return image
+}
+
+/**
+ * 갤러리에서 고른 사진을 촬영본과 같은 형태(업라이트·장변 상한·캐시 JPEG)로 들여온다.
+ *
+ * 원본 content uri 를 그대로 쓰지 않는 이유: EXIF 회전이 남아 있어 크롭 좌표가 표시와
+ * 어긋날 수 있고, 고화소 원본을 그대로 올리면 업로드 시 메모리에 통째로 올라간다.
+ * 원본은 사용자 사진이라 지우지 않는다.
+ *
+ * 파일 이름에 시각을 넣는다 — 같은 사진을 다시 고르면 이름이 겹쳐, 이전 결과를 지울 때
+ * 새 결과까지 지워진다.
+ */
+internal fun importToUpright(context: Context, uri: Uri): UprightImage =
+    decodeUprightAndSave(context, "gallery_${uri.hashCode()}_${System.currentTimeMillis()}") {
+        context.contentResolver.openInputStream(uri) ?: error("사진을 열 수 없음")
+    }
+
+/**
+ * [open] 이 주는 이미지를 EXIF 방향대로 세우고, [MAX_UPLOAD_EDGE] 로 줄여 캐시에 저장한다.
+ *
+ * 디코딩은 축소해서 받는다. 원본 크기로 받으면 메모리가 해상도에 그대로 비례해 터진다.
+ * 스트림은 한 번 읽으면 끝이라 EXIF·크기·픽셀을 읽을 때마다 새로 연다.
+ */
+private fun decodeUprightAndSave(context: Context, key: String, open: () -> InputStream): UprightImage {
+    val rotation = readRotationDegrees(open)
+    val src = decodeDownsampled(open) ?: error("이미지 디코딩 실패")
     val upright = if (rotation == 0f) {
         src
     } else {
         Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(rotation) }, true)
             .also { if (it != src) src.recycle() }
     }
-    val image = saveJpeg(context, upright, "capture_${upright.width}x${upright.height}_${sourcePath.hashCode()}.jpg")
-    // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
-    runCatching { File(sourcePath).delete() }
-    return image
+    return saveJpeg(context, upright, "${key}_${upright.width}x${upright.height}.jpg")
 }
 
 /**
@@ -109,9 +133,9 @@ private fun saveJpeg(context: Context, bitmap: Bitmap, name: String): UprightIma
 }
 
 /** EXIF 회전값(도). 지원하지 않는 값(플립 계열 포함)은 0 으로 둬 기존 동작을 유지한다. */
-private fun readRotationDegrees(sourcePath: String): Float = when (
+private fun readRotationDegrees(open: () -> InputStream): Float = when (
     runCatching {
-        ExifInterface(sourcePath).getAttributeInt(
+        open().use { ExifInterface(it) }.getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
             ExifInterface.ORIENTATION_NORMAL,
         )
@@ -130,16 +154,16 @@ private fun readRotationDegrees(sourcePath: String): Float = when (
  * 샘플링 배율을 정한다. inSampleSize 는 2의 거듭제곱만 적용돼 결과가 상한보다 클 수
  * 있지만, 최소 절반씩 줄어 메모리 상한을 잡는 목적에는 충분하다.
  */
-private fun decodeDownsampled(path: String): Bitmap? {
+private fun decodeDownsampled(open: () -> InputStream): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    BitmapFactory.decodeFile(path, bounds)
+    open().use { BitmapFactory.decodeStream(it, null, bounds) }
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
     val longest = maxOf(bounds.outWidth, bounds.outHeight)
     var sample = 1
     while (longest / sample > MAX_UPLOAD_EDGE) sample *= 2
 
-    return BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
+    return open().use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
 }
 
 /** 촬영 결과를 받을 임시 원본 파일. */

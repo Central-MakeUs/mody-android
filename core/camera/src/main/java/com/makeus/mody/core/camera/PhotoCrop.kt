@@ -58,21 +58,48 @@ internal fun normalizeToUpright(context: Context, sourcePath: String): UprightIm
         Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(rotation) }, true)
             .also { if (it != src) src.recycle() }
     }
-    val out = cameraCacheFile(context, "capture_${upright.width}x${upright.height}_${sourcePath.hashCode()}.jpg")
-    val encoded = FileOutputStream(out).use {
-        upright.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it)
-    }
-    val w = upright.width
-    val h = upright.height
-    upright.recycle()
-    // 인코딩 실패(저장공간 부족 등)면 out 은 깨진 파일이다. 이때 원본까지 지우면 둘 다 잃는다.
-    // 원본을 남겨 호출부가 다시 시도할 수 있게 두고, 쓸모없어진 결과물만 치운다.
+    val image = saveJpeg(context, upright, "capture_${upright.width}x${upright.height}_${sourcePath.hashCode()}.jpg")
+    // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
+    runCatching { File(sourcePath).delete() }
+    return image
+}
+
+/**
+ * 조정 화면에서 돌린 방향을 파일에 굽는다.
+ *
+ * 서버 계약이 "원본 + 정규화 크롭 영역"뿐이라 회전을 따로 실어 보낼 곳이 없다. 그래서
+ * 회전된 이미지를 원본으로 올리고, 크롭 영역도 회전된 이미지 기준으로 계산한다(iOS 도 같다).
+ * 회전 전 파일은 이 결과로 대체되므로 지운다.
+ *
+ * @param degrees 시계 방향 90 의 배수.
+ */
+internal fun rotateUpright(context: Context, image: UprightImage, degrees: Int): UprightImage {
+    val src = BitmapFactory.decodeFile(image.path) ?: error("이미지 디코딩 실패")
+    val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)
+    if (rotated != src) src.recycle()
+    val result = saveJpeg(context, rotated, "capture_${rotated.width}x${rotated.height}_r${degrees}_${image.path.hashCode()}.jpg")
+    runCatching { File(image.path).delete() }
+    return result
+}
+
+/**
+ * [bitmap] 을 캐시에 JPEG 로 저장하고 recycle 한다.
+ *
+ * 인코딩 실패(저장공간 부족 등)면 결과 파일은 깨진 파일이다. 이때 입력 파일까지 지우면
+ * 둘 다 잃으므로, 호출부는 이 함수가 성공한 뒤에만 입력을 지운다.
+ */
+private fun saveJpeg(context: Context, bitmap: Bitmap, name: String): UprightImage {
+    val out = cameraCacheFile(context, name)
+    val encoded = runCatching {
+        FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+    }.getOrDefault(false)
+    val w = bitmap.width
+    val h = bitmap.height
+    bitmap.recycle()
     if (!encoded) {
         runCatching { out.delete() }
         error("이미지 인코딩 실패")
     }
-    // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
-    runCatching { File(sourcePath).delete() }
     return UprightImage(
         uri = fileUri(context, out).toString(),
         path = out.absolutePath,

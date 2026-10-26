@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.model.CropRegion
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,9 +49,12 @@ const val RECORD_FRAME_RATIO = 200f / 354f
 /** 정사각(1:1). 주간 챌린지 인증 사진 격자. */
 const val SQUARE_FRAME_RATIO = 1f
 
+private const val ROTATE_FAILED_MESSAGE = "사진을 저장하지 못했어요. 다시 시도해주세요."
+
 /**
  * 커스텀 촬영 오버레이(앱 공용). 풀스크린으로 띄운다.
- * 권한 → 촬영 → 조정 → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
+ * 권한 → 촬영(3:4) → 조정(프레임 위치·90° 회전) → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
+ * 회전했으면 원본은 회전이 구워진 파일이고, 크롭 영역도 그 기준이다.
  *
  * @param frameRatio 조정 단계 크롭 프레임의 높이/너비. 쓰는 곳의 카드 비율을 넘긴다
  *   ([RECORD_FRAME_RATIO], [SQUARE_FRAME_RATIO]).
@@ -89,6 +94,7 @@ fun ModyCameraOverlay(
     }
     var permissionDenied by remember { mutableStateOf(false) }
     var captured by remember { mutableStateOf<UprightImage?>(null) }
+    var confirming by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -130,7 +136,34 @@ fun ModyCameraOverlay(
                         scope.launch { withContext(Dispatchers.IO) { deleteCameraFile(discarded) } }
                     }
                 },
-                onConfirm = onConfirm,
+                confirming = confirming,
+                onConfirm = { quarterTurns, region ->
+                    val image = captured ?: return@AdjustLayer
+                    if (quarterTurns == 0) {
+                        onConfirm(image.uri, region)
+                        return@AdjustLayer
+                    }
+                    confirming = true
+                    scope.launch {
+                        try {
+                            // 디코딩·회전·재인코딩은 무거워 메인에서 하면 화면이 멈춘다.
+                            val rotated = withContext(Dispatchers.IO) {
+                                rotateUpright(context, image, quarterTurns * 90)
+                            }
+                            // 회전 전 파일은 rotateUpright 가 지웠다. 상태도 새 파일로 바꿔 둬야
+                            // 이후 다시 찍기가 지워진 경로를 지우려 하지 않는다.
+                            captured = rotated
+                            onConfirm(rotated.uri, region)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            // 조용히 넘기면 업로드를 눌러도 반응이 없어 고장으로 보인다.
+                            Toast.makeText(context, ROTATE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
+                        } finally {
+                            confirming = false
+                        }
+                    }
+                },
                 onClose = onDismiss,
             )
         }

@@ -1,7 +1,6 @@
 package com.makeus.mody.core.camera
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -47,23 +46,55 @@ class CropGeometryTest {
     }
 
     /**
-     * 사진이 프레임보다 짧으면 여지가 없다.
-     *
-     * 이 경우 maxFrameTop < minFrameTop 이라 `coerceIn` 을 그대로 부르면
-     * IllegalArgumentException 이 난다. hasRoom 이 그걸 막는다.
+     * 가로 사진은 폭 맞춤으로는 프레임보다 짧다(표시 높이 270 < 프레임 540).
+     * 프레임 안에 빈 띠가 생기지 않도록 프레임 높이에 맞춰 키우고, 넘친 좌우는 잘라낸다.
      */
     @Test
-    fun `사진이 프레임보다 짧으면 드래그 여지가 없고 중앙에 고정된다`() {
+    fun `사진이 프레임보다 짧으면 프레임을 덮도록 키우고 좌우를 자른다`() {
         val layout = cropLayout(
             screenWidth = screenW,
             screenHeight = screenH,
             imageWidth = 4000,
-            imageHeight = 1000, // 표시 높이 270 < 프레임 540
+            imageHeight = 1000,
             frameRatio = 0.5f,
         )
-        assertFalse(layout.hasRoom)
+        // 540 / 1000 = 0.54 → 표시 2160 x 540
+        assertEquals(0.54f, layout.imageScale, EPS)
+        assertEquals(540f, layout.displayedHeight, EPS)
+        // 위아래 여지가 없으니 중앙 고정
         assertEquals(layout.baseFrameTop, layout.frameTopAt(9999f), EPS)
         assertEquals(layout.baseFrameTop, layout.frameTopAt(-9999f), EPS)
+
+        val region = layout.cropRegionAt(layout.frameTopAt(0f))
+        assertEquals(0f, region.y, EPS)
+        assertEquals(1f, region.height, EPS)
+        // 표시 폭 2160 중 가운데 1080 → x 0.25, width 0.5
+        assertEquals(0.25f, region.x, EPS)
+        assertEquals(0.5f, region.width, EPS)
+    }
+
+    /** 3:4 세로 사진을 90° 돌리면 4:3 가로가 된다. 1:1 프레임에서도 빈 곳 없이 정사각으로 잘린다. */
+    @Test
+    fun `회전한 3대4 사진도 1대1 프레임을 정사각으로 자른다`() {
+        val (w, h) = rotatedSize(3000, 4000, quarterTurns = 1)
+        assertEquals(4000 to 3000, w to h)
+        val layout = cropLayout(screenW, screenH, w, h, frameRatio = 1f)
+        val region = layout.cropRegionAt(layout.frameTopAt(0f))
+        // 원본 px 로 되돌리면 정사각
+        assertEquals(region.width * w, region.height * h, 1f)
+        assertEquals((1f - region.width) / 2f, region.x, EPS)
+    }
+
+    @Test
+    fun `회전은 네 번 누르면 제자리다`() {
+        var turns = 0
+        val seen = mutableListOf<Int>()
+        repeat(4) {
+            turns = nextQuarterTurn(turns)
+            seen += turns
+        }
+        assertEquals(listOf(1, 2, 3, 0), seen)
+        assertEquals(3000 to 4000, rotatedSize(3000, 4000, 2))
     }
 
     @Test
@@ -80,7 +111,7 @@ class CropGeometryTest {
     }
 
     @Test
-    fun `크롭 영역은 항상 세로 슬라이스다`() {
+    fun `폭 맞춤으로 덮이는 사진은 가로를 자르지 않는다`() {
         val region = tallLayout().let { it.cropRegionAt(it.frameTopAt(0f)) }
         assertEquals(0f, region.x, EPS)
         assertEquals(1f, region.width, EPS)
@@ -127,6 +158,8 @@ class CropGeometryTest {
                     assertTrue("$label y=${region.y}", region.y in 0f..1f)
                     assertTrue("$label height=${region.height}", region.height in 0f..1f)
                     assertTrue("$label y+h=${region.y + region.height}", region.y + region.height <= 1f + EPS)
+                    assertTrue("$label x=${region.x}", region.x in 0f..1f)
+                    assertTrue("$label x+w=${region.x + region.width}", region.x + region.width <= 1f + EPS)
                 }
             }
         }

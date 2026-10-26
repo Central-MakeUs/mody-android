@@ -10,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +44,7 @@ import kotlinx.coroutines.withContext
 private const val CAPTURE_FAILED_MESSAGE = "사진을 찍지 못했어요. 다시 시도해주세요."
 
 /**
- * 촬영 단계 레이어: 풀스크린 프리뷰 + 우상단 닫기 + 하단(갤러리 / 셔터 / 전후면 전환).
+ * 촬영 단계 레이어: 3:4 프리뷰(화면 세로 중앙) + 우상단 닫기 + 하단(갤러리 / 셔터 / 전후면 전환).
  * 셔터 → 촬영·업라이트 정규화 후 [onCaptured] 로 결과 전달.
  *
  * @param onPickGallery null 이면 갤러리 버튼을 숨긴다. 자리는 비워 둬 셔터가 가운데에 남는다.
@@ -69,7 +70,15 @@ internal fun CaptureLayer(
     }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+        // 프리뷰는 촬영 결과와 같은 3:4 박스로, 화면 세로 중앙에 둔다(iOS 와 같은 배치).
+        // 바인딩의 ViewPort 도 3:4 라 박스에 보이는 범위가 그대로 찍힌다.
+        AndroidView(
+            factory = { previewView },
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .aspectRatio(CAPTURE_ASPECT_WIDTH.toFloat() / CAPTURE_ASPECT_HEIGHT),
+        )
 
         Icon(
             painter = painterResource(ModyIcons.Plus1),

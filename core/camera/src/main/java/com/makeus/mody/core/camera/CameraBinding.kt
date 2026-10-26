@@ -9,6 +9,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import java.io.File
@@ -18,6 +19,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+
+/** 촬영 결과 비율(가로:세로). 프리뷰 박스도 이 비율로 그린다. */
+internal const val CAPTURE_ASPECT_WIDTH = 3
+internal const val CAPTURE_ASPECT_HEIGHT = 4
 
 /** CameraX Preview + ImageCapture 를 [lifecycleOwner] 에 바인딩. 성공 시 ImageCapture 반환. */
 internal suspend fun bindCamera(
@@ -29,25 +34,27 @@ internal suspend fun bindCamera(
     val future = ProcessCameraProvider.getInstance(context)
     future.addListener({
         val provider = future.get()
-        val preview = Preview.Builder().build().also {
-            it.surfaceProvider = previewView.surfaceProvider
-        }
+        // 센서 기본 비율(4:3) 스트림을 고른다. 16:9 를 받아 3:4 로 자르면 화각이 좁아진다.
+        // 센서 최고 해상도로 캡처(기본값이 낮게 잡히는 것 방지).
+        val resolutionSelector = ResolutionSelector.Builder()
+            .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+            .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
+            .build()
+        val preview = Preview.Builder()
+            .setResolutionSelector(resolutionSelector)
+            .build()
+            .also { it.surfaceProvider = previewView.surfaceProvider }
         val imageCapture = ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-            // 센서 최고 해상도로 캡처(기본값이 낮게 잡히는 것 방지).
-            .setResolutionSelector(
-                ResolutionSelector.Builder()
-                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
-                    .build(),
-            )
+            .setResolutionSelector(resolutionSelector)
             .build()
         val selector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
-        // Preview 와 ImageCapture 가 같은 크롭 영역(화면 비율) 공유 → 보이는 대로 찍힘(WYSIWYG).
-        val metrics = context.resources.displayMetrics
+        // Preview 와 ImageCapture 가 같은 크롭 영역(3:4 세로)을 공유 → 보이는 대로 찍힘(WYSIWYG).
+        // 화면 비율로 잡으면 기기마다 결과 비율이 달라진다(iOS 와 맞춘 3:4 로 고정).
         val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
         val viewPort = ViewPort.Builder(
-            Rational(metrics.widthPixels, metrics.heightPixels),
+            Rational(CAPTURE_ASPECT_WIDTH, CAPTURE_ASPECT_HEIGHT),
             rotation,
         ).build()
         val useCaseGroup = UseCaseGroup.Builder()

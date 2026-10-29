@@ -29,11 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -53,19 +55,18 @@ import com.makeus.mody.core.model.CropRegion
 import kotlin.math.roundToInt
 
 /**
- * 조정 단계(촬영본·갤러리 사진 공용): 사진 위의 크롭 프레임을 세로로 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
- * 사진은 화면 중앙 고정, 프레임이 위아래로 움직인다. 프레임 밖은 어둡게.
+ * 조정 단계(촬영본·갤러리 사진 공용): 사진 위의 크롭 프레임을 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
  *
- * 편집 영역은 촬영 프리뷰와 같은 3:4 박스(화면 폭 기준, 세로 중앙)다. 갤러리의 세로로 긴 사진도
- * 이 박스 밖으로는 그리지 않는다 — 촬영 화면과 같은 틀에서 편집하도록.
+ * 편집 영역은 촬영 프리뷰와 같은 3:4 박스(화면 폭 기준, 세로 중앙)다. 사진은 그 안에 잘리지 않고
+ * 통째로 들어가게 맞추고(남는 곳은 여백), 프레임은 사진 안에서 상하좌우로 움직인다. 프레임 밖은 어둡게.
+ * 배치 규칙은 [cropLayout] 참고.
  *
  * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
- * 프레임은 항상 화면 폭을 채운다. 사진이 프레임보다 넓으면(가로 사진) 가운데를 남기고 좌우도 잘린다.
  *
  * 회전은 화면에서는 표시만 돌리고, 파일에는 [onConfirm] 을 받은 쪽이 굽는다([rotateUpright]).
  * 크롭 영역은 회전된 사진 기준이다.
  *
- * @param frameRatio 프레임 높이/너비. 화면보다 세로로 길면 드래그 여지가 없어 1 이하만 의미가 있다.
+ * @param frameRatio 프레임 높이/너비.
  * @param retakeLabel 왼쪽 아래 버튼 문구. 촬영본은 "다시 찍기", 갤러리 사진은 "다시 선택".
  * @param confirming 회전본을 굽는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
  * @param onConfirm (시계 방향 회전 횟수 0~3, 회전된 사진 기준 크롭 영역).
@@ -96,24 +97,21 @@ internal fun AdjustLayer(
 
         // 배치·크롭 계산은 CropGeometry 의 순수 함수에 있다(화면 크기·사진 비율 조합이
         // 많아 손으로 확인이 안 돼 테스트로 고정했다).
-        val layout = remember(constraints, imageW, imageH, frameRatio) {
+        val layout = remember(viewportW, viewportH, imageW, imageH, frameRatio) {
             cropLayout(
-                screenWidth = viewportW,
-                screenHeight = viewportH,
+                viewportWidth = viewportW,
+                viewportHeight = viewportH,
                 imageWidth = imageW,
                 imageHeight = imageH,
                 frameRatio = frameRatio,
             )
         }
-        val frameH = layout.frameHeight
-        val imageTop = layout.imageTop
-        val dispH = layout.displayedHeight
-        val hasRoom = layout.hasRoom
 
-        // 회전하면 사진 크기가 바뀌어 이전 위치가 의미 없다 → 중앙으로 되돌린다(iOS 와 같다).
-        var frameOffset by remember(image.uri, quarterTurns) { mutableFloatStateOf(0f) }
-        val frameTop = layout.frameTopAt(frameOffset)
-        val frameBottom = frameTop + frameH
+        // 회전하면 사진 크기가 바뀌어 이전 위치가 의미 없다 → 가운데로 되돌린다(iOS 와 같다).
+        var offsetX by remember(image.uri, quarterTurns) { mutableFloatStateOf(0f) }
+        var offsetY by remember(image.uri, quarterTurns) { mutableFloatStateOf(0f) }
+        val frameLeft = layout.baseFrameLeft + offsetX
+        val frameTop = layout.baseFrameTop + offsetY
 
         val context = LocalContext.current
         val request = remember(image.uri, quarterTurns) {
@@ -123,68 +121,54 @@ internal fun AdjustLayer(
                 .build()
         }
 
-        // 3:4 편집 영역. 좌표는 전부 이 박스 기준이고, 넘치는 사진은 잘라 박스 밖에 그리지 않는다.
+        // 3:4 편집 영역. 좌표는 전부 이 박스 기준이다.
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
                 .height(with(density) { viewportH.toDp() })
-                .clipToBounds()
-                .pointerInput(image.uri, quarterTurns, hasRoom) {
-                    if (!hasRoom) return@pointerInput
+                .pointerInput(layout) {
                     detectDragGestures { _, drag ->
-                        frameOffset =
-                            (frameOffset + drag.y).coerceIn(layout.minOffset, layout.maxOffset)
+                        val (x, y) = layout.clampOffset(offsetX + drag.x, offsetY + drag.y)
+                        offsetX = x
+                        offsetY = y
                     }
                 },
         ) {
-            // 표시 폭이 화면보다 넓으면(프레임을 덮도록 키운 가로 사진) Crop 이 가운데를 남긴다 —
-            // cropLayout 이 가로를 가운데 정렬로 계산한 것과 같다.
+            // 사진 전체를 비율 그대로(aspect-fit). 크기를 cropLayout 이 계산한 표시 크기로 고정해
+            // 그린 위치와 크롭 계산이 어긋나지 않게 한다.
             AsyncImage(
                 model = request,
                 contentDescription = "촬영 사진",
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier
-                    .offset { IntOffset(0, imageTop.roundToInt()) }
-                    .fillMaxWidth()
-                    .height(with(density) { dispH.toDp() }),
+                    .offset { IntOffset(layout.imageLeft.roundToInt(), layout.imageTop.roundToInt()) }
+                    .size(
+                        width = with(density) { layout.displayedWidth.toDp() },
+                        height = with(density) { layout.displayedHeight.toDp() },
+                    ),
             )
 
-            // 프레임 밖 상/하단 딤.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(with(density) { frameTop.toDp() })
-                    .background(Color.Black.copy(alpha = 0.55f)),
-            )
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(0, frameBottom.roundToInt()) }
-                    .fillMaxWidth()
-                    .height(with(density) { (viewportH - frameBottom).toDp() })
-                    .background(Color.Black.copy(alpha = 0.55f)),
-            )
-
-            // 점선 프레임(옐로).
+            // 프레임 밖 딤 + 점선 프레임(옐로).
             val dashColor = ModyTheme.colors.primary100
-            Canvas(
-                modifier = Modifier
-                    .offset { IntOffset(0, frameTop.roundToInt()) }
-                    .fillMaxWidth()
-                    .height(with(density) { frameH.toDp() }),
-            ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val frame = Rect(
+                    offset = Offset(frameLeft, frameTop),
+                    size = Size(layout.frameWidth, layout.frameHeight),
+                )
+                val dim = Path().apply {
+                    fillType = PathFillType.EvenOdd
+                    addRect(Rect(Offset.Zero, size))
+                    addRect(frame)
+                }
+                drawPath(dim, color = Color.Black.copy(alpha = 0.55f))
                 drawRect(
                     color = dashColor,
-                    topLeft = Offset.Zero,
-                    size = Size(size.width, size.height),
+                    topLeft = frame.topLeft,
+                    size = frame.size,
                     style = Stroke(
-                        width = with(density) { 2.dp.toPx() },
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                with(density) { 8.dp.toPx() },
-                                with(density) { 6.dp.toPx() },
-                            ),
-                        ),
+                        width = 2.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())),
                     ),
                 )
             }
@@ -239,7 +223,7 @@ internal fun AdjustLayer(
             RetakeButton(label = retakeLabel, enabled = !confirming, onClick = onRetake)
             UploadButton(
                 enabled = !confirming,
-                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(frameTop)) },
+                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(frameLeft, frameTop)) },
             )
         }
     }

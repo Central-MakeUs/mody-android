@@ -116,5 +116,9 @@ internal fun CropLayout.cropRegionAt(frameTop: Float): CropRegion {
 internal fun rotatedSize(width: Int, height: Int, quarterTurns: Int): Pair<Int, Int> =
     if (quarterTurns % 2 == 0) width to height else height to width
 
-/** 회전 버튼 한 번. 0 → 1 → 2 → 3 → 0. */
-internal fun nextQuarterTurn(quarterTurns: Int): Int = (quarterTurns + 1) % 4
+/**
+ * 회전 버튼 한 번. 시계 방향 기준 횟수(0~3)로 저장한다.
+ * 오른쪽: 0 → 1 → 2 → 3 → 0, 왼쪽: 0 → 3 → 2 → 1 → 0.
+ */
+internal fun rotateQuarterTurn(quarterTurns: Int, clockwise: Boolean): Int =
+    (quarterTurns + if (clockwise) 1 else 3) % 4

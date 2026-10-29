@@ -86,15 +86,26 @@ class CropGeometryTest {
     }
 
     @Test
-    fun `회전은 네 번 누르면 제자리다`() {
-        var turns = 0
-        val seen = mutableListOf<Int>()
-        repeat(4) {
-            turns = nextQuarterTurn(turns)
-            seen += turns
-        }
-        assertEquals(listOf(1, 2, 3, 0), seen)
+    fun `오른쪽 회전은 네 번 누르면 제자리다`() {
+        assertEquals(listOf(1, 2, 3, 0), turnsAfter(clockwise = true))
         assertEquals(3000 to 4000, rotatedSize(3000, 4000, 2))
+    }
+
+    /** 왼쪽 90° 는 시계 방향 270° 다. 파일에 굽는 쪽은 시계 방향 횟수만 안다. */
+    @Test
+    fun `왼쪽 회전은 시계 방향 3 2 1 0 순서다`() {
+        assertEquals(listOf(3, 2, 1, 0), turnsAfter(clockwise = false))
+    }
+
+    @Test
+    fun `왼쪽 오른쪽을 한 번씩 누르면 제자리다`() {
+        assertEquals(0, rotateQuarterTurn(rotateQuarterTurn(0, clockwise = false), clockwise = true))
+        assertEquals(2, rotateQuarterTurn(rotateQuarterTurn(2, clockwise = true), clockwise = false))
+    }
+
+    private fun turnsAfter(clockwise: Boolean): List<Int> {
+        var turns = 0
+        return List(4) { rotateQuarterTurn(turns, clockwise).also { turns = it } }
     }
 
     @Test

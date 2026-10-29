@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -55,6 +56,9 @@ import kotlin.math.roundToInt
  * 조정 단계(촬영본·갤러리 사진 공용): 사진 위의 크롭 프레임을 세로로 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
  * 사진은 화면 중앙 고정, 프레임이 위아래로 움직인다. 프레임 밖은 어둡게.
  *
+ * 편집 영역은 촬영 프리뷰와 같은 3:4 박스(화면 폭 기준, 세로 중앙)다. 갤러리의 세로로 긴 사진도
+ * 이 박스 밖으로는 그리지 않는다 — 촬영 화면과 같은 틀에서 편집하도록.
+ *
  * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
  * 프레임은 항상 화면 폭을 채운다. 사진이 프레임보다 넓으면(가로 사진) 가운데를 남기고 좌우도 잘린다.
  *
@@ -64,7 +68,7 @@ import kotlin.math.roundToInt
  * @param frameRatio 프레임 높이/너비. 화면보다 세로로 길면 드래그 여지가 없어 1 이하만 의미가 있다.
  * @param retakeLabel 왼쪽 아래 버튼 문구. 촬영본은 "다시 찍기", 갤러리 사진은 "다시 선택".
  * @param confirming 회전본을 굽는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
- * @param onConfirm (시계 방향 회전 횟수, 회전된 사진 기준 크롭 영역).
+ * @param onConfirm (시계 방향 회전 횟수 0~3, 회전된 사진 기준 크롭 영역).
  */
 @Composable
 internal fun AdjustLayer(
@@ -82,15 +86,20 @@ internal fun AdjustLayer(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val density = LocalDensity.current
-        val screenH = constraints.maxHeight.toFloat()
+        val viewportW = constraints.maxWidth.toFloat()
+        // 화면이 3:4 보다 짧은 기기(가로 모드·분할 화면)에선 화면 높이를 넘지 않는다.
+        val viewportH = minOf(
+            constraints.maxHeight.toFloat(),
+            viewportW * CAPTURE_ASPECT_HEIGHT / CAPTURE_ASPECT_WIDTH,
+        )
         val (imageW, imageH) = rotatedSize(image.width, image.height, quarterTurns)
 
         // 배치·크롭 계산은 CropGeometry 의 순수 함수에 있다(화면 크기·사진 비율 조합이
         // 많아 손으로 확인이 안 돼 테스트로 고정했다).
         val layout = remember(constraints, imageW, imageH, frameRatio) {
             cropLayout(
-                screenWidth = constraints.maxWidth.toFloat(),
-                screenHeight = screenH,
+                screenWidth = viewportW,
+                screenHeight = viewportH,
                 imageWidth = imageW,
                 imageHeight = imageH,
                 frameRatio = frameRatio,
@@ -114,9 +123,13 @@ internal fun AdjustLayer(
                 .build()
         }
 
+        // 3:4 편집 영역. 좌표는 전부 이 박스 기준이고, 넘치는 사진은 잘라 박스 밖에 그리지 않는다.
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .height(with(density) { viewportH.toDp() })
+                .clipToBounds()
                 .pointerInput(image.uri, quarterTurns, hasRoom) {
                     if (!hasRoom) return@pointerInput
                     detectDragGestures { _, drag ->
@@ -148,7 +161,7 @@ internal fun AdjustLayer(
                 modifier = Modifier
                     .offset { IntOffset(0, frameBottom.roundToInt()) }
                     .fillMaxWidth()
-                    .height(with(density) { (screenH - frameBottom).toDp() })
+                    .height(with(density) { (viewportH - frameBottom).toDp() })
                     .background(Color.Black.copy(alpha = 0.55f)),
             )
 
@@ -177,20 +190,28 @@ internal fun AdjustLayer(
             }
         }
 
-        // 회전(좌상단). 시계 방향 90°.
-        // TODO: 디자인 확정 전 임시 아이콘 — 되돌리기(반시계) 아이콘을 좌우 반전해 시계 방향으로 쓴다.
-        Icon(
-            painter = painterResource(ModyIcons.Reset),
-            contentDescription = "시계 방향으로 회전",
-            tint = Color.White,
+        // 회전(좌상단): 반시계 / 시계 90°.
+        // TODO: 디자인 확정 전 임시 아이콘 — 되돌리기(반시계) 아이콘을 그대로, 시계 방향은 좌우 반전해 쓴다.
+        Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
-                .padding(16.dp)
-                .size(28.dp)
-                .graphicsLayer { scaleX = -1f }
-                .clickable(enabled = !confirming) { quarterTurns = nextQuarterTurn(quarterTurns) },
-        )
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            RotateButton(
+                description = "왼쪽으로 회전",
+                mirrored = false,
+                enabled = !confirming,
+                onClick = { quarterTurns = rotateQuarterTurn(quarterTurns, clockwise = false) },
+            )
+            RotateButton(
+                description = "오른쪽으로 회전",
+                mirrored = true,
+                enabled = !confirming,
+                onClick = { quarterTurns = rotateQuarterTurn(quarterTurns, clockwise = true) },
+            )
+        }
 
         // 닫기(우상단).
         Icon(
@@ -233,6 +254,19 @@ private class RotateTransformation(private val degrees: Int) : Transformation {
             input, 0, 0, input.width, input.height,
             Matrix().apply { postRotate(degrees.toFloat()) }, true,
         )
+}
+
+@Composable
+private fun RotateButton(description: String, mirrored: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Icon(
+        painter = painterResource(ModyIcons.Reset),
+        contentDescription = description,
+        tint = Color.White,
+        modifier = Modifier
+            .size(28.dp)
+            .graphicsLayer { if (mirrored) scaleX = -1f }
+            .clickable(enabled = enabled, onClick = onClick),
+    )
 }
 
 @Composable

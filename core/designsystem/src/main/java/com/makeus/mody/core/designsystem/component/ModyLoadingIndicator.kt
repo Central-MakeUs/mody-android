@@ -1,10 +1,14 @@
 package com.makeus.mody.core.designsystem.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -19,6 +23,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.makeus.mody.core.designsystem.R
+import com.makeus.mody.core.designsystem.theme.ModyTheme
 
 /**
  * 공용 로딩 인디케이터. API 응답을 기다리는 모든 화면에서 동일하게 사용.
@@ -73,5 +78,34 @@ fun ModyLoadingScreen(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         ModyLoadingIndicator()
+    }
+}
+
+/**
+ * 화면 위를 어둡게 덮고 중앙에 로딩 인디케이터를 띄우는 오버레이. 아래 조작을 막는다.
+ *
+ * 다이얼로그를 이미 닫은 뒤 기다리는 작업(탈퇴·로그아웃)이나 화면 전체를 막아야 하는 저장에
+ * 쓴다. 버튼 하나만 기다리면 되는 곳은 [ModyButton] 의 `isLoading` 을 쓴다.
+ *
+ * 화면 콘텐츠와 같은 Box 안 맨 위에 둔다.
+ */
+@Composable
+fun ModyLoadingOverlay(
+    modifier: Modifier = Modifier,
+    loadingDescription: String = "로딩 중",
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(ModyTheme.colors.black.copy(alpha = 0.2f))
+            // 아래 콘텐츠로 터치가 새지 않도록 소비만 한다.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        ModyLoadingIndicator(loadingDescription = loadingDescription)
     }
 }

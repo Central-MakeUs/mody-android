@@ -33,6 +33,9 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
  *
  * @param onDismissRequest 스크림 탭·백키 등 시스템 닫기. 취소 버튼도 기본적으로 이걸 호출.
  * @param onConfirm 확정 버튼 클릭. 호출 측에서 다이얼로그를 닫아야 한다(자동 닫힘 아님).
+ * @param isConfirmLoading 확정 요청이 진행 중. 확정 버튼에 로딩 인디케이터를 띄우고, 취소·
+ *   스크림 탭·백키를 막아 다이얼로그를 연 채로 둔다 — 결과가 오기 전에 닫히면 사용자는 끝난 줄
+ *   알고, 실패해도 알 길이 없다. 성공·실패 시 닫는 건 여전히 호출 측이다.
  */
 // 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
 @Suppress("unused")
@@ -50,8 +53,9 @@ fun ModyDialog(
     confirmContentColor: Color = ModyTheme.colors.gray10,
     // 진행 차단형 공지 등 확정 버튼을 비활성으로 노출해야 할 때 false.
     confirmEnabled: Boolean = true,
+    isConfirmLoading: Boolean = false,
 ) {
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(onDismissRequest = { if (!isConfirmLoading) onDismissRequest() }) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -84,6 +88,7 @@ fun ModyDialog(
                         contentColor = ModyTheme.colors.gray05,
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
+                        enabled = !isConfirmLoading,
                     )
                 }
                 DialogButton(
@@ -93,6 +98,7 @@ fun ModyDialog(
                     onClick = onConfirm,
                     modifier = Modifier.weight(1f),
                     enabled = confirmEnabled,
+                    isLoading = isConfirmLoading,
                 )
             }
         }
@@ -142,15 +148,20 @@ private fun DialogButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    isLoading: Boolean = false,
 ) {
     Box(
         modifier = modifier
             .height(48.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (enabled) containerColor else ModyTheme.colors.gray02)
-            .clickable(enabled = enabled, onClick = onClick),
+            .background(if (enabled || isLoading) containerColor else ModyTheme.colors.gray02)
+            .clickable(enabled = enabled && !isLoading, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
+        if (isLoading) {
+            ModyLoadingIndicator(size = BUTTON_LOADING_SIZE)
+            return@Box
+        }
         Text(
             text = text,
             style = ModyTheme.typography.b6,

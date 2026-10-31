@@ -208,17 +208,24 @@ class ChallengeViewModel @Inject constructor(
     /** 걸음 수 새로고침 — 건강 데이터 재동기화 후 현황 + 순위 재조회. */
     private fun refreshStep() = viewModelScope.launch {
         val groupId = currentGroupId ?: return@launch
-        val step = loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
-        val rankings = loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }
-        setState {
-            copy(
-                stepChallenge = step ?: stepChallenge,
-                stepRankings = rankings ?: stepRankings,
-            )
+        // 연타하면 조회·동기화가 겹쳐 돌며 늦게 끝난 쪽이 최신 값을 덮어쓴다.
+        if (currentState.isRefreshingStep) return@launch
+        setState { copy(isRefreshingStep = true) }
+        try {
+            val step = loadOrNull("stepChallenge") { challengeRepository.getStepChallenge(groupId) }
+            val rankings = loadOrNull("stepRankings") { challengeRepository.getStepRankings(groupId) }
+            setState {
+                copy(
+                    stepChallenge = step ?: stepChallenge,
+                    stepRankings = rankings ?: stepRankings,
+                )
+            }
+            // 동기화가 마지막 — 순서를 바꾸면 조회 결과가 방금 반영한 실제 걸음 수를 덮어쓴다.
+            // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
+            syncSteps(groupId, askPermission = true, challenge = step)
+        } finally {
+            setState { copy(isRefreshingStep = false) }
         }
-        // 동기화가 마지막 — 순서를 바꾸면 조회 결과가 방금 반영한 실제 걸음 수를 덮어쓴다.
-        // 수동 새로고침은 사용자가 의도한 행동이므로 권한이 없으면 다시 물어본다.
-        syncSteps(groupId, askPermission = true, challenge = step)
     }
 
     /**

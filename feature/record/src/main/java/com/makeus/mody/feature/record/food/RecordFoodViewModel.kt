@@ -1,6 +1,7 @@
 package com.makeus.mody.feature.record.food
 
 import androidx.lifecycle.viewModelScope
+import com.makeus.mody.core.camera.CameraSource
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.RecordRepository
@@ -34,11 +35,16 @@ class RecordFoodViewModel @Inject constructor(
             is RecordFoodIntent.PhotoBoxClicked -> setState { copy(isPhotoSheetVisible = true) }
             is RecordFoodIntent.PhotoSheetDismissed -> setState { copy(isPhotoSheetVisible = false) }
 
-            // 촬영하기 → 커스텀 카메라 오버레이. 갤러리 실행은 Screen 런처, 결과는 PhotoSelected로.
+            // 촬영하기/갤러리 → 같은 오버레이를 시작 화면만 달리해 연다. 결과는 PhotoSelected 로.
             is RecordFoodIntent.TakePhotoClicked ->
-                setState { copy(isPhotoSheetVisible = false, isCameraVisible = true) }
+                setState {
+                    copy(isPhotoSheetVisible = false, isCameraVisible = true, cameraSource = CameraSource.CAMERA)
+                }
             is RecordFoodIntent.CameraDismissed -> setState { copy(isCameraVisible = false) }
-            is RecordFoodIntent.PickFromGalleryClicked -> setState { copy(isPhotoSheetVisible = false) }
+            is RecordFoodIntent.PickFromGalleryClicked ->
+                setState {
+                    copy(isPhotoSheetVisible = false, isCameraVisible = true, cameraSource = CameraSource.GALLERY)
+                }
             is RecordFoodIntent.PhotoSelected ->
                 setState {
                     copy(photoUri = intent.uri, cropRegion = intent.cropRegion, isCameraVisible = false)

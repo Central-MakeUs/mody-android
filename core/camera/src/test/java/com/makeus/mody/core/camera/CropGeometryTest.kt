@@ -1,138 +1,140 @@
 package com.makeus.mody.core.camera
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * 크롭 기하 계산.
  *
- * 화면 폭 1080, 프레임 비율 200/354 (주간 챌린지 인증 프레임) 를 기준으로 잡았다.
- * 실제 기기 값과 맞출 필요는 없다 — 비율 관계만 검증한다.
+ * 편집 영역은 3:4 (1080 x 1440). 실제 기기 값과 맞출 필요는 없다 — 비율 관계만 검증한다.
  */
 class CropGeometryTest {
 
-    private val screenW = 1080f
-    private val screenH = 2400f
+    private val vw = 1080f
+    private val vh = 1440f
 
-    /** 세로로 긴 사진(4:3 세로). 화면 폭에 맞추면 세로가 남아 드래그 여지가 생긴다. */
-    private fun tallLayout(frameRatio: Float = 0.5f) = cropLayout(
-        screenWidth = screenW,
-        screenHeight = screenH,
-        imageWidth = 3000,
-        imageHeight = 4000,
-        frameRatio = frameRatio,
-    )
+    private fun layout(w: Int, h: Int, ratio: Float) = cropLayout(vw, vh, w, h, ratio)
 
     @Test
-    fun `프레임 높이는 화면 폭 곱하기 비율이다`() {
-        assertEquals(540f, tallLayout(0.5f).frameHeight, EPS)
-        assertEquals(1080f, tallLayout(1f).frameHeight, EPS)
+    fun `3대4 사진은 편집 영역을 꽉 채운다`() {
+        val l = layout(3000, 4000, RECORD_FRAME_RATIO)
+        assertEquals(0f, l.imageLeft, EPS)
+        assertEquals(0f, l.imageTop, EPS)
+        assertEquals(vw, l.displayedWidth, EPS)
+        assertEquals(vh, l.displayedHeight, EPS)
+        // 프레임은 사진 폭을 채운다
+        assertEquals(vw, l.frameWidth, EPS)
+    }
+
+    /** 세로로 긴 사진(9:20)은 잘리지 않고 높이에 맞춰 통째로 들어가고, 좌우가 여백이다. */
+    @Test
+    fun `세로로 긴 사진은 잘리지 않고 좌우 여백이 생긴다`() {
+        val l = layout(1080, 2400, RECORD_FRAME_RATIO)
+        assertEquals(vh, l.displayedHeight, EPS)
+        assertEquals(1440f * 1080f / 2400f, l.displayedWidth, EPS)
+        assertTrue(l.imageLeft > 0f)
+        // 프레임은 사진 폭으로 줄어든다(편집 영역 폭이 아니라)
+        assertEquals(l.displayedWidth, l.frameWidth, EPS)
+    }
+
+    /** 가로 사진 + 1:1 은 프레임이 사진 높이에 맞춰지고, 좌우로 움직일 수 있다. */
+    @Test
+    fun `가로 사진에 정사각 프레임은 높이에 맞추고 좌우로 움직인다`() {
+        val l = layout(4000, 3000, SQUARE_FRAME_RATIO)
+        assertEquals(vw, l.displayedWidth, EPS)
+        assertEquals(810f, l.displayedHeight, EPS)
+        assertEquals(810f, l.frameWidth, EPS)
+        assertEquals(810f, l.frameHeight, EPS)
+        assertTrue(l.maxOffsetX > 0f)
+        assertEquals(0f, l.maxOffsetY, EPS)
     }
 
     @Test
-    fun `사진은 화면 폭에 맞춰 확대되고 세로 중앙에 놓인다`() {
-        val layout = tallLayout()
-        // 1080 / 3000 = 0.36 → 표시 높이 4000 * 0.36 = 1440
-        assertEquals(0.36f, layout.imageScale, EPS)
-        assertEquals((2400f - 1440f) / 2f, layout.imageTop, EPS)
+    fun `가운데 프레임은 사진 가운데를 잘라낸다`() {
+        val l = layout(3000, 4000, 0.5f)
+        val r = l.cropRegionAt(l.baseFrameLeft, l.baseFrameTop)
+        assertEquals(0f, r.x, EPS)
+        assertEquals(1f, r.width, EPS)
+        // 프레임 높이 540 / 1440 = 0.375
+        assertEquals(0.375f, r.height, EPS)
+        assertEquals((1f - 0.375f) / 2f, r.y, EPS)
     }
 
     @Test
-    fun `사진이 프레임보다 길면 드래그 여지가 있다`() {
-        val layout = tallLayout()
-        assertTrue(layout.hasRoom)
-        assertTrue(layout.maxOffset > layout.minOffset)
+    fun `드래그는 사진 밖으로 나가지 않는다`() {
+        val l = layout(4000, 3000, SQUARE_FRAME_RATIO)
+        val (x, y) = l.clampOffset(100_000f, -100_000f)
+        val r = l.cropRegionAt(l.baseFrameLeft + x, l.baseFrameTop + y)
+        assertEquals(1f, r.x + r.width, EPS)
+        assertEquals(0f, r.y, EPS)
+        val (x2, _) = l.clampOffset(-100_000f, 0f)
+        assertEquals(0f, l.cropRegionAt(l.baseFrameLeft + x2, l.baseFrameTop).x, EPS)
     }
 
-    /**
-     * 사진이 프레임보다 짧으면 여지가 없다.
-     *
-     * 이 경우 maxFrameTop < minFrameTop 이라 `coerceIn` 을 그대로 부르면
-     * IllegalArgumentException 이 난다. hasRoom 이 그걸 막는다.
-     */
+    /** 원본 px 로 되돌렸을 때 프레임 비율이 유지돼야 카드에서 찌그러지지 않는다. */
     @Test
-    fun `사진이 프레임보다 짧으면 드래그 여지가 없고 중앙에 고정된다`() {
-        val layout = cropLayout(
-            screenWidth = screenW,
-            screenHeight = screenH,
-            imageWidth = 4000,
-            imageHeight = 1000, // 표시 높이 270 < 프레임 540
-            frameRatio = 0.5f,
-        )
-        assertFalse(layout.hasRoom)
-        assertEquals(layout.baseFrameTop, layout.frameTopAt(9999f), EPS)
-        assertEquals(layout.baseFrameTop, layout.frameTopAt(-9999f), EPS)
-    }
-
-    @Test
-    fun `드래그가 경계를 넘으면 잘린다`() {
-        val layout = tallLayout()
-        assertEquals(layout.maxFrameTop, layout.frameTopAt(100_000f), EPS)
-        assertEquals(layout.minFrameTop, layout.frameTopAt(-100_000f), EPS)
-    }
-
-    @Test
-    fun `드래그를 안 하면 프레임은 화면 중앙이다`() {
-        val layout = tallLayout()
-        assertEquals(layout.baseFrameTop, layout.frameTopAt(0f), EPS)
-    }
-
-    @Test
-    fun `크롭 영역은 항상 세로 슬라이스다`() {
-        val region = tallLayout().let { it.cropRegionAt(it.frameTopAt(0f)) }
-        assertEquals(0f, region.x, EPS)
-        assertEquals(1f, region.width, EPS)
-    }
-
-    /**
-     * 프레임을 중앙에 두면 크롭 영역도 사진 중앙이어야 한다.
-     * 표시 높이 1440 중 프레임 540 → 540/1440 = 0.375, 위아래 여백이 같으므로 y = 0.3125.
-     */
-    @Test
-    fun `중앙 프레임은 사진 중앙을 잘라낸다`() {
-        val layout = tallLayout()
-        val region = layout.cropRegionAt(layout.frameTopAt(0f))
-        assertEquals(0.375f, region.height, EPS)
-        assertEquals((1f - 0.375f) / 2f, region.y, EPS)
-    }
-
-    @Test
-    fun `위로 끝까지 올리면 사진 맨 위부터 잘린다`() {
-        val layout = tallLayout()
-        val region = layout.cropRegionAt(layout.frameTopAt(-100_000f))
-        assertEquals(0f, region.y, EPS)
-        assertEquals(0.375f, region.height, EPS)
-    }
-
-    @Test
-    fun `아래로 끝까지 내리면 사진 맨 아래에서 끝난다`() {
-        val layout = tallLayout()
-        val region = layout.cropRegionAt(layout.frameTopAt(100_000f))
-        assertEquals(1f, region.y + region.height, EPS)
+    fun `크롭 영역은 원본 px 에서 프레임 비율을 지킨다`() {
+        for ((w, h) in listOf(3000 to 4000, 4000 to 3000, 1080 to 2400, 6000 to 1500, 300 to 200)) {
+            for (ratio in listOf(RECORD_FRAME_RATIO, SQUARE_FRAME_RATIO)) {
+                val l = layout(w, h, ratio)
+                val r = l.cropRegionAt(l.baseFrameLeft, l.baseFrameTop)
+                assertEquals("${w}x$h ratio=$ratio", ratio, (r.height * h) / (r.width * w), 0.001f)
+            }
+        }
     }
 
     /** 정규화 값이라 0~1 을 벗어나면 서버·뷰어가 어떻게 해석할지 모른다. */
     @Test
     fun `크롭 영역은 항상 0에서 1 사이에 머문다`() {
-        val ratios = listOf(0.2f, 0.5f, 200f / 354f, 1f, 1.5f)
-        val sizes = listOf(3000 to 4000, 4000 to 3000, 1000 to 1000, 4000 to 1000)
-        for (ratio in ratios) {
+        val sizes = listOf(3000 to 4000, 4000 to 3000, 1000 to 1000, 6000 to 1500, 1080 to 2400)
+        for (ratio in listOf(0.2f, RECORD_FRAME_RATIO, 1f, 1.5f)) {
             for ((w, h) in sizes) {
-                val layout = cropLayout(screenW, screenH, w, h, ratio)
-                for (offset in listOf(-100_000f, 0f, 100_000f)) {
-                    val region = layout.cropRegionAt(layout.frameTopAt(offset))
-                    val label = "ratio=$ratio size=${w}x$h offset=$offset"
-                    assertTrue("$label y=${region.y}", region.y in 0f..1f)
-                    assertTrue("$label height=${region.height}", region.height in 0f..1f)
-                    assertTrue("$label y+h=${region.y + region.height}", region.y + region.height <= 1f + EPS)
+                val l = layout(w, h, ratio)
+                for (o in listOf(-100_000f, 0f, 100_000f)) {
+                    val (x, y) = l.clampOffset(o, o)
+                    val r = l.cropRegionAt(l.baseFrameLeft + x, l.baseFrameTop + y)
+                    val label = "ratio=$ratio size=${w}x$h offset=$o"
+                    assertTrue("$label $r", r.x in 0f..1f && r.y in 0f..1f)
+                    assertTrue("$label $r", r.x + r.width <= 1f + EPS && r.y + r.height <= 1f + EPS)
                 }
             }
         }
     }
 
+    @Test
+    fun `회전한 3대4 사진도 정사각으로 자른다`() {
+        val (w, h) = rotatedSize(3000, 4000, quarterTurns = 1)
+        assertEquals(4000 to 3000, w to h)
+        val l = layout(w, h, SQUARE_FRAME_RATIO)
+        val r = l.cropRegionAt(l.baseFrameLeft, l.baseFrameTop)
+        assertEquals(r.width * w, r.height * h, 1f)
+    }
+
+    @Test
+    fun `오른쪽 회전은 네 번 누르면 제자리다`() {
+        assertEquals(listOf(1, 2, 3, 0), turnsAfter(clockwise = true))
+        assertEquals(3000 to 4000, rotatedSize(3000, 4000, 2))
+    }
+
+    /** 왼쪽 90° 는 시계 방향 270° 다. 파일에 굽는 쪽은 시계 방향 횟수만 안다. */
+    @Test
+    fun `왼쪽 회전은 시계 방향 3 2 1 0 순서다`() {
+        assertEquals(listOf(3, 2, 1, 0), turnsAfter(clockwise = false))
+    }
+
+    @Test
+    fun `왼쪽 오른쪽을 한 번씩 누르면 제자리다`() {
+        assertEquals(0, rotateQuarterTurn(rotateQuarterTurn(0, clockwise = false), clockwise = true))
+        assertEquals(2, rotateQuarterTurn(rotateQuarterTurn(2, clockwise = true), clockwise = false))
+    }
+
+    private fun turnsAfter(clockwise: Boolean): List<Int> {
+        var turns = 0
+        return List(4) { rotateQuarterTurn(turns, clockwise).also { turns = it } }
+    }
+
     private companion object {
-        const val EPS = 0.0001f
+        const val EPS = 0.01f
     }
 }

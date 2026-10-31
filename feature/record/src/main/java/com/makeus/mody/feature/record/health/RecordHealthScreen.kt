@@ -1,8 +1,5 @@
 package com.makeus.mody.feature.record.health
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,12 +53,6 @@ import com.makeus.mody.feature.record.health.contract.RecordHealthIntent
 @Composable
 fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri ->
-        // 갤러리 선택은 크롭 없음 → region null(원본 전체 표시).
-        uri?.let { viewModel.onIntent(RecordHealthIntent.PhotoSelected(it.toString(), cropRegion = null)) }
-    }
 
     // 작성 실패 → 공용 에러 다이얼로그. 확인 시 상태 소비.
     state.submitError?.let { error ->
@@ -144,12 +135,7 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
     if (state.isPhotoSheetVisible) {
         PhotoSourceSheet(
             onTakePhoto = { viewModel.onIntent(RecordHealthIntent.TakePhotoClicked) },
-            onPickFromGallery = {
-                viewModel.onIntent(RecordHealthIntent.PickFromGalleryClicked)
-                galleryLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
-            },
+            onPickFromGallery = { viewModel.onIntent(RecordHealthIntent.PickFromGalleryClicked) },
             onDismiss = { viewModel.onIntent(RecordHealthIntent.PhotoSheetDismissed) },
         )
     }
@@ -160,12 +146,10 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
             onConfirm = { uri, region ->
                 viewModel.onIntent(RecordHealthIntent.PhotoSelected(uri, region))
             },
-            onPickGallery = {
-                galleryLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
-            },
+            allowGallery = true,
             onDismiss = { viewModel.onIntent(RecordHealthIntent.CameraDismissed) },
+            // 갤러리도 오버레이가 연다 — 그래야 갤러리 사진도 조정(크롭·회전)을 거친다.
+            initialSource = state.cameraSource,
         )
     }
 }

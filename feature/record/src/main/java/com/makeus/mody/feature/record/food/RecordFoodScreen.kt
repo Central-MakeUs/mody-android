@@ -41,6 +41,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyTextField
 import com.makeus.mody.core.designsystem.component.ModyTimePicker
@@ -129,6 +130,9 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
     }
+
+    // 사진 업로드 + 기록 생성 대기.
+    if (state.isSubmitting) ModyLoadingOverlay(loadingDescription = "기록을 올리는 중")
 
     if (state.isPhotoSheetVisible) {
         PhotoSourceSheet(

@@ -42,6 +42,7 @@ import com.makeus.mody.core.designsystem.component.ModyBottomSheet
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -131,6 +132,8 @@ private fun FeedContent(
                 )
             }
         }
+        // 신고·삭제 확정 후 응답 대기(확인 다이얼로그는 확정 즉시 닫힌다).
+        if (state.isReporting || state.isDeleting) ModyLoadingOverlay()
     }
 
     if (state.isGroupSheetVisible) {

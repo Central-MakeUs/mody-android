@@ -179,7 +179,8 @@ class ProfileEditViewModel @Inject constructor(
     }
 
     private fun logout() = viewModelScope.launch {
-        if (currentState.isProcessing) return@launch
+        // 저장 중에도 막는다 — 오버레이가 화면을 덮어도 VM 이 마지막 방어선이다.
+        if (currentState.isProcessing || currentState.isSaving) return@launch
         setState { copy(isProcessing = true) }
         // 서버 통지 실패해도 로컬 세션은 clear → 로그인으로.
         runCatching { authRepository.logout() }
@@ -187,7 +188,8 @@ class ProfileEditViewModel @Inject constructor(
     }
 
     private fun withdraw() = viewModelScope.launch {
-        if (currentState.isProcessing) return@launch
+        // 저장 중에도 막는다 — 오버레이가 화면을 덮어도 VM 이 마지막 방어선이다.
+        if (currentState.isProcessing || currentState.isSaving) return@launch
         setState { copy(isProcessing = true, showWithdrawDialog = false) }
         try {
             authRepository.withdraw()

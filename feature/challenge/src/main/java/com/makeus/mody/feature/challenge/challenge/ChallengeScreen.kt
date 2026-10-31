@@ -161,6 +161,7 @@ private fun ChallengeContent(
                     onStepRefreshClick = { onIntent(ChallengeIntent.StepRefreshClicked) },
                     onChangeStepChallengeClick = { onIntent(ChallengeIntent.ChangeStepChallengeClicked) },
                     onWeeklyChallengeClick = { onIntent(ChallengeIntent.WeeklyChallengeClicked(it)) },
+                    isRefreshingStep = state.isRefreshingStep,
                 )
             }
         }

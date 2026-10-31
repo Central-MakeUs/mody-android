@@ -40,6 +40,7 @@ import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.modifier.shimmer
@@ -58,6 +59,8 @@ fun StepChallengeChangeScreen(
     LaunchedEffect(Unit) { viewModel.onIntent(StepChallengeChangeIntent.ScreenEntered) }
 
     StepChallengeChangeContent(state = state, onIntent = viewModel::onIntent)
+    // 변경 확정 후 응답 대기(확인 다이얼로그는 확정 즉시 닫힌다).
+    if (state.isChanging) ModyLoadingOverlay()
 
     // 교체하면 서버에서 기존 걸음 기록이 초기화되므로 한 번 되묻는다.
     state.pendingOption?.let {

@@ -45,7 +45,7 @@ import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyInputFilter
-import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyPhotoSourceSheet
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
@@ -69,22 +69,11 @@ fun ProfileEditScreen(viewModel: ProfileEditViewModel = hiltViewModel()) {
     Box(modifier = Modifier.fillMaxSize()) {
         ProfileEditContent(state = state, onIntent = viewModel::onIntent)
 
-        // 저장(이미지 업로드 포함) 중 — 딤 오버레이 + 스피너로 진행 표시 + 조작 차단.
-        if (state.isSaving) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(ModyTheme.colors.black.copy(alpha = 0.2f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                ModyLoadingIndicator()
-            }
-        }
+        // 저장(이미지 업로드 포함)·로그아웃·탈퇴 중 — 딤 오버레이 + 스피너로 진행 표시 + 조작 차단.
+        // 탈퇴는 확인 다이얼로그를 먼저 닫고 기다리므로 이게 없으면 아무 반응 없는 화면이 된다.
+        // 탈퇴 완료 안내가 뜨면 내린다(isProcessing 은 이동 전까지 조작 차단용으로 유지된다).
+        val isBusy = state.isSaving || (state.isProcessing && !state.showWithdrawCompleteDialog)
+        if (isBusy) ModyLoadingOverlay()
     }
 
     // 실패(조회/저장/탈퇴) → 공용 에러 다이얼로그. 확인 시 상태 소비.

@@ -26,6 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
+import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.model.Group
@@ -51,15 +53,23 @@ private fun GroupSettingContent(
             )
         },
     ) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.groups, key = { it.groupId }) { group ->
-                GroupRow(
-                    group = group,
-                    onLeaveClick = { onIntent(GroupSettingIntent.LeaveClicked(group)) },
-                )
+        // 첫 조회 중엔 빈 목록 대신 로딩. 나가기 후 재조회처럼 목록이 이미 있으면 그대로 둔다.
+        if (state.isLoading && state.groups.isEmpty()) {
+            ModyLoadingScreen()
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(state.groups, key = { it.groupId }) { group ->
+                    GroupRow(
+                        group = group,
+                        onLeaveClick = { onIntent(GroupSettingIntent.LeaveClicked(group)) },
+                    )
+                }
             }
         }
     }
+
+    // 나가기 확정 후 응답 대기(확인 다이얼로그는 확정 즉시 닫힌다).
+    if (state.isProcessing) ModyLoadingOverlay()
 
     state.leaveTarget?.let {
         ModyDialog(

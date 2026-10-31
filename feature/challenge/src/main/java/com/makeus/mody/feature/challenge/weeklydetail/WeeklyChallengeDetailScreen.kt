@@ -43,6 +43,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -74,6 +75,8 @@ fun WeeklyChallengeDetailScreen(
     LaunchedEffect(Unit) { viewModel.onIntent(WeeklyChallengeDetailIntent.ScreenEntered) }
 
     WeeklyChallengeDetailContent(state = state, onIntent = viewModel::onIntent)
+    // 인증 사진 업로드·공유 이미지 생성 대기.
+    if (state.isUploading || state.isPreparingShare) ModyLoadingOverlay()
 
     // "인증하기" 는 바로 촬영으로 간다 — 인증 사진이라 그 자리에서 찍는 게 기본 흐름.
     // 갤러리는 막는다(allowGallery = false): 아무 사진이나 고르면 인증이 성립하지 않는다.

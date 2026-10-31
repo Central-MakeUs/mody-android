@@ -156,8 +156,8 @@ private fun FeedContent(
             message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
             confirmText = "신고하기",
             dismissText = "취소",
-            // 접수 중 중복 탭 방지
-            confirmEnabled = !state.isReporting,
+            // 접수 중: 진행 표시 + 중복 탭·닫기 방지
+            isConfirmLoading = state.isReporting,
             onConfirm = { onIntent(FeedIntent.ReportConfirmed) },
             onDismissRequest = { onIntent(FeedIntent.ReportDialogDismissed) },
         )
@@ -179,8 +179,8 @@ private fun FeedContent(
             message = "삭제한 게시물은 되돌릴 수 없어요.",
             confirmText = "삭제하기",
             dismissText = "취소",
-            // 삭제 중 중복 탭 방지
-            confirmEnabled = !state.isDeleting,
+            // 삭제 중: 진행 표시 + 중복 탭·닫기 방지
+            isConfirmLoading = state.isDeleting,
             onConfirm = { onIntent(FeedIntent.DeleteConfirmed) },
             onDismissRequest = { onIntent(FeedIntent.DeleteDialogDismissed) },
         )

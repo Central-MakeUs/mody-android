@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.core.model.Group
@@ -51,12 +52,17 @@ private fun GroupSettingContent(
             )
         },
     ) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.groups, key = { it.groupId }) { group ->
-                GroupRow(
-                    group = group,
-                    onLeaveClick = { onIntent(GroupSettingIntent.LeaveClicked(group)) },
-                )
+        // 첫 조회 중엔 빈 목록 대신 로딩. 나가기 후 재조회처럼 목록이 이미 있으면 그대로 둔다.
+        if (state.isLoading && state.groups.isEmpty()) {
+            ModyLoadingScreen()
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(state.groups, key = { it.groupId }) { group ->
+                    GroupRow(
+                        group = group,
+                        onLeaveClick = { onIntent(GroupSettingIntent.LeaveClicked(group)) },
+                    )
+                }
             }
         }
     }
@@ -69,6 +75,8 @@ private fun GroupSettingContent(
             confirmText = "그룹 나가기",
             onConfirm = { onIntent(GroupSettingIntent.LeaveConfirmed) },
             onDismissRequest = { onIntent(GroupSettingIntent.LeaveDismissed) },
+            // 나가기 요청 중엔 다이얼로그를 연 채로 확정 버튼에 진행 표시.
+            isConfirmLoading = state.isProcessing,
         )
     }
 

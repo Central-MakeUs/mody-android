@@ -66,7 +66,7 @@ fun StepChallengeChangeScreen(
             message = "지금까지 걸었던 기록이 전부 사라져요!",
             confirmText = "변경하기",
             dismissText = "취소",
-            confirmEnabled = !state.isChanging,
+            isConfirmLoading = state.isChanging,
             onConfirm = { viewModel.onIntent(StepChallengeChangeIntent.ChangeConfirmed) },
             onDismissRequest = { viewModel.onIntent(StepChallengeChangeIntent.ChangeCancelled) },
         )

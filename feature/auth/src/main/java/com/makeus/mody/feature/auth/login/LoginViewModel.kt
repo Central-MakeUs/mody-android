@@ -1,6 +1,11 @@
 package com.makeus.mody.feature.auth.login
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.LoginFailReason
+import com.makeus.mody.core.domain.analytics.LoginMethod
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.model.StartDestination
 import com.makeus.mody.core.model.SocialLoginType
 import com.makeus.mody.core.model.error.ErrorAlert
@@ -29,6 +34,7 @@ class LoginViewModel @Inject constructor(
     private val socialLoginProvider: SocialLoginProvider,
     private val remoteConfigRepository: RemoteConfigRepository,
     private val resolveStartDestination: ResolveStartDestinationUseCase,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<LoginState, LoginIntent>(LoginState()) {
 
     // 심사용 히든 로그인 진입: 로고 연타 카운트(간격 벌어지면 리셋)
@@ -75,10 +81,12 @@ class LoginViewModel @Inject constructor(
         setState { copy(showReviewLogin = false, reviewPassword = "", isLoading = true, error = null) }
         try {
             authRepository.loginForReview()
+            analyticsLogger.log(AnalyticsEvent.Login(LoginMethod.REVIEW))
             navigateAfterLogin()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            analyticsLogger.log(AnalyticsEvent.LoginFail(LoginMethod.REVIEW, LoginFailReason.ERROR))
             setState { copy(isLoading = false, error = e.toErrorAlert("로그인에 실패했어요")) }
         }
     }
@@ -88,13 +96,16 @@ class LoginViewModel @Inject constructor(
         try {
             val socialAccessToken = socialLoginProvider.getAccessToken(type)
             authRepository.loginWithSocial(type, socialAccessToken)
+            analyticsLogger.log(AnalyticsEvent.Login(LoginMethod.of(type)))
             navigateAfterLogin()
         } catch (e: CancellationException) {
             throw e // 구조적 동시성 유지 — 취소는 전파
         } catch (_: SocialLoginCancelledException) {
             // 사용자가 소셜 로그인 UI를 취소 → 에러 아님, 조용히 종료
+            analyticsLogger.log(AnalyticsEvent.LoginFail(LoginMethod.of(type), LoginFailReason.CANCEL))
             setState { copy(isLoading = false) }
         } catch (e: Exception) {
+            analyticsLogger.log(AnalyticsEvent.LoginFail(LoginMethod.of(type), LoginFailReason.ERROR))
             // 서버/네트워크/기타 분기는 toErrorAlert 공통 규칙을 따른다.
             setState { copy(isLoading = false, error = e.toErrorAlert("로그인에 실패했어요")) }
         }

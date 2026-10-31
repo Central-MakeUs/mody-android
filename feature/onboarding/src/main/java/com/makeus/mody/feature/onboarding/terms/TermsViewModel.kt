@@ -1,6 +1,10 @@
 package com.makeus.mody.feature.onboarding.terms
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.OnboardingStep
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.OnboardingGraph
@@ -13,6 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TermsViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<TermsState, TermsIntent>(TermsState()) {
 
     override suspend fun processIntent(intent: TermsIntent) {
@@ -36,8 +41,11 @@ class TermsViewModel @Inject constructor(
                 )
 
             // 동의 완료 → 온보딩 첫 입력 스텝(닉네임)으로.
-            TermsIntent.StartClicked ->
+            // 버튼이 막혀 있어도 규칙은 여기 둔다 — 미동의 진행이 '약관 완료'로 집계되면 안 된다.
+            TermsIntent.StartClicked -> if (currentState.canStart) {
+                analyticsLogger.log(AnalyticsEvent.OnboardingStepComplete(OnboardingStep.TERMS))
                 navigationHelper.navigate(NavigationEvent.To(OnboardingGraph.NicknameRoute))
+            }
         }
     }
 }

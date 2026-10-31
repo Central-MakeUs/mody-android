@@ -2,6 +2,10 @@ package com.makeus.mody.feature.mypage.notification
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.ScheduleEntrySource
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.model.ExerciseSchedule
 import com.makeus.mody.core.model.MealSchedule
 import com.makeus.mody.core.model.MealType
@@ -30,6 +34,7 @@ private const val SCHEDULE_DEBOUNCE_MS = 500L
 class NotificationSettingViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<NotificationSettingState, NotificationSettingIntent>(NotificationSettingState()) {
 
     // 토글 디바운스 job. 새 토글마다 리셋.
@@ -85,11 +90,29 @@ class NotificationSettingViewModel @Inject constructor(
             }
 
             is NotificationSettingIntent.ExerciseAllTimesSet -> {
+                // '적용'은 시트 확인 시점이다. 서버 반영은 디바운스 뒤라 여기서 결과를 기다리지 않는다.
+                analyticsLogger.log(
+                    AnalyticsEvent.ExerciseTimeSheetApply(
+                        currentState.exerciseTimes.size,
+                        ScheduleEntrySource.MYPAGE,
+                    ),
+                )
                 setState {
                     copy(exerciseTimes = exerciseTimes.mapValues { intent.hour to intent.minute })
                 }
                 scheduleSync()
             }
+
+            is NotificationSettingIntent.SameTimeClicked -> analyticsLogger.log(
+                AnalyticsEvent.SameTimeClick(currentState.exerciseTimes.size, ScheduleEntrySource.MYPAGE),
+            )
+
+            is NotificationSettingIntent.SameTimeSheetDismissed -> analyticsLogger.log(
+                AnalyticsEvent.ExerciseTimeSheetClose(
+                    currentState.exerciseTimes.size,
+                    ScheduleEntrySource.MYPAGE,
+                ),
+            )
 
             is NotificationSettingIntent.ErrorShown -> setState { copy(error = null) }
         }

@@ -4,6 +4,11 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.model.Group
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.AnalyticsUserProperty
+import com.makeus.mody.core.domain.analytics.GroupEntryPoint
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.domain.notification.PendingGroupSelectionHolder
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.FeedRepository
@@ -44,6 +49,7 @@ class FeedViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val recordRepository: RecordRepository,
     private val unreadNotificationStore: UnreadNotificationStore,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<FeedState, FeedIntent>(FeedState()) {
 
     init {
@@ -124,11 +130,16 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.FabClicked -> setState { copy(isFabExpanded = !isFabExpanded) }
             is FeedIntent.FabDismissed -> setState { copy(isFabExpanded = false) }
 
-            is FeedIntent.GroupSelectorClicked -> setState { copy(isGroupSheetVisible = true) }
+            is FeedIntent.GroupSelectorClicked -> {
+                analyticsLogger.log(AnalyticsEvent.GroupSelectorClick(myGroups.size))
+                setState { copy(isGroupSheetVisible = true) }
+            }
             is FeedIntent.GroupSelected -> selectGroup(intent.groupId)
             is FeedIntent.GroupSheetDismissed -> setState { copy(isGroupSheetVisible = false) }
-            is FeedIntent.AddGroupClicked ->
+            is FeedIntent.AddGroupClicked -> {
+                analyticsLogger.log(AnalyticsEvent.GroupAddClick(myGroups.size))
                 setState { copy(isGroupSheetVisible = false, isAddGroupDialogVisible = true) }
+            }
             is FeedIntent.JoinGroupClicked -> {
                 setState { copy(isAddGroupDialogVisible = false) }
                 navigationHelper.navigate(
@@ -137,7 +148,11 @@ class FeedViewModel @Inject constructor(
             }
             is FeedIntent.CreateGroupClicked -> {
                 setState { copy(isAddGroupDialogVisible = false) }
-                navigationHelper.navigate(NavigationEvent.To(GroupGraph.CreateGroupRoute))
+                // 그룹 참여 화면을 거치지 않으므로 생성 시작은 여기서 남긴다(GR-04).
+                analyticsLogger.log(AnalyticsEvent.GroupCreateClick(GroupEntryPoint.FEED))
+                navigationHelper.navigate(
+                    NavigationEvent.To(GroupGraph.CreateGroupRoute(source = GroupEntrySource.Feed)),
+                )
             }
             is FeedIntent.AddGroupDialogDismissed -> setState { copy(isAddGroupDialogVisible = false) }
             is FeedIntent.LoadMoreFeeds -> loadMoreFeeds()
@@ -145,7 +160,10 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.AlarmClicked ->
                 navigationHelper.navigate(NavigationEvent.To(NotificationGraph.NotificationRoute))
             // 챌린지 탭(연속 기록)으로. 탭 전환은 MainScreenViewModel, 서브탭은 ChallengeViewModel 이 처리.
-            is FeedIntent.PokeClicked -> pendingStreakTabHolder.set()
+            is FeedIntent.PokeClicked -> {
+                analyticsLogger.log(AnalyticsEvent.PokeCtaClick)
+                pendingStreakTabHolder.set()
+            }
             is FeedIntent.FeedCardClicked -> {
                 // 화면에서 이미 탭을 막지만 여기서도 한 번 더 — 화살표만 되살리고 이쪽을
                 // 빠뜨리면 댓글 화면이 열린다. 되돌릴 땐 FeedState.commentEnabled 하나만 바꾼다.
@@ -185,6 +203,8 @@ class FeedViewModel @Inject constructor(
     private fun loadMyGroup() = viewModelScope.launch {
         runCatching { groupRepository.getMyGroups() }
             .onSuccess { groups ->
+                // 피드 노출(screen_view) 시점엔 그룹 수를 몰라 사용자 속성으로 둔다(HM-01).
+                analyticsLogger.setUserProperty(AnalyticsUserProperty.GROUP_COUNT, groups.size.toString())
                 // 속한 그룹이 없으면(다른 기기에서 전부 나감 등) 그룹 참여/생성으로 강제 이동.
                 // 백스택 제거 → 피드 복귀 불가. 세션 플래그도 내려 재접속 시 GROUP 시작.
                 if (groups.isEmpty()) {

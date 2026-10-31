@@ -69,6 +69,9 @@ private sealed interface ExerciseModal {
  *
  * @param exerciseTimes 선택된 요일(1=월~7=일) → (hour24, minute).
  * @param minExerciseDays "일주일에 최소 N 번" 안내 문구용.
+ * @param onSameTimeClick '모두 같은 시간으로 설정'으로 일괄 설정 시트를 열었다.
+ * @param onSameTimeSheetDismiss 일괄 설정 시트를 적용 없이 닫았다. 적용은 [onExerciseAllTimesSet].
+ *   요일별 시간 행으로 연 시트는 둘 다 부르지 않는다.
  */
 @Composable
 fun MealExerciseSchedule(
@@ -82,6 +85,8 @@ fun MealExerciseSchedule(
     onExerciseAllTimesSet: (hour: Int, minute: Int) -> Unit,
     modifier: Modifier = Modifier,
     minExerciseDays: Int = 1,
+    onSameTimeClick: () -> Unit = {},
+    onSameTimeSheetDismiss: () -> Unit = {},
 ) {
     var exerciseModal by remember { mutableStateOf<ExerciseModal?>(null) }
 
@@ -199,7 +204,10 @@ fun MealExerciseSchedule(
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { exerciseModal = ExerciseModal.All },
+                    .clickable {
+                        exerciseModal = ExerciseModal.All
+                        onSameTimeClick()
+                    },
             )
         }
     }
@@ -221,7 +229,10 @@ fun MealExerciseSchedule(
                 }
                 exerciseModal = null
             },
-            onDismiss = { exerciseModal = null },
+            onDismiss = {
+                if (modal == ExerciseModal.All) onSameTimeSheetDismiss()
+                exerciseModal = null
+            },
         )
     }
 }

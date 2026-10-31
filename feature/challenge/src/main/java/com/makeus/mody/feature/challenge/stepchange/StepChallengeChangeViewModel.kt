@@ -4,6 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.log
+import com.makeus.mody.core.domain.analytics.ProgressBucket
+import com.makeus.mody.core.model.StepChallengeOption
 import com.makeus.mody.core.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.navigation.ChallengeGraph
@@ -21,12 +26,13 @@ class StepChallengeChangeViewModel @Inject constructor(
     private val challengeRepository: ChallengeRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<StepChallengeChangeState, StepChallengeChangeIntent>(
     StepChallengeChangeState(),
 ) {
 
-    private val groupId =
-        savedStateHandle.toRoute<ChallengeGraph.StepChallengeChangeRoute>().groupId
+    private val route = savedStateHandle.toRoute<ChallengeGraph.StepChallengeChangeRoute>()
+    private val groupId = route.groupId
 
     override suspend fun processIntent(intent: StepChallengeChangeIntent) {
         when (intent) {
@@ -75,6 +81,7 @@ class StepChallengeChangeViewModel @Inject constructor(
         setState { copy(isChanging = true) }
         try {
             challengeRepository.changeStepChallenge(groupId, option.challengeId)
+            logChange(to = option)
             setState { copy(isChanging = false, pendingOption = null) }
             navigationHelper.navigate(NavigationEvent.Up)
         } catch (e: CancellationException) {
@@ -90,4 +97,18 @@ class StepChallengeChangeViewModel @Inject constructor(
             }
         }
     }
+
+    /** 변경 전 챌린지는 목록에서 '진행 중'인 것. 값은 화면 문구가 아닌 서버 원본(출발-도착). */
+    private fun logChange(to: StepChallengeOption) {
+        val from = currentState.options.firstOrNull { it.selected } ?: return
+        analyticsLogger.log(
+            AnalyticsEvent.ChallengeChange(
+                from = from.analyticsName,
+                to = to.analyticsName,
+                progress = ProgressBucket.of(route.progressPercent),
+            ),
+        )
+    }
+
+    private val StepChallengeOption.analyticsName: String get() = "$departure-$destination"
 }

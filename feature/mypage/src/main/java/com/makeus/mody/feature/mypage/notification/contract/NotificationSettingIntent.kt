@@ -21,6 +21,9 @@ sealed class NotificationSettingIntent : UiIntent {
     data class ExerciseDaySet(val day: Int, val hour: Int, val minute: Int) : NotificationSettingIntent()
     data class ExerciseDayRemoved(val day: Int) : NotificationSettingIntent()
     data class ExerciseAllTimesSet(val hour: Int, val minute: Int) : NotificationSettingIntent()
+    // '모두 같은 시간으로 설정' 시트 열기 / 적용 없이 닫기(로그 전용)
+    data object SameTimeClicked : NotificationSettingIntent()
+    data object SameTimeSheetDismissed : NotificationSettingIntent()
 
     data object ErrorShown : NotificationSettingIntent()
 }

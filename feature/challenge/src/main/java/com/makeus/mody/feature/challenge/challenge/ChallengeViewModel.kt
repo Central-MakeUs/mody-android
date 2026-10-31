@@ -11,6 +11,9 @@ import com.makeus.mody.core.model.StepChallengeStatus
 import com.makeus.mody.core.model.StepRanking
 import com.makeus.mody.core.model.WeeklyChallenge
 import com.makeus.mody.core.model.error.HttpResponseException
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.domain.notification.UnreadNotificationStore
 import com.makeus.mody.core.domain.repository.ChallengeRepository
 import com.makeus.mody.core.model.HealthAvailability
@@ -45,6 +48,7 @@ class ChallengeViewModel @Inject constructor(
     private val pendingStreakTabHolder: PendingStreakTabHolder,
     private val unreadNotificationStore: UnreadNotificationStore,
     private val syncTodaySteps: SyncTodayStepsUseCase,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<ChallengeState, ChallengeIntent>(ChallengeState()) {
 
     /** 현재 보고 있는 그룹. 피드와 동일 규칙(마지막 선택 그룹 > 첫 그룹)으로 결정. */
@@ -97,7 +101,12 @@ class ChallengeViewModel @Inject constructor(
                 setState { copy(showHealthPermissionGuide = false) }
             is ChallengeIntent.ChangeStepChallengeClicked -> currentGroupId?.let { groupId ->
                 navigationHelper.navigate(
-                    NavigationEvent.To(ChallengeGraph.StepChallengeChangeRoute(groupId)),
+                    NavigationEvent.To(
+                        ChallengeGraph.StepChallengeChangeRoute(
+                            groupId = groupId,
+                            progressPercent = currentState.stepChallenge?.progressPercent ?: 0,
+                        ),
+                    ),
                 )
             }
             is ChallengeIntent.WeeklyChallengeClicked ->
@@ -365,6 +374,8 @@ class ChallengeViewModel @Inject constructor(
         setState { copy(nudgingMemberIds = nudgingMemberIds + memberId) }
         try {
             val status = challengeRepository.nudge(groupId, memberId)
+            // 전송은 성공했으니 화면 반영 여부(그룹 전환)와 무관하게 남긴다.
+            analyticsLogger.log(AnalyticsEvent.PokeSend)
             if (groupId != currentGroupId) return@launch
             setState {
                 copy(

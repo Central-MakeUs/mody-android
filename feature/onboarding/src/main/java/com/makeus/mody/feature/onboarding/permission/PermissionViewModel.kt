@@ -2,6 +2,10 @@ package com.makeus.mody.feature.onboarding.permission
 
 import androidx.lifecycle.viewModelScope
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.PermissionType
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.model.HealthAvailability
 import com.makeus.mody.core.domain.repository.HealthRepository
 import com.makeus.mody.core.domain.repository.OnboardingRepository
@@ -20,6 +24,7 @@ class PermissionViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val healthRepository: HealthRepository,
     private val onboardingRepository: OnboardingRepository,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<PermissionState, PermissionIntent>(PermissionState()) {
 
     init {
@@ -31,10 +36,22 @@ class PermissionViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: PermissionIntent) {
         when (intent) {
-            is PermissionIntent.BasePermissionsHandled -> requestHealthOrContinue()
+            is PermissionIntent.BasePermissionsHandled -> {
+                intent.notificationGranted?.let {
+                    analyticsLogger.log(AnalyticsEvent.PermissionResult(PermissionType.NOTIFICATION, it))
+                }
+                requestHealthOrContinue()
+            }
             is PermissionIntent.HealthPermissionRequestLaunched ->
                 setState { copy(healthPermissionRequest = null) }
-            is PermissionIntent.HealthPermissionResult -> onHealthPermissionResult(intent.granted)
+            is PermissionIntent.HealthPermissionResult -> {
+                if (intent.prompted) {
+                    analyticsLogger.log(
+                        AnalyticsEvent.PermissionResult(PermissionType.HEALTH_CONNECT, intent.granted),
+                    )
+                }
+                onHealthPermissionResult(intent.granted)
+            }
         }
     }
 

@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.model.CropRegion
 import com.makeus.mody.core.model.error.HttpResponseException
 import com.makeus.mody.core.domain.repository.ChallengeRepository
@@ -28,6 +31,7 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
     private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<WeeklyChallengeDetailState, WeeklyChallengeDetailIntent>(
     savedStateHandle.toRoute<ChallengeGraph.WeeklyChallengeDetailRoute>().let { route ->
         WeeklyChallengeDetailState(
@@ -54,7 +58,11 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
                 setState { copy(isCameraVisible = false) }
             is WeeklyChallengeDetailIntent.PhotoCaptured ->
                 uploadProof(intent.imageUri, intent.cropRegion)
-            is WeeklyChallengeDetailIntent.ShareClicked -> share()
+            is WeeklyChallengeDetailIntent.ShareClicked -> {
+                // 준비 중 연타는 share() 가 버리므로 로그도 같이 거른다.
+                if (!currentState.isPreparingShare) analyticsLogger.log(AnalyticsEvent.WeeklyChallengeShare)
+                share()
+            }
             is WeeklyChallengeDetailIntent.ShareLaunched -> setState { copy(shareImageUri = null) }
             is WeeklyChallengeDetailIntent.ToastShown -> setState { copy(toastMessage = null) }
             is WeeklyChallengeDetailIntent.ErrorShown -> setState { copy(error = null) }
@@ -119,6 +127,7 @@ class WeeklyChallengeDetailViewModel @Inject constructor(
                 // 원본을 그대로 올리고, 조정 단계에서 맞춘 영역만 좌표로 넘긴다.
                 cropRegion = cropRegion,
             )
+            analyticsLogger.log(AnalyticsEvent.WeeklyChallengeComplete)
             // 여기부터의 실패는 등록 실패가 아니라 목록 갱신 실패다. 아래 catch 로 흘리면
             // "등록에 실패했어요" 가 떠서, 이미 올라간 사진을 다시 올리게 만든다.
             val proofs = try {

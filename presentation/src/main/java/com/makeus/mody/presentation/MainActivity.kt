@@ -34,6 +34,7 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.core.navigation.Route
 import com.makeus.mody.presentation.analytics.MainScreenName
+import com.makeus.mody.presentation.analytics.screenParams
 import com.makeus.mody.presentation.analytics.toScreenName
 import com.makeus.mody.presentation.navigation.AppNavHost
 import com.makeus.mody.core.navigation.NotificationDestination
@@ -139,7 +140,7 @@ class MainActivity : ComponentActivity() {
                     val screenName = entry.destination.route.toScreenName() ?: return@collect
                     // Main 은 컨테이너라 실제로 보이는 건 탭이다 — MainScreen 이 탭 이름으로 남긴다.
                     if (screenName == MainScreenName) return@collect
-                    analyticsLogger.logScreenView(screenName)
+                    analyticsLogger.logScreenView(screenName, entry.screenParams())
                 }
             }
 

@@ -43,7 +43,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
-import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -75,6 +75,8 @@ fun WeeklyChallengeDetailScreen(
     LaunchedEffect(Unit) { viewModel.onIntent(WeeklyChallengeDetailIntent.ScreenEntered) }
 
     WeeklyChallengeDetailContent(state = state, onIntent = viewModel::onIntent)
+    // 인증 사진 업로드·공유 이미지 생성 대기.
+    if (state.isUploading || state.isPreparingShare) ModyLoadingOverlay()
 
     // "인증하기" 는 바로 촬영으로 간다 — 인증 사진이라 그 자리에서 찍는 게 기본 흐름.
     // 갤러리는 막는다(allowGallery = false): 아무 사진이나 고르면 인증이 성립하지 않는다.
@@ -151,13 +153,11 @@ private fun WeeklyChallengeDetailContent(
                 Spacer(modifier = Modifier.height(30.dp))
             }
             ModyButton(
-                text = "SNS에 공유하기",
+                text = if (state.isPreparingShare) "공유 이미지 만드는 중…" else "SNS에 공유하기",
                 onClick = { onIntent(WeeklyChallengeDetailIntent.ShareClicked) },
                 variant = ModyButtonVariant.Dark,
                 // 인증 사진이 없으면 서버가 만들 게 없다.
-                enabled = state.proofs.isNotEmpty(),
-                // 공유 이미지 생성 + 내려받기 대기.
-                isLoading = state.isPreparingShare,
+                enabled = state.proofs.isNotEmpty() && !state.isPreparingShare,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = ScreenPadding)
@@ -262,18 +262,11 @@ private fun AddProofCell(isUploading: Boolean, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         if (isUploading) {
-            // 사진 업로드 + 인증 등록 대기. 글자만 있으면 멈춘 것처럼 보여 인디케이터를 같이 둔다.
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                ModyLoadingIndicator(size = 32.dp, loadingDescription = "인증 사진을 올리는 중")
-                Text(
-                    text = "올리는 중…",
-                    style = ModyTheme.typography.c1,
-                    color = ModyTheme.colors.gray09,
-                )
-            }
+            Text(
+                text = "올리는 중…",
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.gray09,
+            )
         } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

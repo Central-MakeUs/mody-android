@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.MealExerciseSchedule
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
@@ -18,8 +19,6 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
         totalSteps = 4,
         title = "식사와 운동 알림을\n언제 드릴까요?",
         nextEnabled = state.isAlarmValid,
-        // 마지막 스텝 — 프로필 제출 응답을 기다린다.
-        nextLoading = state.isLoading,
         onNextClick = { viewModel.onIntent(OnboardingIntent.AlarmNext) },
     ) {
         MealExerciseSchedule(
@@ -42,4 +41,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             minExerciseDays = OnboardingState.EXERCISE_MIN_DAYS,
         )
     }
+
+    // 마지막 스텝 — 프로필 제출 응답 대기. 콘텐츠 뒤에 둬야 위에 겹친다.
+    if (state.isLoading) ModyLoadingOverlay()
 }

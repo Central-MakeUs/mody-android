@@ -42,6 +42,7 @@ import com.makeus.mody.core.designsystem.component.ModyBottomSheet
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLogoTopBar
 import com.makeus.mody.core.designsystem.component.ModyTextSkeleton
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -131,6 +132,8 @@ private fun FeedContent(
                 )
             }
         }
+        // 신고·삭제 확정 후 응답 대기(확인 다이얼로그는 확정 즉시 닫힌다).
+        if (state.isReporting || state.isDeleting) ModyLoadingOverlay()
     }
 
     if (state.isGroupSheetVisible) {
@@ -156,8 +159,8 @@ private fun FeedContent(
             message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
             confirmText = "신고하기",
             dismissText = "취소",
-            // 접수 중: 진행 표시 + 중복 탭·닫기 방지
-            isConfirmLoading = state.isReporting,
+            // 접수 중 중복 탭 방지
+            confirmEnabled = !state.isReporting,
             onConfirm = { onIntent(FeedIntent.ReportConfirmed) },
             onDismissRequest = { onIntent(FeedIntent.ReportDialogDismissed) },
         )
@@ -179,8 +182,8 @@ private fun FeedContent(
             message = "삭제한 게시물은 되돌릴 수 없어요.",
             confirmText = "삭제하기",
             dismissText = "취소",
-            // 삭제 중: 진행 표시 + 중복 탭·닫기 방지
-            isConfirmLoading = state.isDeleting,
+            // 삭제 중 중복 탭 방지
+            confirmEnabled = !state.isDeleting,
             onConfirm = { onIntent(FeedIntent.DeleteConfirmed) },
             onDismissRequest = { onIntent(FeedIntent.DeleteDialogDismissed) },
         )

@@ -86,8 +86,7 @@ fun WeightRecordSheet(
                 text = "기록 완료",
                 onClick = { parsed?.let { onConfirm(it.toString(), weight.toDouble()) } },
                 variant = ModyButtonVariant.Primary,
-                enabled = parsed != null,
-                isLoading = isSaving,
+                enabled = parsed != null && !isSaving,
             )
         }
     }

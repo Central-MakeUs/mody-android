@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyButton
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.modifier.clearFocusOnTap
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyDurationPicker
@@ -128,11 +129,12 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
             onClick = { viewModel.onIntent(RecordHealthIntent.SubmitClicked) },
             variant = ModyButtonVariant.Primary,
             enabled = state.canSubmit,
-            // 사진 업로드 + 기록 생성까지 기다린다. 몇 초 걸려 멈춘 것처럼 보이지 않게.
-            isLoading = state.isSubmitting,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
     }
+
+    // 사진 업로드 + 기록 생성 대기. NavHost 목적지는 Box 안이라 콘텐츠 뒤에 두면 위에 겹친다.
+    if (state.isSubmitting) ModyLoadingOverlay(loadingDescription = "기록을 올리는 중")
 
     if (state.isPhotoSheetVisible) {
         PhotoSourceSheet(

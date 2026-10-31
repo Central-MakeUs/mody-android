@@ -72,7 +72,8 @@ class StepChallengeChangeViewModel @Inject constructor(
     private fun change() = viewModelScope.launch {
         val option = currentState.pendingOption ?: return@launch
         if (currentState.isChanging) return@launch
-        setState { copy(isChanging = true) }
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다. 옵션은 위에서 붙들었다.
+        setState { copy(isChanging = true, pendingOption = null) }
         try {
             challengeRepository.changeStepChallenge(groupId, option.challengeId)
             setState { copy(isChanging = false, pendingOption = null) }

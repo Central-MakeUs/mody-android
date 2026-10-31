@@ -51,7 +51,8 @@ class GroupSettingViewModel @Inject constructor(
     private fun leaveGroup() = viewModelScope.launch {
         val target = currentState.leaveTarget ?: return@launch
         if (currentState.isProcessing) return@launch
-        setState { copy(isProcessing = true) }
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다. 대상은 위에서 붙들었다.
+        setState { copy(isProcessing = true, leaveTarget = null) }
         try {
             groupRepository.leaveGroup(target.groupId)
         } catch (e: CancellationException) {

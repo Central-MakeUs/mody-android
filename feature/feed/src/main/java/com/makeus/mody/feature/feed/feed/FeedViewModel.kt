@@ -346,7 +346,8 @@ class FeedViewModel @Inject constructor(
         val groupId = currentGroupId ?: return@launch
         val recordId = currentState.reportTargetRecordId ?: return@launch
         if (currentState.isReporting) return@launch
-        setState { copy(isReporting = true) }
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다. 대상 id 는 위에서 붙들었다.
+        setState { copy(isReporting = true, reportTargetRecordId = null) }
         runCatching { feedRepository.reportRecord(groupId, recordId) }
             .onSuccess {
                 setState {
@@ -373,7 +374,8 @@ class FeedViewModel @Inject constructor(
     private fun deleteRecord() = viewModelScope.launch {
         val recordId = currentState.deleteTargetRecordId ?: return@launch
         if (currentState.isDeleting) return@launch
-        setState { copy(isDeleting = true) }
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다. 대상 id 는 위에서 붙들었다.
+        setState { copy(isDeleting = true, deleteTargetRecordId = null) }
         runCatching { recordRepository.deleteRecord(recordId) }
             .onSuccess {
                 setState {

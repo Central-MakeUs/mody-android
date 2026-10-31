@@ -81,13 +81,17 @@ fun ModyLoadingScreen(modifier: Modifier = Modifier) {
     }
 }
 
+/** 로딩 오버레이 딤. iOS `MLoadingModifier` 와 같은 값. */
+private const val OVERLAY_DIM_ALPHA = 0.6f
+
 /**
  * 화면 위를 어둡게 덮고 중앙에 로딩 인디케이터를 띄우는 오버레이. 아래 조작을 막는다.
  *
- * 다이얼로그를 이미 닫은 뒤 기다리는 작업(탈퇴·로그아웃)이나 화면 전체를 막아야 하는 저장에
- * 쓴다. 버튼 하나만 기다리면 되는 곳은 [ModyButton] 의 `isLoading` 을 쓴다.
+ * 응답을 기다리는 동작(저장·제출·확인 다이얼로그 확정 등)은 전부 이걸 쓴다 — 버튼 안 스피너나
+ * 다이얼로그를 연 채 기다리는 방식은 쓰지 않는다. iOS `mLoading`(검정 60% + 같은 로티)과 같은
+ * 동작이다. 확인 다이얼로그는 확정 즉시 닫고 이 오버레이를 띄운다.
  *
- * 화면 콘텐츠와 같은 Box 안 맨 위에 둔다.
+ * 화면 콘텐츠 뒤(같은 Box 안 맨 마지막)에 둬야 위에 겹친다.
  */
 @Composable
 fun ModyLoadingOverlay(
@@ -97,7 +101,7 @@ fun ModyLoadingOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(ModyTheme.colors.black.copy(alpha = 0.2f))
+            .background(ModyTheme.colors.black.copy(alpha = OVERLAY_DIM_ALPHA))
             // 아래 콘텐츠로 터치가 새지 않도록 소비만 한다.
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },

@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -67,6 +68,9 @@ private fun GroupSettingContent(
         }
     }
 
+    // 나가기 확정 후 응답 대기(확인 다이얼로그는 확정 즉시 닫힌다).
+    if (state.isProcessing) ModyLoadingOverlay()
+
     state.leaveTarget?.let {
         ModyDialog(
             title = "정말 그룹에서 나가실건가요?",
@@ -75,8 +79,6 @@ private fun GroupSettingContent(
             confirmText = "그룹 나가기",
             onConfirm = { onIntent(GroupSettingIntent.LeaveConfirmed) },
             onDismissRequest = { onIntent(GroupSettingIntent.LeaveDismissed) },
-            // 나가기 요청 중엔 다이얼로그를 연 채로 확정 버튼에 진행 표시.
-            isConfirmLoading = state.isProcessing,
         )
     }
 

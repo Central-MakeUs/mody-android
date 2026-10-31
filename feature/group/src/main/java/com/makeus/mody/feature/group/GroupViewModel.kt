@@ -1,15 +1,22 @@
 package com.makeus.mody.feature.group
 
 import com.makeus.mody.core.commonui.base.BaseViewModel
+import com.makeus.mody.core.domain.analytics.AnalyticsEvent
+import com.makeus.mody.core.domain.analytics.AnalyticsLogger
+import com.makeus.mody.core.domain.analytics.GroupJoinFailReason
+import com.makeus.mody.core.domain.analytics.ShareMethod
+import com.makeus.mody.core.domain.analytics.log
 import com.makeus.mody.core.domain.invite.InviteCodeHolder
 import com.makeus.mody.core.model.error.HttpResponseException
 import com.makeus.mody.core.model.error.ModyErrorCode
 import com.makeus.mody.core.model.error.toErrorAlert
 import com.makeus.mody.core.domain.repository.GroupRepository
+import com.makeus.mody.core.navigation.GroupEntrySource
 import com.makeus.mody.core.navigation.GroupGraph
 import com.makeus.mody.core.navigation.MainRoute
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.feature.group.analytics.toEntryPoint
 import com.makeus.mody.feature.group.contract.GroupIntent
 import com.makeus.mody.feature.group.contract.GroupState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +32,11 @@ class GroupViewModel @Inject constructor(
     private val navigationHelper: NavigationHelper,
     private val groupRepository: GroupRepository,
     inviteCodeHolder: InviteCodeHolder,
+    private val analyticsLogger: AnalyticsLogger,
 ) : BaseViewModel<GroupState, GroupIntent>(GroupState()) {
+
+    /** 그룹 그래프에 들어온 출처. 화면 진입 때 [GroupIntent.Entered] 로 채운다. 로그 전용. */
+    private var entrySource = GroupEntrySource.Onboarding
 
     init {
         // 딥링크로 들어온 초대 코드가 있으면 참여 코드 필드에 자동 입력(1회성).
@@ -36,14 +47,18 @@ class GroupViewModel @Inject constructor(
 
     override suspend fun processIntent(intent: GroupIntent) {
         when (intent) {
+            is GroupIntent.Entered -> entrySource = intent.source
+
             is GroupIntent.JoinCodeChanged ->
                 // 코드는 영문 대문자 기준 → 입력 소스(붙여넣기/하드웨어) 무관하게 정규화
                 setState { copy(joinCode = intent.value.uppercase(), joinError = null) }
 
             is GroupIntent.JoinClicked -> join()
 
-            is GroupIntent.CreateGroupClicked ->
-                navigationHelper.navigate(NavigationEvent.To(GroupGraph.CreateGroupRoute))
+            is GroupIntent.CreateGroupClicked -> {
+                analyticsLogger.log(AnalyticsEvent.GroupCreateClick(entrySource.toEntryPoint()))
+                navigationHelper.navigate(NavigationEvent.To(GroupGraph.CreateGroupRoute(source = entrySource)))
+            }
 
             is GroupIntent.GroupNameChanged ->
                 setState { copy(groupName = intent.value) }
@@ -54,13 +69,20 @@ class GroupViewModel @Inject constructor(
             is GroupIntent.CreateErrorShown ->
                 setState { copy(createError = null) }
 
-            is GroupIntent.CopyCodeClicked ->
+            is GroupIntent.CopyCodeClicked -> {
                 // 실제 클립보드 쓰기는 Screen(LocalClipboardManager)에서 처리. 여기선 상태만.
+                analyticsLogger.log(AnalyticsEvent.GroupShareClick(ShareMethod.COPY))
                 setState { copy(codeCopied = true) }
+            }
 
-            is GroupIntent.ShareDoneClicked ->
+            is GroupIntent.KakaoShareClicked ->
+                analyticsLogger.log(AnalyticsEvent.GroupShareClick(ShareMethod.KAKAO))
+
+            is GroupIntent.ShareDoneClicked -> {
                 // 그룹 생성 완료 → 메인으로. 온보딩/그룹 백스택 제거.
+                analyticsLogger.log(AnalyticsEvent.GroupCreateFinish)
                 navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))
+            }
 
             is GroupIntent.BackClicked ->
                 // 생성/참여 요청 중에는 화면을 떠나지 않는다. ViewModel 이 그룹 그래프
@@ -76,6 +98,7 @@ class GroupViewModel @Inject constructor(
         setState { copy(isLoading = true) }
         try {
             val group = groupRepository.createGroup(currentState.groupName)
+            analyticsLogger.log(AnalyticsEvent.GroupCreateSuccess(entrySource.toEntryPoint()))
             setState { copy(isLoading = false, inviteCode = group.code, codeCopied = false) }
             navigationHelper.navigate(NavigationEvent.To(GroupGraph.GroupShareRoute))
         } catch (e: CancellationException) {
@@ -91,6 +114,7 @@ class GroupViewModel @Inject constructor(
         setState { copy(isLoading = true, joinError = null) }
         try {
             groupRepository.joinGroup(currentState.joinCode)
+            analyticsLogger.log(AnalyticsEvent.JoinGroup(entrySource.toEntryPoint()))
             navigationHelper.navigate(NavigationEvent.To(MainRoute, popUpTo = true))
         } catch (e: CancellationException) {
             throw e
@@ -98,6 +122,7 @@ class GroupViewModel @Inject constructor(
             // 서버 에러코드(GROUP3xx)별 기획 문구 분기. 미분기 코드는 서버 message 노출,
             // 네트워크 등 비 HTTP 예외는 기술 메시지가 새지 않게 폴백 문구.
             val http = e as? HttpResponseException
+            analyticsLogger.log(AnalyticsEvent.GroupJoinFail(http.toJoinFailReason(), entrySource.toEntryPoint()))
             val message = when (http?.errorCode) {
                 ModyErrorCode.GROUP302 -> "존재하지 않는 코드입니다."
                 ModyErrorCode.GROUP304 -> "참여할 수 있는 그룹 개수를 초과했어요."
@@ -109,4 +134,14 @@ class GroupViewModel @Inject constructor(
             setState { copy(isLoading = false, joinError = message) }
         }
     }
+}
+
+/** 서버 에러 코드 → 사용 로그 fail_reason. 화면 문구 분기(join)와 같은 코드 기준. */
+private fun HttpResponseException?.toJoinFailReason(): GroupJoinFailReason = when {
+    this == null -> GroupJoinFailReason.NETWORK
+    errorCode == ModyErrorCode.GROUP302 -> GroupJoinFailReason.INVALID_CODE
+    errorCode == ModyErrorCode.GROUP304 -> GroupJoinFailReason.MAX_GROUP
+    errorCode == ModyErrorCode.GROUP305 -> GroupJoinFailReason.ALREADY_JOINED
+    errorCode == ModyErrorCode.GROUP307 -> GroupJoinFailReason.GROUP_FULL
+    else -> GroupJoinFailReason.SERVER_ERROR
 }

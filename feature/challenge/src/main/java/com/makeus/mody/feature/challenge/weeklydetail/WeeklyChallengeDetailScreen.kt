@@ -43,6 +43,7 @@ import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -150,11 +151,13 @@ private fun WeeklyChallengeDetailContent(
                 Spacer(modifier = Modifier.height(30.dp))
             }
             ModyButton(
-                text = if (state.isPreparingShare) "공유 이미지 만드는 중…" else "SNS에 공유하기",
+                text = "SNS에 공유하기",
                 onClick = { onIntent(WeeklyChallengeDetailIntent.ShareClicked) },
                 variant = ModyButtonVariant.Dark,
                 // 인증 사진이 없으면 서버가 만들 게 없다.
-                enabled = state.proofs.isNotEmpty() && !state.isPreparingShare,
+                enabled = state.proofs.isNotEmpty(),
+                // 공유 이미지 생성 + 내려받기 대기.
+                isLoading = state.isPreparingShare,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = ScreenPadding)
@@ -259,11 +262,18 @@ private fun AddProofCell(isUploading: Boolean, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         if (isUploading) {
-            Text(
-                text = "올리는 중…",
-                style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.gray09,
-            )
+            // 사진 업로드 + 인증 등록 대기. 글자만 있으면 멈춘 것처럼 보여 인디케이터를 같이 둔다.
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                ModyLoadingIndicator(size = 32.dp, loadingDescription = "인증 사진을 올리는 중")
+                Text(
+                    text = "올리는 중…",
+                    style = ModyTheme.typography.c1,
+                    color = ModyTheme.colors.gray09,
+                )
+            }
         } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

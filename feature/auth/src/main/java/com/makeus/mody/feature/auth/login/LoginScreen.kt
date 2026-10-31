@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyButton
 import com.makeus.mody.core.designsystem.component.ModyButtonVariant
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.auth.R
@@ -40,12 +41,16 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LoginContent(
-        isLoading = state.isLoading,
-        onKakaoLoginClick = { viewModel.onIntent(LoginIntent.KakaoLoginClicked) },
-        onGoogleLoginClick = { viewModel.onIntent(LoginIntent.GoogleLoginClicked) },
-        onLogoClick = { viewModel.onIntent(LoginIntent.LogoClicked) },
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LoginContent(
+            isLoading = state.isLoading,
+            onKakaoLoginClick = { viewModel.onIntent(LoginIntent.KakaoLoginClicked) },
+            onGoogleLoginClick = { viewModel.onIntent(LoginIntent.GoogleLoginClicked) },
+            onLogoClick = { viewModel.onIntent(LoginIntent.LogoClicked) },
+        )
+        // 로그인 API 응답 대기. 소셜 SDK 화면이 떠 있는 동안엔 그 아래에 깔려 보이지 않는다.
+        if (state.isLoading) ModyLoadingOverlay(loadingDescription = "로그인하는 중")
+    }
 
     // 심사용 히든 로그인(로고 연타 → 비밀번호 확인)
     if (state.showReviewLogin) {

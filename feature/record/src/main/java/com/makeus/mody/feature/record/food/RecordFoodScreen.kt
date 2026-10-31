@@ -126,6 +126,8 @@ fun RecordFoodScreen(viewModel: RecordFoodViewModel = hiltViewModel()) {
             onClick = { viewModel.onIntent(RecordFoodIntent.SubmitClicked) },
             variant = ModyButtonVariant.Primary,
             enabled = state.canSubmit,
+            // 사진 업로드 + 기록 생성까지 기다린다. 몇 초 걸려 멈춘 것처럼 보이지 않게.
+            isLoading = state.isSubmitting,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
     }

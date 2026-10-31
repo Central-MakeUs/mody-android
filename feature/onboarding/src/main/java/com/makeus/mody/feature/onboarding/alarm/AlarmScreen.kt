@@ -18,6 +18,8 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
         totalSteps = 4,
         title = "식사와 운동 알림을\n언제 드릴까요?",
         nextEnabled = state.isAlarmValid,
+        // 마지막 스텝 — 프로필 제출 응답을 기다린다.
+        nextLoading = state.isLoading,
         onNextClick = { viewModel.onIntent(OnboardingIntent.AlarmNext) },
     ) {
         MealExerciseSchedule(

@@ -43,6 +43,8 @@ fun OnboardingScaffold(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     nextEnabled: Boolean = true,
+    // 다음으로 넘어가며 요청을 보내는 스텝(마지막 제출)에서 응답 대기 표시.
+    nextLoading: Boolean = false,
     nextText: String = "다음으로",
     // null이면 자동: 서브타이틀 있으면 60dp, 타이틀만이면 48dp
     titleContentSpacing: Dp? = null,
@@ -113,6 +115,7 @@ fun OnboardingScaffold(
             onClick = onNextClick,
             variant = ModyButtonVariant.Primary,
             enabled = nextEnabled,
+            isLoading = nextLoading,
             modifier = Modifier.padding(bottom = 16.dp),
         )
     }

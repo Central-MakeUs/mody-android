@@ -133,7 +133,7 @@ fun RecordHealthScreen(viewModel: RecordHealthViewModel = hiltViewModel()) {
         )
     }
 
-    // 사진 업로드 + 기록 생성 대기. NavHost 목적지는 Box 안이라 콘텐츠 뒤에 두면 위에 겹친다.
+    // 사진 업로드 + 기록 생성 대기.
     if (state.isSubmitting) ModyLoadingOverlay(loadingDescription = "기록을 올리는 중")
 
     if (state.isPhotoSheetVisible) {

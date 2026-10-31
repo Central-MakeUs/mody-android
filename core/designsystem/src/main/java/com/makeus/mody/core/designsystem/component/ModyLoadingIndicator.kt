@@ -1,22 +1,24 @@
 package com.makeus.mody.core.designsystem.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -91,25 +93,36 @@ private const val OVERLAY_DIM_ALPHA = 0.6f
  * 다이얼로그를 연 채 기다리는 방식은 쓰지 않는다. iOS `mLoading`(검정 60% + 같은 로티)과 같은
  * 동작이다. 확인 다이얼로그는 확정 즉시 닫고 이 오버레이를 띄운다.
  *
- * 화면 콘텐츠 뒤(같은 Box 안 맨 마지막)에 둬야 위에 겹친다.
+ * 별도 창(Dialog)으로 띄운다. 같은 화면 안에 Box 로 겹치면 터치만 막히고, TalkBack·키보드
+ * 포커스로는 아래 버튼(로그아웃·탈퇴 등)에 그대로 닿는다. 창을 띄우면 아래 화면 전체가
+ * 접근성·포커스·터치에서 빠지고, 하단 탭바까지 덮이며, 뒤로가기도 막힌다(iOS 와 같다).
+ * 그래서 호출부는 화면 어디에 두든 상관없다.
  */
 @Composable
 fun ModyLoadingOverlay(
     modifier: Modifier = Modifier,
     loadingDescription: String = "로딩 중",
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(ModyTheme.colors.black.copy(alpha = OVERLAY_DIM_ALPHA))
-            // 아래 콘텐츠로 터치가 새지 않도록 소비만 한다.
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {},
-            ),
-        contentAlignment = Alignment.Center,
+    Dialog(
+        // 대기는 사용자가 끊을 수 없다 — 끝나면 호출부가 상태를 내려 닫는다.
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
     ) {
-        ModyLoadingIndicator(loadingDescription = loadingDescription)
+        // 창 기본 딤은 끄고 아래 Box 하나로 그린다 — 두 딤이 겹치면 값이 어긋난다.
+        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+        SideEffect { window?.setDimAmount(0f) }
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(ModyTheme.colors.black.copy(alpha = OVERLAY_DIM_ALPHA)),
+            contentAlignment = Alignment.Center,
+        ) {
+            ModyLoadingIndicator(loadingDescription = loadingDescription)
+        }
     }
 }

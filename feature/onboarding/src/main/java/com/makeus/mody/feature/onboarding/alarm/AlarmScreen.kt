@@ -42,6 +42,6 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
         )
     }
 
-    // 마지막 스텝 — 프로필 제출 응답 대기. 콘텐츠 뒤에 둬야 위에 겹친다.
+    // 마지막 스텝 — 프로필 제출 응답 대기.
     if (state.isLoading) ModyLoadingOverlay()
 }

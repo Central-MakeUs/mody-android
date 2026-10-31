@@ -81,7 +81,13 @@ fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
     // 결과(허용/거부)와 무관하게 다음 단계로 — 전부 선택 권한.
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
-    ) { viewModel.onIntent(PermissionIntent.BasePermissionsHandled) }
+    ) { results ->
+        viewModel.onIntent(
+            PermissionIntent.BasePermissionsHandled(
+                notificationGranted = results[Manifest.permission.POST_NOTIFICATIONS],
+            ),
+        )
+    }
 
     // Health Connect 권한 요청. 허용 집합을 그대로 돌려주므로 요청한 권한이 전부 포함됐는지로 판정.
     // 요청 집합은 화면 로컬에 따로 붙든다 — 런처 콜백은 항상 최신 값을 읽으므로,
@@ -111,7 +117,7 @@ fun PermissionScreen(viewModel: PermissionViewModel = hiltViewModel()) {
         viewModel.onIntent(PermissionIntent.HealthPermissionRequestLaunched)
         if (!launched) {
             pendingHealthPermissions = null
-            viewModel.onIntent(PermissionIntent.HealthPermissionResult(granted = false))
+            viewModel.onIntent(PermissionIntent.HealthPermissionResult(granted = false, prompted = false))
         }
     }
 

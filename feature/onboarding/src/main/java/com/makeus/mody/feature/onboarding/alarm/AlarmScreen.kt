@@ -38,6 +38,8 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
                 viewModel.onIntent(OnboardingIntent.ExerciseAllTimesSet(h, m))
             },
             minExerciseDays = OnboardingState.EXERCISE_MIN_DAYS,
+            onSameTimeClick = { viewModel.onIntent(OnboardingIntent.SameTimeClicked) },
+            onSameTimeSheetDismiss = { viewModel.onIntent(OnboardingIntent.SameTimeSheetDismissed) },
         )
     }
 }

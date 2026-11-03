@@ -50,7 +50,7 @@ const val RECORD_FRAME_RATIO = 200f / 354f
 /** 정사각(1:1). 주간 챌린지 인증 사진 격자. */
 const val SQUARE_FRAME_RATIO = 1f
 
-private const val ROTATE_FAILED_MESSAGE = "사진을 저장하지 못했어요. 다시 시도해주세요."
+private const val EXPORT_FAILED_MESSAGE = "사진을 저장하지 못했어요. 다시 시도해주세요."
 private const val GALLERY_FAILED_MESSAGE = "사진을 불러오지 못했어요. 다른 사진을 선택해주세요."
 
 /** 오버레이를 어디서 시작할지. */
@@ -64,15 +64,15 @@ enum class CameraSource {
 
 /**
  * 커스텀 촬영 오버레이(앱 공용). 풀스크린으로 띄운다.
- * (권한 → 촬영(3:4) | 갤러리 선택) → 조정(프레임 위치·90° 회전) → [onConfirm] 으로 원본 uri + 크롭 영역 전달.
+ * (권한 → 촬영(3:4) | 갤러리 선택) → 조정(프레임 위치·90° 회전) → [onConfirm] 으로 업로드본 uri + 크롭 영역 전달.
  * 촬영본과 갤러리 사진은 같은 조정 화면을 거치므로 크롭 영역은 항상 있다.
- * 회전했으면 원본은 회전이 구워진 파일이고, 크롭 영역도 그 기준이다.
+ * 업로드본은 자르지 않은 사진 전체를 줄이고 회전을 구운 파일이고, 크롭 영역도 그 기준이다.
  *
  * 갤러리 선택기는 여기 안에서 연다 — 호출부가 열면 결과가 조정 화면을 건너뛴다.
  *
  * @param frameRatio 조정 단계 크롭 프레임의 높이/너비. 쓰는 곳의 카드 비율을 넘긴다
  *   ([RECORD_FRAME_RATIO], [SQUARE_FRAME_RATIO]).
- * @param onConfirm (원본 이미지 uri, 정규화 크롭 영역).
+ * @param onConfirm (업로드본 uri, 정규화 크롭 영역).
  * @param allowGallery false 면 촬영 화면의 갤러리 버튼을 숨긴다(인증 사진처럼 그 자리에서 찍어야 할 때).
  * @param onDismiss 닫기/취소.
  * @param initialSource 시작 화면. [CameraSource.GALLERY] 는 [allowGallery] 가 true 일 때만 쓴다.
@@ -109,7 +109,7 @@ fun ModyCameraOverlay(
         )
     }
     var permissionDenied by remember { mutableStateOf(false) }
-    var captured by remember { mutableStateOf<UprightImage?>(null) }
+    var captured by remember { mutableStateOf<EditableImage?>(null) }
     // 조정 중인 사진이 갤러리에서 왔는지. "다시 찍기" 대신 "다시 선택" 으로 선택기를 연다.
     var capturedFromGallery by remember { mutableStateOf(false) }
     var confirming by remember { mutableStateOf(false) }
@@ -136,13 +136,13 @@ fun ModyCameraOverlay(
         }
         scope.launch {
             try {
-                val imported = withContext(Dispatchers.IO) { importToUpright(context, uri) }
+                val imported = withContext(Dispatchers.IO) { prepareGallery(context, uri) }
                 // 새 사진이 준비된 뒤에 바꾼다 — 실패하면 보던 사진이 그대로 남는다.
                 // 회전·프레임 위치는 AdjustLayer 가 uri 로 붙들고 있어 새 사진에서 초기화된다.
-                val discarded = captured?.path
+                val discarded = captured
                 captured = imported
                 capturedFromGallery = true
-                if (discarded != null) withContext(Dispatchers.IO) { deleteCameraFile(discarded) }
+                if (discarded != null) withContext(Dispatchers.IO) { discardEditable(discarded) }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -170,7 +170,7 @@ fun ModyCameraOverlay(
         when {
             // 갤러리 사진은 카메라 권한 없이도 조정할 수 있어야 해서 권한보다 먼저 본다.
             image != null -> AdjustLayer(
-                image = image,
+                image = image.preview,
                 frameRatio = frameRatio,
                 retakeLabel = if (capturedFromGallery) "다시 선택" else "다시 찍기",
                 confirming = confirming,
@@ -180,33 +180,26 @@ fun ModyCameraOverlay(
                         openGallery()
                     } else {
                         // 버린 촬영본은 바로 지운다. 재촬영을 반복하면 그만큼 캐시가 쌓인다.
-                        // 경로를 먼저 붙들고 상태를 비운다 — 삭제는 IO 로 넘겨 화면 전환을 막지 않는다.
-                        val discarded = image.path
+                        // 상태를 먼저 비운다 — 삭제는 IO 로 넘겨 화면 전환을 막지 않는다.
                         captured = null
-                        scope.launch { withContext(Dispatchers.IO) { deleteCameraFile(discarded) } }
+                        scope.launch { withContext(Dispatchers.IO) { discardEditable(image) } }
                     }
                 },
                 onConfirm = { quarterTurns, region ->
-                    if (quarterTurns == 0) {
-                        onConfirm(image.uri, region)
-                        return@AdjustLayer
-                    }
+                    // 회전하지 않았어도 업로드본은 여기서 만든다 — 원본에서 한 번만 인코딩한다.
                     confirming = true
                     scope.launch {
                         try {
-                            // 디코딩·회전·재인코딩은 무거워 메인에서 하면 화면이 멈춘다.
-                            val rotated = withContext(Dispatchers.IO) {
-                                rotateUpright(context, image, quarterTurns * 90)
+                            // 디코딩·축소·회전·인코딩은 무거워 메인에서 하면 화면이 멈춘다.
+                            val upload = withContext(Dispatchers.IO) {
+                                exportForUpload(context, image, quarterTurns).also { discardEditable(image) }
                             }
-                            // 회전 전 파일은 rotateUpright 가 지웠다. 상태도 새 파일로 바꿔 둬야
-                            // 이후 다시 찍기가 지워진 경로를 지우려 하지 않는다.
-                            captured = rotated
-                            onConfirm(rotated.uri, region)
+                            onConfirm(upload.uri, region)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (_: Exception) {
                             // 조용히 넘기면 업로드를 눌러도 반응이 없어 고장으로 보인다.
-                            Toast.makeText(context, ROTATE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, EXPORT_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
                         } finally {
                             confirming = false
                         }

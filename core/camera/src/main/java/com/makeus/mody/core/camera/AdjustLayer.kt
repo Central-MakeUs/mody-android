@@ -63,12 +63,13 @@ import kotlin.math.roundToInt
  *
  * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
  *
- * 회전은 화면에서는 표시만 돌리고, 파일에는 [onConfirm] 을 받은 쪽이 굽는다([rotateUpright]).
+ * 회전은 화면에서는 표시만 돌리고, 파일에는 [onConfirm] 을 받은 쪽이 굽는다([exportForUpload]).
  * 크롭 영역은 회전된 사진 기준이다.
  *
  * @param frameRatio 프레임 높이/너비.
  * @param retakeLabel 왼쪽 아래 버튼 문구. 촬영본은 "다시 찍기", 갤러리 사진은 "다시 선택".
- * @param confirming 회전본을 굽는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
+ * @param image 표시용 사본([EditableImage.preview]).
+ * @param confirming 업로드본을 만드는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
  * @param onConfirm (시계 방향 회전 횟수 0~3, 회전된 사진 기준 크롭 영역).
  */
 @Composable
@@ -229,7 +230,7 @@ internal fun AdjustLayer(
     }
 }
 
-/** 표시용 회전. 파일은 건드리지 않는다 — 확정 시 [rotateUpright] 가 굽는다. */
+/** 표시용 회전. 파일은 건드리지 않는다 — 확정 시 [exportForUpload] 가 굽는다. */
 private class RotateTransformation(private val degrees: Int) : Transformation {
     override val cacheKey: String = "rotate-$degrees"
 

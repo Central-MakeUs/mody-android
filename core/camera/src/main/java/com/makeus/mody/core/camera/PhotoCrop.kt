@@ -13,18 +13,32 @@ import java.io.FileOutputStream
 import java.io.InputStream
 
 /**
- * 업로드본 장변 상한(px).
+ * 업로드본 장변(px).
  *
- * 캡처는 센서 최고 해상도로 받지만(구도·화질), 그 크기를 그대로 비트맵으로 올리면
- * ARGB_8888 기준 12MP 가 약 48MB, 50MP 면 약 200MB 다. 회전 시에는 원본과 회전본이
- * 잠깐 함께 존재해 두 배가 된다 — 고화소 기기에서 OOM 이 난다.
- *
- * 표시 최대 폭이 3x 기기에서도 1200px 남짓이라 2048 이면 확대·재크롭 여지까지 충분하다.
+ * 캡처는 센서 최고 해상도로 받지만(구도·화질), 표시 최대 폭이 3x 기기에서도 1200px 남짓이라
+ * 그 이상은 용량만 늘린다. 2048 이면 1:1 로 잘라도 표시 폭보다 크고 확대 여지도 남는다.
  */
-private const val MAX_UPLOAD_EDGE = 2048
+private const val UPLOAD_MAX_EDGE = 2048
 
-/** 재인코딩 품질. 축소 후 저장이라 파일 크기보다 화질 보존 쪽에 둔다. */
-private const val JPEG_QUALITY = 95
+/**
+ * 업로드본 JPEG 품질.
+ *
+ * 95 → 88 로 내리면 용량이 크게 줄고, 표시 크기(1200px 남짓)로 줄여 그리면 차이가 보이지 않는다.
+ * 대신 이 값은 인코딩이 한 번뿐이라는 전제다 — 여러 번 재인코딩하면 손실이 쌓인다.
+ * iOS 는 기록 사진을 원본 그대로(회전 시 0.95) 올린다. 인코더가 달라 숫자를 1:1 로 맞출 수는 없다.
+ */
+private const val UPLOAD_JPEG_QUALITY = 88
+
+/**
+ * 조정 화면 표시용 사본의 장변 상한(px). 업로드되지 않는다.
+ *
+ * 원본을 그대로 비트맵으로 올리면 ARGB_8888 기준 12MP 가 약 48MB, 50MP 면 약 200MB 라
+ * 표시용은 따로 줄여 둔다.
+ */
+private const val PREVIEW_MAX_EDGE = 2048
+
+/** 표시용 사본 품질. 업로드와 무관해 화면에서 티 나지 않을 만큼만. */
+private const val PREVIEW_JPEG_QUALITY = 90
 
 /** 진입 시 지울 캐시 파일의 최소 나이(ms). 업로드가 아직 참조 중인 파일을 지우지 않도록 여유를 둔다. */
 private const val STALE_CACHE_AGE_MS = 10 * 60 * 1000L
@@ -39,71 +53,119 @@ private fun cameraCacheFile(context: Context, name: String): File =
 private fun fileUri(context: Context, file: File): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.camera.fileprovider", file)
 
-/** 정규화된(EXIF 회전 반영) 업라이트 이미지 정보. [uri] 는 표시·업로드용, [path] 는 회전 디코딩·정리용. */
+/** EXIF 회전을 반영해 세운 이미지 파일. [uri] 는 표시·업로드용, [path] 는 정리용. */
 internal data class UprightImage(val uri: String, val path: String, val width: Int, val height: Int)
 
 /**
- * 촬영 원본(EXIF 회전 가능)을 실제 픽셀 방향으로 세워서 다시 저장한다.
- * 이후 크롭 좌표 계산이 화면 표시와 1:1 로 맞도록 회전 애매함을 여기서 제거.
+ * 조정 화면에서 다루는 사진.
  *
- * 다 쓴 원본 파일은 지운다 — 여기서 만든 결과물만 이후 단계가 참조한다.
+ * 업로드본은 확정할 때 [source] 에서 한 번만 만든다([exportForUpload]). 미리 세워 저장한 파일에서
+ * 다시 만들면 촬영 → 정규화 → 회전마다 JPEG 를 다시 인코딩해 화질이 깎인다.
+ *
+ * @param preview 화면 표시·크롭 좌표 계산용 사본(EXIF 회전 반영). 비율만 원본과 같으면 되고
+ *   크롭 영역은 정규화 비율이라 업로드본 크기와 무관하다.
+ * @param source 원본. 촬영본은 캐시 파일, 갤러리 사진은 선택기가 준 content uri.
+ * @param ownedSourcePath 다 쓰면 지울 원본 경로. 촬영본만 있다 — 갤러리 원본은 사용자 사진이라 지우지 않는다.
  */
-internal fun normalizeToUpright(context: Context, sourcePath: String): UprightImage {
-    val image = decodeUprightAndSave(context, "capture_${sourcePath.hashCode()}") { FileInputStream(sourcePath) }
-    // 원본은 재인코딩된 결과로 대체됐다. 남겨두면 촬영할 때마다 캐시가 두 배로 쌓인다.
-    runCatching { File(sourcePath).delete() }
-    return image
+internal data class EditableImage(
+    val preview: UprightImage,
+    val source: Uri,
+    val ownedSourcePath: String?,
+)
+
+/**
+ * 촬영 원본으로 조정 화면을 준비한다. 원본은 업로드본을 만들 때까지 남겨 둔다.
+ *
+ * 표시용 사본은 실제 픽셀 방향으로 세워 둔다 — 크롭 좌표 계산이 화면 표시와 1:1 로 맞도록
+ * EXIF 회전 애매함을 여기서 없앤다.
+ */
+internal fun prepareCaptured(context: Context, rawPath: String): EditableImage =
+    EditableImage(
+        preview = decodePreview(context, "capture_${rawPath.hashCode()}") { FileInputStream(rawPath) },
+        source = Uri.fromFile(File(rawPath)),
+        ownedSourcePath = rawPath,
+    )
+
+/**
+ * 갤러리에서 고른 사진으로 조정 화면을 준비한다.
+ *
+ * 파일 이름에 시각을 넣는다 — 같은 사진을 다시 고르면 이름이 겹쳐, 이전 사본을 지울 때
+ * 새 사본까지 지워진다.
+ */
+internal fun prepareGallery(context: Context, uri: Uri): EditableImage =
+    EditableImage(
+        preview = decodePreview(context, "gallery_${uri.hashCode()}_${System.currentTimeMillis()}") {
+            context.contentResolver.openInputStream(uri) ?: error("사진을 열 수 없음")
+        },
+        source = uri,
+        ownedSourcePath = null,
+    )
+
+/** 조정 화면에서 쓰던 파일(표시용 사본, 촬영 원본) 정리. 갤러리 원본은 건드리지 않는다. */
+internal fun discardEditable(image: EditableImage) {
+    deleteCameraFile(image.preview.path)
+    image.ownedSourcePath?.let(::deleteCameraFile)
 }
 
 /**
- * 갤러리에서 고른 사진을 촬영본과 같은 형태(업라이트·장변 상한·캐시 JPEG)로 들여온다.
- *
- * 원본 content uri 를 그대로 쓰지 않는 이유: EXIF 회전이 남아 있어 크롭 좌표가 표시와
- * 어긋날 수 있고, 고화소 원본을 그대로 올리면 업로드 시 메모리에 통째로 올라간다.
- * 원본은 사용자 사진이라 지우지 않는다.
- *
- * 파일 이름에 시각을 넣는다 — 같은 사진을 다시 고르면 이름이 겹쳐, 이전 결과를 지울 때
- * 새 결과까지 지워진다.
- */
-internal fun importToUpright(context: Context, uri: Uri): UprightImage =
-    decodeUprightAndSave(context, "gallery_${uri.hashCode()}_${System.currentTimeMillis()}") {
-        context.contentResolver.openInputStream(uri) ?: error("사진을 열 수 없음")
-    }
-
-/**
- * [open] 이 주는 이미지를 EXIF 방향대로 세우고, [MAX_UPLOAD_EDGE] 로 줄여 캐시에 저장한다.
- *
- * 디코딩은 축소해서 받는다. 원본 크기로 받으면 메모리가 해상도에 그대로 비례해 터진다.
- * 스트림은 한 번 읽으면 끝이라 EXIF·크기·픽셀을 읽을 때마다 새로 연다.
- */
-private fun decodeUprightAndSave(context: Context, key: String, open: () -> InputStream): UprightImage {
-    val rotation = readRotationDegrees(open)
-    val src = decodeDownsampled(open) ?: error("이미지 디코딩 실패")
-    val upright = if (rotation == 0f) {
-        src
-    } else {
-        Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(rotation) }, true)
-            .also { if (it != src) src.recycle() }
-    }
-    return saveJpeg(context, upright, "${key}_${upright.width}x${upright.height}.jpg")
-}
-
-/**
- * 조정 화면에서 돌린 방향을 파일에 굽는다.
+ * 원본에서 업로드본을 만든다. 축소·EXIF 회전·조정 화면 회전을 한 번에 적용하고 한 번만 인코딩한다.
  *
  * 서버 계약이 "원본 + 정규화 크롭 영역"뿐이라 회전을 따로 실어 보낼 곳이 없다. 그래서
  * 회전된 이미지를 원본으로 올리고, 크롭 영역도 회전된 이미지 기준으로 계산한다(iOS 도 같다).
- * 회전 전 파일은 이 결과로 대체되므로 지운다.
  *
- * @param degrees 시계 방향 90 의 배수.
+ * 메모리: 1단계 디코딩 결과는 장변 4096 미만(약 50MB 이하)이다. API 26+ 는 비트맵 픽셀이
+ * 네이티브 힙에 있어 Java 힙 한도에 걸리지 않는다.
+ *
+ * @param quarterTurns 조정 화면에서 돌린 시계 방향 90° 횟수(0~3).
  */
-internal fun rotateUpright(context: Context, image: UprightImage, degrees: Int): UprightImage {
-    val src = BitmapFactory.decodeFile(image.path) ?: error("이미지 디코딩 실패")
-    val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)
-    if (rotated != src) src.recycle()
-    val result = saveJpeg(context, rotated, "capture_${rotated.width}x${rotated.height}_r${degrees}_${image.path.hashCode()}.jpg")
-    runCatching { File(image.path).delete() }
-    return result
+internal fun exportForUpload(context: Context, image: EditableImage, quarterTurns: Int): UprightImage {
+    val open = { context.contentResolver.openInputStream(image.source) ?: error("사진을 열 수 없음") }
+    val degrees = (readRotationDegrees(open) + quarterTurns * 90) % 360
+
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    open().use { BitmapFactory.decodeStream(it, null, bounds) }
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) error("이미지 디코딩 실패")
+    val sample = decodeSampleSize(maxOf(bounds.outWidth, bounds.outHeight), UPLOAD_MAX_EDGE)
+    val src = open().use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
+        ?: error("이미지 디코딩 실패")
+
+    // 샘플링 결과는 목표 이상이다. 남은 만큼을 보간(filter)으로 줄이면서 회전도 같은 패스에 한다.
+    val scale = downscaleFactor(maxOf(src.width, src.height), UPLOAD_MAX_EDGE)
+    val result = if (scale == 1f && degrees == 0) {
+        src
+    } else {
+        val matrix = Matrix().apply {
+            postScale(scale, scale)
+            postRotate(degrees.toFloat())
+        }
+        Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+            .also { if (it != src) src.recycle() }
+    }
+    return saveJpeg(
+        context,
+        result,
+        "upload_${System.currentTimeMillis()}_${result.width}x${result.height}.jpg",
+        UPLOAD_JPEG_QUALITY,
+    )
+}
+
+/**
+ * [open] 이 주는 이미지를 EXIF 방향대로 세우고 [PREVIEW_MAX_EDGE] 이하로 줄여 캐시에 저장한다.
+ *
+ * 디코딩은 축소해서 받는다. 원본 크기로 받으면 메모리가 해상도에 그대로 비례해 터진다.
+ * 표시용이라 2의 거듭제곱 샘플링만 한다(목표보다 작아질 수 있지만 화면 폭보다는 크다).
+ * 스트림은 한 번 읽으면 끝이라 EXIF·크기·픽셀을 읽을 때마다 새로 연다.
+ */
+private fun decodePreview(context: Context, key: String, open: () -> InputStream): UprightImage {
+    val rotation = readRotationDegrees(open)
+    val src = decodeDownsampled(open) ?: error("이미지 디코딩 실패")
+    val upright = if (rotation == 0) {
+        src
+    } else {
+        Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
+            .also { if (it != src) src.recycle() }
+    }
+    return saveJpeg(context, upright, "${key}_${upright.width}x${upright.height}.jpg", PREVIEW_JPEG_QUALITY)
 }
 
 /**
@@ -112,10 +174,10 @@ internal fun rotateUpright(context: Context, image: UprightImage, degrees: Int):
  * 인코딩 실패(저장공간 부족 등)면 결과 파일은 깨진 파일이다. 이때 입력 파일까지 지우면
  * 둘 다 잃으므로, 호출부는 이 함수가 성공한 뒤에만 입력을 지운다.
  */
-private fun saveJpeg(context: Context, bitmap: Bitmap, name: String): UprightImage {
+private fun saveJpeg(context: Context, bitmap: Bitmap, name: String, quality: Int): UprightImage {
     val out = cameraCacheFile(context, name)
     val encoded = runCatching {
-        FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+        FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, quality, it) }
     }.getOrDefault(false)
     val w = bitmap.width
     val h = bitmap.height
@@ -133,7 +195,7 @@ private fun saveJpeg(context: Context, bitmap: Bitmap, name: String): UprightIma
 }
 
 /** EXIF 회전값(도). 지원하지 않는 값(플립 계열 포함)은 0 으로 둬 기존 동작을 유지한다. */
-private fun readRotationDegrees(open: () -> InputStream): Float = when (
+private fun readRotationDegrees(open: () -> InputStream): Int = when (
     runCatching {
         open().use { ExifInterface(it) }.getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
@@ -141,18 +203,17 @@ private fun readRotationDegrees(open: () -> InputStream): Float = when (
         )
     }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
 ) {
-    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-    else -> 0f
+    ExifInterface.ORIENTATION_ROTATE_90 -> 90
+    ExifInterface.ORIENTATION_ROTATE_180 -> 180
+    ExifInterface.ORIENTATION_ROTATE_270 -> 270
+    else -> 0
 }
 
 /**
- * 장변이 [MAX_UPLOAD_EDGE] 이하가 되도록 축소해 디코딩한다.
+ * 장변이 [PREVIEW_MAX_EDGE] 이하가 되도록 축소해 디코딩한다.
  *
  * 먼저 [BitmapFactory.Options.inJustDecodeBounds] 로 크기만 읽어(픽셀 할당 없음)
- * 샘플링 배율을 정한다. inSampleSize 는 2의 거듭제곱만 적용돼 결과가 상한보다 클 수
- * 있지만, 최소 절반씩 줄어 메모리 상한을 잡는 목적에는 충분하다.
+ * 샘플링 배율을 정한다.
  */
 private fun decodeDownsampled(open: () -> InputStream): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -161,7 +222,7 @@ private fun decodeDownsampled(open: () -> InputStream): Bitmap? {
 
     val longest = maxOf(bounds.outWidth, bounds.outHeight)
     var sample = 1
-    while (longest / sample > MAX_UPLOAD_EDGE) sample *= 2
+    while (longest / sample > PREVIEW_MAX_EDGE) sample *= 2
 
     return open().use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
 }

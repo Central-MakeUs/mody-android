@@ -3,7 +3,9 @@ package com.makeus.mody.core.domain.feature
 /**
  * 응원 댓글 기능 노출 여부.
  *
- * 댓글에는 신고 경로가 없어 스토어 심사에서 리젝될 소지가 있어 닫아둔다.
+ * 1.1.2 까지는 댓글에 신고 경로가 없어 스토어 심사 리젝 소지로 닫아뒀다가 다음 버전부터 연다.
+ * 댓글 신고·삭제는 아직 없다(서버 API 도 없음) — 심사에서 UGC 신고 경로를 지적받으면 다시
+ * false 로 내려 배포한다.
  *
  * ## 왜 Remote Config 가 아닌가
  *
@@ -25,5 +27,5 @@ package com.makeus.mody.core.domain.feature
  * 빠뜨려서, 들어갈 수 없는데 알림만 오거나 진입은 되는데 빈 화면이 뜬다.
  */
 object CommentFeature {
-    const val ENABLED = false
+    const val ENABLED = true
 }

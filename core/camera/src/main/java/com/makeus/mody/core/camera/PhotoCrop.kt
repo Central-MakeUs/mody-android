@@ -181,12 +181,20 @@ private fun decodePreview(context: Context, key: String, open: () -> InputStream
  */
 private fun saveJpeg(context: Context, bitmap: Bitmap, name: String, quality: Int): UprightImage {
     val out = cameraCacheFile(context, name)
-    val encoded = runCatching {
-        FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, quality, it) }
-    }.getOrDefault(false)
     val w = bitmap.width
     val h = bitmap.height
-    bitmap.recycle()
+    // OutOfMemoryError 는 삼키지 않는다 — exportForUpload 가 받아 작게 줄여 다시 시도해야 한다.
+    // 그래도 비트맵과 쓰다 만 파일은 정리해야 재시도할 메모리·공간이 생긴다.
+    val encoded = try {
+        FileOutputStream(out).use { bitmap.compress(Bitmap.CompressFormat.JPEG, quality, it) }
+    } catch (e: OutOfMemoryError) {
+        runCatching { out.delete() }
+        throw e
+    } catch (_: Exception) {
+        false
+    } finally {
+        bitmap.recycle()
+    }
     if (!encoded) {
         runCatching { out.delete() }
         error("이미지 인코딩 실패")

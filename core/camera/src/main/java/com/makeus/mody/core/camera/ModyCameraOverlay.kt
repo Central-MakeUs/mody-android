@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,6 +114,9 @@ fun ModyCameraOverlay(
     // 조정 중인 사진이 갤러리에서 왔는지. "다시 찍기" 대신 "다시 선택" 으로 선택기를 연다.
     var capturedFromGallery by remember { mutableStateOf(false) }
     var confirming by remember { mutableStateOf(false) }
+    // 마지막으로 고른 갤러리 사진의 순번. 준비 중에 "다시 선택"으로 또 고르면 준비가 겹쳐,
+    // 먼저 고른 쪽이 늦게 끝나며 새 사진을 덮을 수 있다 — 끝났을 때 이 순번이 아니면 버린다.
+    var latestGallerySelection by remember { mutableIntStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -134,9 +138,14 @@ fun ModyCameraOverlay(
             dismissIfNothingToShow()
             return@rememberLauncherForActivityResult
         }
+        val selection = ++latestGallerySelection
         scope.launch {
             try {
                 val imported = withContext(Dispatchers.IO) { prepareGallery(context, uri) }
+                if (selection != latestGallerySelection) {
+                    withContext(Dispatchers.IO) { discardEditable(imported) }
+                    return@launch
+                }
                 // 새 사진이 준비된 뒤에 바꾼다 — 실패하면 보던 사진이 그대로 남는다.
                 // 회전·확대·위치는 AdjustLayer 가 uri 로 붙들고 있어 새 사진에서 초기화된다.
                 val discarded = captured
@@ -146,6 +155,8 @@ fun ModyCameraOverlay(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+                // 이미 새로 고른 사진이 있으면 이 실패는 사용자와 무관하다.
+                if (selection != latestGallerySelection) return@launch
                 Toast.makeText(context, GALLERY_FAILED_MESSAGE, Toast.LENGTH_SHORT).show()
                 dismissIfNothingToShow()
             }

@@ -114,6 +114,10 @@ internal fun AdjustLayer(
 
         // 회전하면 사진 크기가 바뀌어 이전 확대·위치가 의미 없다 → 처음 크기·가운데로 되돌린다(iOS 와 같다).
         var transform by remember(image.uri, quarterTurns) { mutableStateOf(PhotoTransform()) }
+        // 편집 영역 크기가 바뀌면(분할 화면 크기 조절 등) 저장된 값이 새 배치에선 범위 밖일 수 있다.
+        // 그리기·확정·제스처 모두 지금 배치로 다시 묶은 값을 쓴다 — 가이드에 빈 곳이 보이거나
+        // 보이는 것과 다른 영역이 업로드되지 않게.
+        val clamped = layout.clamp(transform)
 
         val context = LocalContext.current
         val request = remember(image.uri, quarterTurns) {
@@ -134,7 +138,9 @@ internal fun AdjustLayer(
                 .pointerInput(layout) {
                     // 한 손가락 이동도 여기로 온다(zoom = 1).
                     detectTransformGestures { centroid, pan, zoom, _ ->
-                        transform = layout.transformBy(transform, centroid.x, centroid.y, pan.x, pan.y, zoom)
+                        transform = layout.transformBy(
+                            layout.clamp(transform), centroid.x, centroid.y, pan.x, pan.y, zoom,
+                        )
                     }
                 },
         ) {
@@ -152,10 +158,10 @@ internal fun AdjustLayer(
                         height = with(density) { layout.displayedHeight.toDp() },
                     )
                     .graphicsLayer {
-                        scaleX = transform.scale
-                        scaleY = transform.scale
-                        translationX = transform.offsetX
-                        translationY = transform.offsetY
+                        scaleX = clamped.scale
+                        scaleY = clamped.scale
+                        translationX = clamped.offsetX
+                        translationY = clamped.offsetY
                     },
             )
 
@@ -233,7 +239,7 @@ internal fun AdjustLayer(
             RetakeButton(label = retakeLabel, enabled = !confirming, onClick = onRetake)
             UploadButton(
                 enabled = !confirming,
-                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(transform)) },
+                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(clamped)) },
             )
         }
     }

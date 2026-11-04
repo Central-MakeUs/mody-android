@@ -51,7 +51,7 @@ private const val CAPTURE_FAILED_MESSAGE = "사진을 찍지 못했어요. 다�
  */
 @Composable
 internal fun CaptureLayer(
-    onCaptured: (UprightImage) -> Unit,
+    onCaptured: (EditableImage) -> Unit,
     onPickGallery: (() -> Unit)?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -128,19 +128,19 @@ internal fun CaptureLayer(
                     val capture = imageCapture ?: return@ShutterButton
                     isCapturing = true
                     scope.launch {
-                        // 실패 시 지울 수 있도록 try 밖에서 붙든다. 성공하면 normalizeToUpright 가
-                        // 원본을 대체하며 지우므로 여기서는 비운다.
+                        // 실패 시 지울 수 있도록 try 밖에서 붙든다. 성공하면 원본은 조정 화면이
+                        // 넘겨받아(업로드본을 만들 때 쓴다) 거기서 지우므로 여기서는 비운다.
                         var rawPath: String? = null
                         try {
                             val file = createRawFile(context)
                             rawPath = file.absolutePath
                             val path = capture.capture(context, file)
-                            // 디코딩·회전·재인코딩은 무거워 메인 스레드에서 하면 셔터가 멈춘다.
-                            val upright = withContext(Dispatchers.IO) {
-                                normalizeToUpright(context, path)
+                            // 표시용 사본 디코딩·인코딩은 무거워 메인 스레드에서 하면 셔터가 멈춘다.
+                            val editable = withContext(Dispatchers.IO) {
+                                prepareCaptured(context, path)
                             }
                             rawPath = null
-                            onCaptured(upright)
+                            onCaptured(editable)
                         } catch (e: CancellationException) {
                             // 화면을 벗어나 스코프가 취소된 경우. 삼키면 아래 안내가 잘못 뜬다.
                             // 남은 파일은 다음 진입의 오래된 캐시 정리가 걷어간다.

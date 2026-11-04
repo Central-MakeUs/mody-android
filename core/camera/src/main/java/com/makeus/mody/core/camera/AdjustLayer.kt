@@ -5,7 +5,7 @@ import android.graphics.Matrix
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,13 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -55,20 +56,24 @@ import com.makeus.mody.core.model.CropRegion
 import kotlin.math.roundToInt
 
 /**
- * 조정 단계(촬영본·갤러리 사진 공용): 사진 위의 크롭 프레임을 드래그해 영역을 맞추고, 사진을 90° 씩 돌린다.
+ * 조정 단계(촬영본·갤러리 사진 공용): 고정된 크롭 가이드 뒤에서 사진을 확대·이동해 영역을 맞추고,
+ * 사진을 90° 씩 돌린다(CAM-03).
  *
- * 편집 영역은 촬영 프리뷰와 같은 3:4 박스(화면 폭 기준, 세로 중앙)다. 사진은 그 안에 잘리지 않고
- * 통째로 들어가게 맞추고(남는 곳은 여백), 프레임은 사진 안에서 상하좌우로 움직인다. 프레임 밖은 어둡게.
- * 배치 규칙은 [cropLayout] 참고.
+ * 편집 영역은 촬영 프리뷰와 같은 3:4 박스(화면 폭 기준, 세로 중앙)다. 사진은 처음에 그 안에 잘리지
+ * 않고 통째로 들어가게 맞추고(남는 곳은 여백), 가이드는 가운데에 고정된다. 두 손가락으로 확대(최대
+ * [MAX_ZOOM] 배), 한 손가락으로 이동한다. 가이드 안에 빈 곳이 보이도록 줄이거나 밀 수는 없다.
+ * 가이드 밖은 어둡게. 배치 규칙은 [cropLayout] 참고.
  *
- * 원본은 그대로 업로드하고, 프레임 위치를 원본 대비 정규화 크롭 영역(CropRegion)으로 계산해 넘긴다.
+ * 원본은 자르지 않고 업로드하고, 가이드에 들어온 영역을 원본 대비 정규화 크롭 영역(CropRegion)으로
+ * 계산해 넘긴다.
  *
- * 회전은 화면에서는 표시만 돌리고, 파일에는 [onConfirm] 을 받은 쪽이 굽는다([rotateUpright]).
+ * 회전은 화면에서는 표시만 돌리고, 파일에는 [onConfirm] 을 받은 쪽이 굽는다([exportForUpload]).
  * 크롭 영역은 회전된 사진 기준이다.
  *
  * @param frameRatio 프레임 높이/너비.
  * @param retakeLabel 왼쪽 아래 버튼 문구. 촬영본은 "다시 찍기", 갤러리 사진은 "다시 선택".
- * @param confirming 회전본을 굽는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
+ * @param image 표시용 사본([EditableImage.preview]).
+ * @param confirming 업로드본을 만드는 중. 버튼을 막아 두 번 업로드되지 않게 한다.
  * @param onConfirm (시계 방향 회전 횟수 0~3, 회전된 사진 기준 크롭 영역).
  */
 @Composable
@@ -82,7 +87,7 @@ internal fun AdjustLayer(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 다른 사진이 들어오면 회전·프레임 위치를 처음부터 시작한다.
+    // 다른 사진이 들어오면 회전·확대·위치를 처음부터 시작한다.
     var quarterTurns by remember(image.uri) { mutableIntStateOf(0) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(Color.Black)) {
@@ -107,11 +112,12 @@ internal fun AdjustLayer(
             )
         }
 
-        // 회전하면 사진 크기가 바뀌어 이전 위치가 의미 없다 → 가운데로 되돌린다(iOS 와 같다).
-        var offsetX by remember(image.uri, quarterTurns) { mutableFloatStateOf(0f) }
-        var offsetY by remember(image.uri, quarterTurns) { mutableFloatStateOf(0f) }
-        val frameLeft = layout.baseFrameLeft + offsetX
-        val frameTop = layout.baseFrameTop + offsetY
+        // 회전하면 사진 크기가 바뀌어 이전 확대·위치가 의미 없다 → 처음 크기·가운데로 되돌린다(iOS 와 같다).
+        var transform by remember(image.uri, quarterTurns) { mutableStateOf(PhotoTransform()) }
+        // 편집 영역 크기가 바뀌면(분할 화면 크기 조절 등) 저장된 값이 새 배치에선 범위 밖일 수 있다.
+        // 그리기·확정·제스처 모두 지금 배치로 다시 묶은 값을 쓴다 — 가이드에 빈 곳이 보이거나
+        // 보이는 것과 다른 영역이 업로드되지 않게.
+        val clamped = layout.clamp(transform)
 
         val context = LocalContext.current
         val request = remember(image.uri, quarterTurns) {
@@ -127,16 +133,20 @@ internal fun AdjustLayer(
                 .align(Alignment.Center)
                 .fillMaxWidth()
                 .height(with(density) { viewportH.toDp() })
+                // 확대한 사진이 편집 영역 밖(버튼 자리)까지 번지지 않게.
+                .clipToBounds()
                 .pointerInput(layout) {
-                    detectDragGestures { _, drag ->
-                        val (x, y) = layout.clampOffset(offsetX + drag.x, offsetY + drag.y)
-                        offsetX = x
-                        offsetY = y
+                    // 한 손가락 이동도 여기로 온다(zoom = 1).
+                    detectTransformGestures { centroid, pan, zoom, _ ->
+                        transform = layout.transformBy(
+                            layout.clamp(transform), centroid.x, centroid.y, pan.x, pan.y, zoom,
+                        )
                     }
                 },
         ) {
-            // 사진 전체를 비율 그대로(aspect-fit). 크기를 cropLayout 이 계산한 표시 크기로 고정해
-            // 그린 위치와 크롭 계산이 어긋나지 않게 한다.
+            // 배율 1 은 사진 전체를 비율 그대로(aspect-fit). 크기를 cropLayout 이 계산한 표시 크기로
+            // 고정하고 확대·이동은 graphicsLayer 로만 한다 — 그린 위치와 크롭 계산이 어긋나지 않게.
+            // graphicsLayer 의 기준점은 사진 가운데라 PhotoTransform 의 정의와 같다.
             AsyncImage(
                 model = request,
                 contentDescription = "촬영 사진",
@@ -146,14 +156,20 @@ internal fun AdjustLayer(
                     .size(
                         width = with(density) { layout.displayedWidth.toDp() },
                         height = with(density) { layout.displayedHeight.toDp() },
-                    ),
+                    )
+                    .graphicsLayer {
+                        scaleX = clamped.scale
+                        scaleY = clamped.scale
+                        translationX = clamped.offsetX
+                        translationY = clamped.offsetY
+                    },
             )
 
-            // 프레임 밖 딤 + 점선 프레임(옐로).
+            // 가이드 밖 딤 + 점선 가이드(옐로). 가이드는 움직이지 않는다.
             val dashColor = ModyTheme.colors.primary100
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val frame = Rect(
-                    offset = Offset(frameLeft, frameTop),
+                    offset = Offset(layout.guideLeft, layout.guideTop),
                     size = Size(layout.frameWidth, layout.frameHeight),
                 )
                 val dim = Path().apply {
@@ -223,13 +239,13 @@ internal fun AdjustLayer(
             RetakeButton(label = retakeLabel, enabled = !confirming, onClick = onRetake)
             UploadButton(
                 enabled = !confirming,
-                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(frameLeft, frameTop)) },
+                onClick = { onConfirm(quarterTurns, layout.cropRegionAt(clamped)) },
             )
         }
     }
 }
 
-/** 표시용 회전. 파일은 건드리지 않는다 — 확정 시 [rotateUpright] 가 굽는다. */
+/** 표시용 회전. 파일은 건드리지 않는다 — 확정 시 [exportForUpload] 가 굽는다. */
 private class RotateTransformation(private val degrees: Int) : Transformation {
     override val cacheKey: String = "rotate-$degrees"
 

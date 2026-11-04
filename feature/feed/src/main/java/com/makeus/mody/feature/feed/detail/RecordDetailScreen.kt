@@ -51,6 +51,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyDialog
+import com.makeus.mody.core.designsystem.component.ModyErrorDialog
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyPageIndicator
 import com.makeus.mody.core.designsystem.icon.ModyIcons
@@ -60,6 +63,7 @@ import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.component.FeedCard
+import com.makeus.mody.feature.feed.feed.component.FeedCardMenu
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 
 @Composable
@@ -73,7 +77,8 @@ private fun RecordDetailContent(
     state: RecordDetailState,
     onIntent: (RecordDetailIntent) -> Unit,
 ) {
-    val author = state.records.getOrNull(state.currentIndex)
+    val author = state.currentRecord
+    val isMine = state.isCurrentMine
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -85,6 +90,17 @@ private fun RecordDetailContent(
             onBackClick = { onIntent(RecordDetailIntent.BackClicked) },
             showAvatar = true,
             avatarUrl = author?.avatarUrl,
+            // 남의 글이면 신고, 내 글이면 삭제. 판별 전(null)엔 메뉴를 숨긴다(피드 카드와 같은 정책).
+            trailingContent = if (isMine == null) {
+                null
+            } else {
+                {
+                    FeedCardMenu(
+                        onReportClick = { onIntent(RecordDetailIntent.ReportClicked) }.takeIf { !isMine },
+                        onDeleteClick = { onIntent(RecordDetailIntent.DeleteClicked) }.takeIf { isMine },
+                    )
+                }
+            },
         )
 
         when {
@@ -107,6 +123,60 @@ private fun RecordDetailContent(
             )
         }
     }
+
+    if (state.isReporting || state.isDeleting) ModyLoadingOverlay()
+    RecordActionDialogs(state = state, onIntent = onIntent)
+}
+
+/** 신고·삭제 확인/완료/실패 다이얼로그. 문구는 피드 카드 메뉴와 같다. */
+@Composable
+private fun RecordActionDialogs(
+    state: RecordDetailState,
+    onIntent: (RecordDetailIntent) -> Unit,
+) {
+    if (state.reportTargetRecordId != null) {
+        ModyDialog(
+            title = "게시물을 신고하시겠어요?",
+            message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
+            confirmText = "신고하기",
+            dismissText = "취소",
+            confirmEnabled = !state.isReporting,
+            onConfirm = { onIntent(RecordDetailIntent.ReportConfirmed) },
+            onDismissRequest = { onIntent(RecordDetailIntent.ReportDialogDismissed) },
+        )
+    }
+
+    if (state.showReportComplete) {
+        ModyDialog(
+            title = "신고가 완료되었어요",
+            message = "검토 및 처리는 최대 7일까지 걸릴 수 있어요.",
+            confirmText = "확인",
+            onConfirm = { onIntent(RecordDetailIntent.ReportCompleteConfirmed) },
+            onDismissRequest = { onIntent(RecordDetailIntent.ReportCompleteConfirmed) },
+        )
+    }
+
+    if (state.deleteTargetRecordId != null) {
+        ModyDialog(
+            title = "게시물을 삭제하시겠어요?",
+            message = "삭제한 게시물은 되돌릴 수 없어요.",
+            confirmText = "삭제하기",
+            dismissText = "취소",
+            confirmEnabled = !state.isDeleting,
+            onConfirm = { onIntent(RecordDetailIntent.DeleteConfirmed) },
+            onDismissRequest = { onIntent(RecordDetailIntent.DeleteDialogDismissed) },
+        )
+    }
+
+    ModyErrorDialog(
+        message = state.reportError,
+        onDismiss = { onIntent(RecordDetailIntent.ReportErrorShown) },
+    )
+
+    ModyErrorDialog(
+        message = state.deleteError,
+        onDismiss = { onIntent(RecordDetailIntent.DeleteErrorShown) },
+    )
 }
 
 @Composable

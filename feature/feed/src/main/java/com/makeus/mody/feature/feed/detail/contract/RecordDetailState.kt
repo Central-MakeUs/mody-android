@@ -25,7 +25,31 @@ data class RecordDetailState(
     val isSending: Boolean = false,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
+    // 내 memberId(/mypage/me). 로딩 전(null)에는 더보기 메뉴 자체를 숨긴다 — 판별이 뒤집히면
+    // 내 글에 "신고"가, 남의 글에 "삭제"가 잠깐 떴다 바뀐다(피드와 같은 정책).
+    val myMemberId: Long? = null,
+    // 신고 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 접수 중 → 완료/실패 다이얼로그
+    val reportTargetRecordId: Long? = null,
+    val isReporting: Boolean = false,
+    val showReportComplete: Boolean = false,
+    val reportError: String? = null,
+    // 삭제 플로우: 확인 다이얼로그 대상 기록(null 이면 닫힘) → 삭제 중 → 실패 다이얼로그.
+    // 완료 다이얼로그는 없다 — 슬라이드에서 사라지는(마지막이면 화면이 닫히는) 것이 곧 결과다.
+    val deleteTargetRecordId: Long? = null,
+    val isDeleting: Boolean = false,
+    val deleteError: String? = null,
 ) : UiState {
     /** 전송 가능: 공백 아님 + 전송 중 아님. */
     val canSend: Boolean get() = commentInput.isNotBlank() && !isSending
+
+    /** 지금 보고 있는 기록. 탑바 작성자·더보기 메뉴의 대상. */
+    val currentRecord: FeedCardUi? get() = records.getOrNull(currentIndex)
+
+    /** 지금 기록이 내 글인지. [myMemberId] 로딩 전이면 null(메뉴 숨김). */
+    val isCurrentMine: Boolean?
+        get() {
+            val me = myMemberId ?: return null
+            val record = currentRecord ?: return null
+            return record.memberId == me
+        }
 }

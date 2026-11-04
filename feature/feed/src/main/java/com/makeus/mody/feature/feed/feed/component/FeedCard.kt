@@ -104,9 +104,9 @@ private fun FeedCardHeader(
     }
 }
 
-/** 미트볼(⋯) 버튼 + 드롭다운. 넘어온 동작만 항목으로 낸다. */
+/** 미트볼(⋯) 버튼 + 드롭다운. 넘어온 동작만 항목으로 낸다. 기록 상세 탑바도 같이 쓴다. */
 @Composable
-private fun FeedCardMenu(
+internal fun FeedCardMenu(
     onReportClick: (() -> Unit)?,
     onDeleteClick: (() -> Unit)?,
 ) {

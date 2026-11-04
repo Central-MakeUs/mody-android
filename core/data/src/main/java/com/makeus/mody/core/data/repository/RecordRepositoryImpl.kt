@@ -2,10 +2,8 @@ package com.makeus.mody.core.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.makeus.mody.core.data.upload.uriUploadBody
 import com.makeus.mody.core.model.CropRegion
-import com.makeus.mody.core.model.error.HttpResponseException
-import com.makeus.mody.core.model.error.HttpResponseStatus
-import com.makeus.mody.core.model.error.ModyErrorCode
 import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.network.api.RecordApi
 import com.makeus.mody.core.network.model.record.ImageCropRegionDto
@@ -13,8 +11,6 @@ import com.makeus.mody.core.network.model.record.RecordCreateRequest
 import com.makeus.mody.core.network.model.unwrapResult
 import com.makeus.mody.core.network.upload.PresignedUploader
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -35,7 +31,8 @@ class RecordRepositoryImpl @Inject constructor(
     ): Long {
         val uri = Uri.parse(imageUri)
         val contentType = context.contentResolver.getType(uri) ?: DEFAULT_MIME
-        val bytes = readBytes(uri)
+        // 파일을 못 열면 presigned 발급 전에 실패한다. 업로드는 스트리밍(이유는 uriUploadBody).
+        val body = uriUploadBody(context, uri, contentType)
 
         // 1) presigned URL 발급 (imageKey 확장자는 fileName 확장자로 결정)
         val presigned = recordApi.createPresignedUrl(
@@ -44,7 +41,7 @@ class RecordRepositoryImpl @Inject constructor(
         ).unwrapResult()
 
         // 2) S3 직접 업로드
-        presignedUploader.upload(presigned.presignedUrl, bytes, contentType)
+        presignedUploader.upload(presigned.presignedUrl, body)
 
         // 3) 기록 생성
         return recordApi.createRecord(
@@ -67,7 +64,8 @@ class RecordRepositoryImpl @Inject constructor(
     ): Long {
         val uri = Uri.parse(imageUri)
         val contentType = context.contentResolver.getType(uri) ?: DEFAULT_MIME
-        val bytes = readBytes(uri)
+        // 파일을 못 열면 presigned 발급 전에 실패한다. 업로드는 스트리밍(이유는 uriUploadBody).
+        val body = uriUploadBody(context, uri, contentType)
 
         // 1) presigned URL 발급
         val presigned = recordApi.createPresignedUrl(
@@ -76,7 +74,7 @@ class RecordRepositoryImpl @Inject constructor(
         ).unwrapResult()
 
         // 2) S3 직접 업로드
-        presignedUploader.upload(presigned.presignedUrl, bytes, contentType)
+        presignedUploader.upload(presigned.presignedUrl, body)
 
         // 3) 기록 생성
         return recordApi.createRecord(
@@ -94,15 +92,6 @@ class RecordRepositoryImpl @Inject constructor(
     // 실패를 삼키지 않는다 — 지워진 줄 알고 화면을 닫으면 다음 진입에 되살아난 것처럼 보인다.
     override suspend fun deleteRecord(recordId: Long) {
         recordApi.deleteRecord(recordId).unwrapResult()
-    }
-
-    private suspend fun readBytes(uri: Uri): ByteArray = withContext(Dispatchers.IO) {
-        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: throw HttpResponseException(
-                status = HttpResponseStatus.BadRequest,
-                errorCode = ModyErrorCode.INVALID_PARAMETER,
-                msg = "사진을 불러오지 못했어요. 다시 선택해주세요.",
-            )
     }
 
     private fun CropRegion.toDto(): ImageCropRegionDto =

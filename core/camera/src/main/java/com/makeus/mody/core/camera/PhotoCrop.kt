@@ -13,14 +13,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 
 /**
- * 업로드본 장변(px).
- *
- * 캡처는 센서 최고 해상도로 받지만(구도·화질), 표시 최대 폭이 3x 기기에서도 1200px 남짓이라
- * 그 이상은 용량만 늘린다. 2048 이면 1:1 로 잘라도 표시 폭보다 크고 확대 여지도 남는다.
- */
-private const val UPLOAD_MAX_EDGE = 2048
-
-/**
  * 업로드본 JPEG 품질.
  *
  * 95 → 88 로 내리면 용량이 크게 줄고, 표시 크기(1200px 남짓)로 줄여 그리면 차이가 보이지 않는다.
@@ -28,6 +20,12 @@ private const val UPLOAD_MAX_EDGE = 2048
  * iOS 는 기록 사진을 원본 그대로(회전 시 0.95) 올린다. 인코더가 달라 숫자를 1:1 로 맞출 수는 없다.
  */
 private const val UPLOAD_JPEG_QUALITY = 88
+
+/**
+ * 업로드본을 원본 해상도로 만들다 메모리가 모자랄 때 물러설 최대 샘플링 배율.
+ * 1/2, 1/4 순서로 줄여 다시 시도하고, 여기서도 안 되면 실패로 넘긴다.
+ */
+private const val UPLOAD_MAX_FALLBACK_SAMPLE = 4
 
 /**
  * 조정 화면 표시용 사본의 장변 상한(px). 업로드되지 않는다.
@@ -108,38 +106,45 @@ internal fun discardEditable(image: EditableImage) {
 }
 
 /**
- * 원본에서 업로드본을 만든다. 축소·EXIF 회전·조정 화면 회전을 한 번에 적용하고 한 번만 인코딩한다.
+ * 원본에서 업로드본을 만든다. 원본 해상도 그대로, EXIF 회전·조정 화면 회전을 한 번에 적용하고
+ * 한 번만 인코딩한다. 확대해서 좁게 잘라도 화질이 남도록 줄이지 않는다(iOS 도 원본을 올린다).
  *
  * 서버 계약이 "원본 + 정규화 크롭 영역"뿐이라 회전을 따로 실어 보낼 곳이 없다. 그래서
  * 회전된 이미지를 원본으로 올리고, 크롭 영역도 회전된 이미지 기준으로 계산한다(iOS 도 같다).
  *
- * 메모리: 1단계 디코딩 결과는 장변 4096 미만(약 50MB 이하)이다. API 26+ 는 비트맵 픽셀이
- * 네이티브 힙에 있어 Java 힙 한도에 걸리지 않는다.
+ * 메모리: 원본과 회전본이 잠깐 함께 있다(12MP 면 약 96MB, 50MP 면 약 400MB). API 26+ 는 비트맵
+ * 픽셀이 네이티브 힙이라 Java 힙 한도엔 안 걸리지만 기기 메모리가 모자랄 수 있어, 할당에
+ * 실패하면 1/2, 1/4 로 줄여 다시 시도한다.
  *
  * @param quarterTurns 조정 화면에서 돌린 시계 방향 90° 횟수(0~3).
  */
 internal fun exportForUpload(context: Context, image: EditableImage, quarterTurns: Int): UprightImage {
     val open = { context.contentResolver.openInputStream(image.source) ?: error("사진을 열 수 없음") }
     val degrees = (readRotationDegrees(open) + quarterTurns * 90) % 360
+    var sample = 1
+    while (true) {
+        try {
+            return encodeUpload(context, open, degrees, sample)
+        } catch (_: OutOfMemoryError) {
+            // Error 는 호출부의 catch(Exception) 에 안 걸려 앱이 죽는다 — 마지막엔 예외로 바꿔 넘긴다.
+            if (sample >= UPLOAD_MAX_FALLBACK_SAMPLE) error("메모리 부족으로 사진을 저장하지 못함")
+            sample *= 2
+        }
+    }
+}
 
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    open().use { BitmapFactory.decodeStream(it, null, bounds) }
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) error("이미지 디코딩 실패")
-    val sample = decodeSampleSize(maxOf(bounds.outWidth, bounds.outHeight), UPLOAD_MAX_EDGE)
+private fun encodeUpload(context: Context, open: () -> InputStream, degrees: Int, sample: Int): UprightImage {
     val src = open().use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
         ?: error("이미지 디코딩 실패")
-
-    // 샘플링 결과는 목표 이상이다. 남은 만큼을 보간(filter)으로 줄이면서 회전도 같은 패스에 한다.
-    val scale = downscaleFactor(maxOf(src.width, src.height), UPLOAD_MAX_EDGE)
-    val result = if (scale == 1f && degrees == 0) {
+    val result = if (degrees == 0) {
         src
     } else {
-        val matrix = Matrix().apply {
-            postScale(scale, scale)
-            postRotate(degrees.toFloat())
+        try {
+            Bitmap.createBitmap(src, 0, 0, src.width, src.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)
+        } finally {
+            // 회전본 할당에 실패해도 원본은 놓아야 재시도할 메모리가 생긴다.
+            src.recycle()
         }
-        Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
-            .also { if (it != src) src.recycle() }
     }
     return saveJpeg(
         context,

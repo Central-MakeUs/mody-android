@@ -64,7 +64,7 @@ enum class CameraSource {
 
 /**
  * 커스텀 촬영 오버레이(앱 공용). 풀스크린으로 띄운다.
- * (권한 → 촬영(3:4) | 갤러리 선택) → 조정(프레임 위치·90° 회전) → [onConfirm] 으로 업로드본 uri + 크롭 영역 전달.
+ * (권한 → 촬영(3:4) | 갤러리 선택) → 조정(확대·이동·90° 회전) → [onConfirm] 으로 업로드본 uri + 크롭 영역 전달.
  * 촬영본과 갤러리 사진은 같은 조정 화면을 거치므로 크롭 영역은 항상 있다.
  * 업로드본은 자르지 않은 사진 전체를 줄이고 회전을 구운 파일이고, 크롭 영역도 그 기준이다.
  *
@@ -138,7 +138,7 @@ fun ModyCameraOverlay(
             try {
                 val imported = withContext(Dispatchers.IO) { prepareGallery(context, uri) }
                 // 새 사진이 준비된 뒤에 바꾼다 — 실패하면 보던 사진이 그대로 남는다.
-                // 회전·프레임 위치는 AdjustLayer 가 uri 로 붙들고 있어 새 사진에서 초기화된다.
+                // 회전·확대·위치는 AdjustLayer 가 uri 로 붙들고 있어 새 사진에서 초기화된다.
                 val discarded = captured
                 captured = imported
                 capturedFromGallery = true

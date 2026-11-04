@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.MealExerciseSchedule
+import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.feature.onboarding.OnboardingViewModel
 import com.makeus.mody.feature.onboarding.component.OnboardingScaffold
 import com.makeus.mody.feature.onboarding.contract.OnboardingIntent
@@ -42,4 +43,7 @@ fun AlarmScreen(viewModel: OnboardingViewModel) {
             onSameTimeSheetDismiss = { viewModel.onIntent(OnboardingIntent.SameTimeSheetDismissed) },
         )
     }
+
+    // 마지막 스텝 — 프로필 제출 응답 대기.
+    if (state.isLoading) ModyLoadingOverlay()
 }

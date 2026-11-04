@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBackTopBar
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
+import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyScreenScaffold
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.notification.R
@@ -59,9 +62,12 @@ private fun NotificationScreen(
         topBar = { ModyBackTopBar(title = "알림", onBackClick = onBackClick) },
     ) {
         when {
+            // 첫 페이지 전엔 빈 목록 대신 로딩. 실패해도 isInitialLoaded 는 켜지므로 여기 갇히지 않는다.
+            !state.isInitialLoaded -> ModyLoadingScreen()
             state.isEmpty -> NotificationEmptyContent(modifier = Modifier.fillMaxSize())
             else -> NotificationList(
                 notifications = state.notifications,
+                isLoadingMore = state.isLoading,
                 onLoadMore = onLoadMore,
                 onItemClick = onItemClick,
                 modifier = Modifier.fillMaxSize(),
@@ -73,6 +79,7 @@ private fun NotificationScreen(
 @Composable
 private fun NotificationList(
     notifications: List<NotificationUiModel>,
+    isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
     onItemClick: (link: String?) -> Unit,
     modifier: Modifier = Modifier,
@@ -93,6 +100,19 @@ private fun NotificationList(
     LazyColumn(state = listState, modifier = modifier) {
         items(notifications, key = { it.id }) { item ->
             NotificationRow(item = item, onClick = { onItemClick(item.link) })
+        }
+        // 다음 페이지 대기. 피드 더보기와 같은 규격.
+        if (isLoadingMore) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ModyLoadingIndicator(size = 24.dp)
+                }
+            }
         }
     }
 }

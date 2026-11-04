@@ -44,6 +44,7 @@ import com.makeus.mody.core.designsystem.R
 import com.makeus.mody.core.designsystem.component.ModyAvatar
 import com.makeus.mody.core.designsystem.component.ModyChip
 import com.makeus.mody.core.designsystem.component.ModyChipStyle
+import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
@@ -99,6 +100,7 @@ fun ChallengeTabContent(
     onStepRefreshClick: () -> Unit,
     onChangeStepChallengeClick: () -> Unit,
     onWeeklyChallengeClick: (Long) -> Unit,
+    isRefreshingStep: Boolean = false,
 ) {
     if (isLoading) {
         ModyLoadingScreen()
@@ -111,6 +113,7 @@ fun ChallengeTabContent(
     ) {
         StepChallengeSection(
             step = stepChallenge,
+            isRefreshing = isRefreshingStep,
             onRefreshClick = onStepRefreshClick,
             onChangeClick = onChangeStepChallengeClick,
         )
@@ -127,6 +130,7 @@ fun ChallengeTabContent(
 @Composable
 private fun StepChallengeSection(
     step: StepChallengeStatus?,
+    isRefreshing: Boolean,
     onRefreshClick: () -> Unit,
     onChangeClick: () -> Unit,
 ) {
@@ -202,15 +206,20 @@ private fun StepChallengeSection(
                     style = ModyTheme.typography.b5,
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    painter = painterResource(ModyIcons.Reset),
-                    contentDescription = "걸음 수 새로고침",
-                    tint = ModyTheme.colors.gray04,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onRefreshClick),
-                )
+                // 새로고침 중엔 아이콘 자리(같은 20dp)에 로딩을 띄워 줄이 흔들리지 않게 한다.
+                if (isRefreshing) {
+                    ModyLoadingIndicator(size = 20.dp, loadingDescription = "걸음 수를 새로고침하는 중")
+                } else {
+                    Icon(
+                        painter = painterResource(ModyIcons.Reset),
+                        contentDescription = "걸음 수 새로고침",
+                        tint = ModyTheme.colors.gray04,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onRefreshClick),
+                    )
+                }
             }
             // 시안 실측 2 (첫 줄 끝 531 → 둘째 줄 533).
             Spacer(modifier = Modifier.height(2.dp))

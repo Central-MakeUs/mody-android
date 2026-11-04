@@ -56,6 +56,8 @@ data class ChallengeState(
     val weeklyChallenges: List<WeeklyChallenge> = emptyList(),
     /** 걸음 수 동기화(건강 데이터 읽기 + 서버 반영) 진행 중. */
     val isSyncingSteps: Boolean = false,
+    /** 새로고침 버튼으로 시작한 재조회·동기화 진행 중. 아이콘 자리에 로딩을 띄우고 연타를 막는다. */
+    val isRefreshingStep: Boolean = false,
     /**
      * 값이 있으면 이 권한들로 시스템 요청을 띄운다(일회성).
      * 런처 실행 후 [ChallengeIntent.HealthPermissionRequestLaunched] 로 비운다.

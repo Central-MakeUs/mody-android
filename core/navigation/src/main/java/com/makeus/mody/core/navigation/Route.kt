@@ -85,8 +85,15 @@ sealed interface GroupGraph : Route {
     @Serializable
     data object JoinGroupRoute : GroupGraph
 
+    /**
+     * 그룹 생성(이름 입력) 화면.
+     * @param source 생성 플로우를 시작한 곳. 피드 추가 모달에서는 참여 화면을 거치지 않고
+     *               바로 오므로 출처를 따로 들고 온다(사용 로그 entry_source).
+     */
     @Serializable
-    data object CreateGroupRoute : GroupGraph
+    data class CreateGroupRoute(
+        val source: GroupEntrySource = GroupEntrySource.Onboarding,
+    ) : GroupGraph
 
     @Serializable
     data object GroupShareRoute : GroupGraph
@@ -126,9 +133,14 @@ sealed interface ChallengeGraph : Route {
     /**
      * 그룹 필수(걸음 수) 챌린지 변경. 챌린지 탭의 "챌린지 변경" 에서 진입.
      * @param groupId 어느 그룹의 챌린지를 바꿀지. 탭이 보고 있는 그룹을 그대로 넘긴다.
+     * @param progressPercent 바꾸기 직전 진행 중 챌린지 달성률(0~100). 사용 로그(변경 시점 진행률) 전용 —
+     *                        변경 화면은 진행률을 조회하지 않는다.
      */
     @Serializable
-    data class StepChallengeChangeRoute(val groupId: Long) : ChallengeGraph
+    data class StepChallengeChangeRoute(
+        val groupId: Long,
+        val progressPercent: Int = 0,
+    ) : ChallengeGraph
 
     /**
      * 주간 챌린지 상세(인증 사진 그리드 + 공유). 챌린지 탭의 주간 챌린지 카드에서 진입.

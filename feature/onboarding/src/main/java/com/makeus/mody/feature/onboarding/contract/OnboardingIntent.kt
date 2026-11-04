@@ -17,6 +17,9 @@ sealed class OnboardingIntent : UiIntent {
     data class ExerciseDaySet(val day: Int, val hour: Int, val minute: Int) : OnboardingIntent()
     data class ExerciseDayRemoved(val day: Int) : OnboardingIntent()
     data class ExerciseAllTimesSet(val hour: Int, val minute: Int) : OnboardingIntent()
+    // '모두 같은 시간으로 설정' 시트 열기 / 적용 없이 닫기(로그 전용)
+    data object SameTimeClicked : OnboardingIntent()
+    data object SameTimeSheetDismissed : OnboardingIntent()
 
     // 스텝 이동 ("다음으로")
     data object NicknameNext : OnboardingIntent()

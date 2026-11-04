@@ -183,6 +183,10 @@ private fun NotificationSettingContent(
                     onExerciseAllTimesSet = { h, m ->
                         onIntent(NotificationSettingIntent.ExerciseAllTimesSet(h, m))
                     },
+                    onSameTimeClick = { onIntent(NotificationSettingIntent.SameTimeClicked) },
+                    onSameTimeSheetDismiss = {
+                        onIntent(NotificationSettingIntent.SameTimeSheetDismissed)
+                    },
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 32.dp),
                 )
             }

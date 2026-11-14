@@ -1,6 +1,8 @@
 package com.makeus.mody.feature.feed.detail
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +61,7 @@ import com.makeus.mody.core.designsystem.component.ModyPageIndicator
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
+import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
@@ -115,6 +118,10 @@ private fun RecordDetailContent(
 
         // 응원 댓글 입력바: 기능이 열렸을 때만 노출(닫히면 전송도 차단).
         if (state.commentEnabled) {
+            EmojiBar(
+                enabled = !state.isSending && state.records.isNotEmpty(),
+                onClick = { onIntent(RecordDetailIntent.EmojiClicked(it)) },
+            )
             CommentInputBar(
                 value = state.commentInput,
                 canSend = state.canSend,
@@ -176,6 +183,11 @@ private fun RecordActionDialogs(
     ModyErrorDialog(
         message = state.deleteError,
         onDismiss = { onIntent(RecordDetailIntent.DeleteErrorShown) },
+    )
+
+    ModyErrorDialog(
+        message = state.sendError,
+        onDismiss = { onIntent(RecordDetailIntent.SendErrorShown) },
     )
 }
 
@@ -291,7 +303,6 @@ private fun EmptyComments() {
 /** 응원 댓글 버블. 내 댓글 = 우측 primary300, 남의 댓글 = 좌측 gray01. */
 @Composable
 private fun CommentBubble(comment: CommentUi) {
-    val bubbleShape = RoundedCornerShape(16.dp)
     if (comment.isMine) {
         Column(
             modifier = Modifier
@@ -311,15 +322,7 @@ private fun CommentBubble(comment: CommentUi) {
                 ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = comment.content,
-                style = ModyTheme.typography.b7,
-                color = ModyTheme.colors.gray10,
-                modifier = Modifier
-                    .clip(bubbleShape)
-                    .background(ModyTheme.colors.primary300)
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-            )
+            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300)
         }
     } else {
         Row(
@@ -336,19 +339,62 @@ private fun CommentBubble(comment: CommentUi) {
                     color = ModyTheme.colors.gray06,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = comment.content,
-                    style = ModyTheme.typography.b7,
-                    color = ModyTheme.colors.gray10,
-                    modifier = Modifier
-                        .clip(bubbleShape)
-                        .background(ModyTheme.colors.gray01)
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                )
+                CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01)
             }
         }
     }
 }
+
+/** 댓글 본문: 이모지 댓글이면 말풍선 없이 이모지 이미지, 글 댓글이면 말풍선. */
+@Composable
+private fun CommentBody(comment: CommentUi, bubbleColor: Color) {
+    val emoji = comment.emoji
+    if (emoji != null) {
+        Image(
+            painter = painterResource(emoji.iconRes),
+            contentDescription = emoji.description,
+            modifier = Modifier.size(EMOJI_COMMENT_SIZE),
+        )
+    } else {
+        Text(
+            text = comment.content,
+            style = ModyTheme.typography.b7,
+            color = ModyTheme.colors.gray10,
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(bubbleColor)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+        )
+    }
+}
+
+/**
+ * 입력바 위 이모지 줄. 탭하면 바로 전송된다(글 입력과 무관).
+ * TODO(design): 시안 확정 전 임시 배치 — 크기·간격·배경은 피그마 대로 맞춘다.
+ */
+@Composable
+private fun EmojiBar(enabled: Boolean, onClick: (CommentEmoji) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        CommentEmoji.entries.forEach { emoji ->
+            Image(
+                painter = painterResource(emoji.iconRes),
+                contentDescription = "${emoji.description} 보내기",
+                modifier = Modifier
+                    .size(EMOJI_BUTTON_SIZE)
+                    .clip(CircleShape)
+                    .clickable(enabled = enabled) { onClick(emoji) },
+            )
+        }
+    }
+}
+
+private val EMOJI_COMMENT_SIZE = 56.dp
+private val EMOJI_BUTTON_SIZE = 36.dp
 
 @Composable
 private fun CommentInputBar(

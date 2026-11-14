@@ -11,6 +11,8 @@ data class CommentUi(
     val avatarUrl: String?,
     val content: String,
     val isMine: Boolean,
+    /** 이모지 댓글이면 그릴 이모지. null 이면 글 댓글(또는 모르는 이모지 → [content] 에 대체 문구). */
+    val emoji: CommentEmoji? = null,
 )
 
 data class RecordDetailState(
@@ -23,6 +25,8 @@ data class RecordDetailState(
     val isCommentsLoading: Boolean = false,
     val commentInput: String = "",
     val isSending: Boolean = false,
+    /** 전송 실패 안내. 이모지는 입력이 남지 않아 알리지 않으면 보낸 줄 안다. */
+    val sendError: String? = null,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 더보기 메뉴 자체를 숨긴다 — 판별이 뒤집히면

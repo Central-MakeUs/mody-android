@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 임시 자리표시. 피그마 이모지(heart) export 로 같은 파일명에 덮어쓴다. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#FFEF5350"
+        android:pathData="M24,4a20,20 0,1 1,0 40a20,20 0,1 1,0 -40z" />
+</vector>

@@ -15,6 +15,12 @@ sealed class RecordDetailIntent : UiIntent {
     /** 댓글 전송 */
     data object SendCommentClicked : RecordDetailIntent()
 
+    /** 이모지 탭 → 글 입력 없이 바로 전송 */
+    data class EmojiClicked(val emoji: CommentEmoji) : RecordDetailIntent()
+
+    /** 전송 실패 다이얼로그 닫힘 */
+    data object SendErrorShown : RecordDetailIntent()
+
     /** 더보기 → 신고(남의 글). 대상은 지금 보고 있는 기록. */
     data object ReportClicked : RecordDetailIntent()
 

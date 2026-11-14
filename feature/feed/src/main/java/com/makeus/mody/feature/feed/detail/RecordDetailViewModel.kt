@@ -11,6 +11,7 @@ import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
@@ -20,6 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -34,6 +36,9 @@ class RecordDetailViewModel @Inject constructor(
     private val route = savedStateHandle.toRoute<FeedGraph.RecordDetailRoute>()
     private val groupId = route.groupId
     private val date = LocalDate.parse(route.date)
+
+    /** 진행 중인 댓글 조회. 페이지를 빠르게 넘기면 이전 조회를 취소한다. */
+    private var commentsJob: Job? = null
 
     init {
         loadDetail()
@@ -50,6 +55,9 @@ class RecordDetailViewModel @Inject constructor(
             // UI 는 숨겨져 있지만 만약을 위해 전송 자체도 차단.
             is RecordDetailIntent.SendCommentClicked ->
                 if (currentState.commentEnabled) sendComment()
+            is RecordDetailIntent.EmojiClicked ->
+                if (currentState.commentEnabled) sendEmoji(intent.emoji)
+            is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
 
             // 대상 id 는 누른 순간에 붙든다 — 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 그 기록이다.
             is RecordDetailIntent.ReportClicked ->
@@ -169,51 +177,89 @@ class RecordDetailViewModel @Inject constructor(
         return result.distinctBy { it.id }
     }
 
-    /** 페이지 스와이프 = 같은 게시물의 다른 사진. 댓글은 게시물 단위로 통일이라 재조회하지 않고 index 만 갱신. */
+    /**
+     * 페이지 스와이프 = 다른 기록(작성자도 바뀐다). 댓글은 기록 단위라 그 기록 것을 다시 받는다.
+     * 이전 기록의 댓글이 남아 보이면 그 위에 쓴 응원이 다른 사람 기록에 달린다.
+     */
     private fun onPageChanged(index: Int) {
         if (index == currentState.currentIndex) return
-        setState { copy(currentIndex = index) }
+        setState { copy(currentIndex = index, comments = emptyList()) }
+        recordIdAt(index)?.let(::loadComments)
     }
 
-    private fun loadComments(recordId: Long) = viewModelScope.launch {
-        setState { copy(isCommentsLoading = true) }
-        runCatching { feedRepository.getComments(groupId, recordId) }
-            .onSuccess { page ->
-                setState { copy(comments = page.comments.map { it.toUi() }, isCommentsLoading = false) }
+    /**
+     * [recordId] 의 댓글 조회. 응답이 왔을 때 그 기록을 아직 보고 있을 때만 반영한다 —
+     * 빠르게 넘기면 이전 페이지 응답이 늦게 와서 지금 페이지 댓글을 덮는다.
+     */
+    private fun loadComments(recordId: Long) {
+        commentsJob?.cancel()
+        commentsJob = viewModelScope.launch {
+            setState { copy(isCommentsLoading = true) }
+            val comments = try {
+                feedRepository.getComments(groupId, recordId).comments.map { it.toUi() }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
             }
-            .onFailure { setState { copy(comments = emptyList(), isCommentsLoading = false) } }
+            if (recordIdAt(currentState.currentIndex) != recordId) return@launch
+            setState { copy(comments = comments, isCommentsLoading = false) }
+        }
     }
 
-    private fun sendComment() = viewModelScope.launch {
+    private fun sendComment() {
         val current = currentState
-        if (!current.canSend) return@launch
-        val recordId = recordIdAt(current.currentIndex) ?: return@launch
-        val content = current.commentInput.trim()
+        if (!current.canSend) return
+        postComment(content = current.commentInput.trim(), emoji = null)
+    }
+
+    /** 이모지는 탭하면 바로 전송. 입력 중인 글은 건드리지 않는다. */
+    private fun sendEmoji(emoji: CommentEmoji) {
+        if (currentState.isSending) return
+        postComment(content = "", emoji = emoji)
+    }
+
+    /**
+     * 글·이모지 공통 전송. 대상은 누른 순간 보고 있던 기록으로 고정한다.
+     * 성공하면 글 입력을 비우고(글일 때), 그 기록을 아직 보고 있으면 목록을 다시 받는다.
+     */
+    private fun postComment(content: String, emoji: CommentEmoji?) = viewModelScope.launch {
+        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
         setState { copy(isSending = true) }
-        runCatching { feedRepository.postComment(groupId, recordId, content) }
-            .onSuccess {
-                setState { copy(commentInput = "", isSending = false) }
-                loadComments(recordId) // 목록 갱신
-            }
-            .onFailure {
-                // TODO(feed): 전송 실패 노출. 지금은 입력 유지.
-                setState { copy(isSending = false) }
-            }
+        try {
+            feedRepository.postComment(groupId, recordId, content, emojiId = emoji?.id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 글은 입력이 남아 다시 보낼 수 있지만, 이모지는 남는 게 없어 알려야 한다.
+            setState { copy(isSending = false, sendError = "댓글을 보내지 못했어요. 다시 시도해주세요.") }
+            return@launch
+        }
+        setState { copy(isSending = false, commentInput = if (emoji == null) "" else commentInput) }
+        if (recordIdAt(currentState.currentIndex) == recordId) loadComments(recordId)
     }
 
     /** 현재 state 의 records 에서 index 위치 recordId. */
     private fun recordIdAt(index: Int): Long? = currentState.records.getOrNull(index)?.id
 
-    private fun Comment.toUi(): CommentUi = CommentUi(
-        id = commentId,
-        authorName = nickname,
-        avatarUrl = profileImageUrl,
-        content = content,
-        isMine = isMine,
-    )
+    private fun Comment.toUi(): CommentUi {
+        val emoji = CommentEmoji.of(emojiId)
+        return CommentUi(
+            id = commentId,
+            authorName = nickname,
+            avatarUrl = profileImageUrl,
+            // 모르는 이모지(구버전 앱)인데 본문이 비어 있으면 빈 말풍선 대신 대체 문구.
+            content = if (emojiId != null && emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
+            isMine = isMine,
+            emoji = emoji,
+        )
+    }
 
     private companion object {
         /** 상세 슬라이드 이어붙이기 안전 상한(무한 루프 방지). */
         const val MAX_DETAIL_PAGES = 20
+
+        /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
+        const val UNKNOWN_EMOJI_TEXT = "(이모지)"
     }
 }

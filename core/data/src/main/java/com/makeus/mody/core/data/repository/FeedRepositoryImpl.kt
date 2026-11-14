@@ -65,11 +65,11 @@ class FeedRepositoryImpl @Inject constructor(
             .unwrapResult()
             .toCommentPage()
 
-    override suspend fun postComment(groupId: Long, recordId: Long, content: String): Long =
+    override suspend fun postComment(groupId: Long, recordId: Long, content: String, emojiId: String?): Long =
         feedApi.postComment(
             groupId = groupId,
             recordId = recordId,
-            request = CommentCreateRequest(content = content),
+            request = CommentCreateRequest(content = content, emojiId = emojiId),
         ).unwrapResult().commentId
 
     override suspend fun reportRecord(groupId: Long, recordId: Long) {
@@ -143,6 +143,7 @@ private fun CommentCursorResponse.toCommentPage(): CommentPage =
                 profileImageUrl = it.profileImageUrl,
                 content = it.content,
                 isMine = it.isMine,
+                emojiId = it.emojiId?.takeIf { id -> id.isNotBlank() },
             )
         },
         nextCursor = nextCursor,

@@ -8,6 +8,8 @@ data class Comment(
     val profileImageUrl: String?,
     val content: String,
     val isMine: Boolean,
+    /** 이모지 댓글이면 이모지 아이디, 글 댓글은 null. 그리는 쪽이 아이디 ↔ 이미지를 매핑한다. */
+    val emojiId: String? = null,
 )
 
 /** 댓글 커서 페이지네이션 결과. */

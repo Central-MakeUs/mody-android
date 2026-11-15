@@ -340,7 +340,11 @@ class RecordDetailViewModel @Inject constructor(
             setState { copy(isSending = false, sendError = "댓글을 보내지 못했어요. 다시 시도해주세요.") }
             return@launch
         }
-        setState { copy(isSending = false, commentInput = if (emoji == null) "" else commentInput) }
+        // 보내는 사이 새로 쓴 글은 지우지 않는다 — 입력이 아직 보낸 글 그대로일 때만 비운다.
+        setState {
+            val sentText = emoji == null && commentInput.trim() == content
+            copy(isSending = false, commentInput = if (sentText) "" else commentInput)
+        }
         if (recordIdAt(currentState.currentIndex) == recordId) loadComments(recordId)
     }
 

@@ -65,11 +65,16 @@ class FeedRepositoryImpl @Inject constructor(
             .unwrapResult()
             .toCommentPage()
 
-    override suspend fun postComment(groupId: Long, recordId: Long, content: String): Long =
+    // 실패를 삼키지 않는다 — 지워진 줄 알고 목록에서 빼면 다음 진입에 되살아난 것처럼 보인다.
+    override suspend fun deleteComment(groupId: Long, recordId: Long, commentId: Long) {
+        feedApi.deleteComment(groupId = groupId, recordId = recordId, commentId = commentId).unwrapResult()
+    }
+
+    override suspend fun postComment(groupId: Long, recordId: Long, content: String, emojiId: String?): Long =
         feedApi.postComment(
             groupId = groupId,
             recordId = recordId,
-            request = CommentCreateRequest(content = content),
+            request = CommentCreateRequest(content = content, emojiId = emojiId),
         ).unwrapResult().commentId
 
     override suspend fun reportRecord(groupId: Long, recordId: Long) {
@@ -143,6 +148,8 @@ private fun CommentCursorResponse.toCommentPage(): CommentPage =
                 profileImageUrl = it.profileImageUrl,
                 content = it.content,
                 isMine = it.isMine,
+                emojiId = it.emojiId?.takeIf { id -> id.isNotBlank() },
+                createdAt = it.createdAt.toServerInstantOrNull(),
             )
         },
         nextCursor = nextCursor,

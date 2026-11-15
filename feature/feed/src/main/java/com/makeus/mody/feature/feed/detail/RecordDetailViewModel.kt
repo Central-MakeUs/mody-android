@@ -6,22 +6,36 @@ import androidx.navigation.toRoute
 import com.makeus.mody.core.commonui.base.BaseViewModel
 import com.makeus.mody.core.model.Comment
 import com.makeus.mody.core.domain.repository.FeedRepository
+import com.makeus.mody.core.domain.repository.MyPageRepository
+import com.makeus.mody.core.domain.repository.RecordRepository
 import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
+import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
+import com.makeus.mody.feature.feed.detail.contract.PendingEmoji
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.toFeedCardUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel
 class RecordDetailViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
+    private val recordRepository: RecordRepository,
+    private val myPageRepository: MyPageRepository,
     private val navigationHelper: NavigationHelper,
     savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<RecordDetailState, RecordDetailIntent>(RecordDetailState()) {
@@ -30,8 +44,21 @@ class RecordDetailViewModel @Inject constructor(
     private val groupId = route.groupId
     private val date = LocalDate.parse(route.date)
 
+    /** 진행 중인 댓글 조회. 페이지를 빠르게 넘기면 이전 조회를 취소한다. */
+    private var commentsJob: Job? = null
+
+    /** 이모지는 누른 순서대로 보낸다(연속으로 눌러도 순서가 섞이지 않게). */
+    private val emojiSendMutex = Mutex()
+
+    /** 최근 이모지를 보낸 시각(ms). 도배 제한용 슬라이딩 윈도. */
+    private val recentEmojiSendTimes = ArrayDeque<Long>()
+
+    /** 미리보기 이모지의 임시 id. 서버 id(양수)와 겹치지 않게 음수로 센다. */
+    private var nextPendingId = -1L
+
     init {
         loadDetail()
+        loadMyMemberId()
         // 댓글 노출은 원격이 아니라 RecordDetailState.commentEnabled 기본값으로 끈다.
     }
 
@@ -44,7 +71,91 @@ class RecordDetailViewModel @Inject constructor(
             // UI 는 숨겨져 있지만 만약을 위해 전송 자체도 차단.
             is RecordDetailIntent.SendCommentClicked ->
                 if (currentState.commentEnabled) sendComment()
+            is RecordDetailIntent.EmojiClicked ->
+                if (currentState.commentEnabled) sendEmoji(intent.emoji)
+            is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
+            is RecordDetailIntent.EmojiLimitNoticeShown -> setState { copy(emojiLimitNotice = null) }
+            is RecordDetailIntent.CommentDeleteClicked ->
+                setState { copy(commentDeleteTargetId = intent.commentId) }
+            is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTargetId = null) }
+            is RecordDetailIntent.CommentDeleteConfirmed -> deleteComment()
+            is RecordDetailIntent.CommentDeleteErrorShown -> setState { copy(commentDeleteError = null) }
+
+            // 대상 id 는 누른 순간에 붙든다 — 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 그 기록이다.
+            is RecordDetailIntent.ReportClicked ->
+                setState { copy(reportTargetRecordId = currentRecord?.id) }
+            is RecordDetailIntent.ReportDialogDismissed -> setState { copy(reportTargetRecordId = null) }
+            is RecordDetailIntent.ReportConfirmed -> reportRecord()
+            is RecordDetailIntent.ReportCompleteConfirmed -> setState { copy(showReportComplete = false) }
+            is RecordDetailIntent.ReportErrorShown -> setState { copy(reportError = null) }
+            is RecordDetailIntent.DeleteClicked ->
+                setState { copy(deleteTargetRecordId = currentRecord?.id) }
+            is RecordDetailIntent.DeleteDialogDismissed -> setState { copy(deleteTargetRecordId = null) }
+            is RecordDetailIntent.DeleteConfirmed -> deleteRecord()
+            is RecordDetailIntent.DeleteErrorShown -> setState { copy(deleteError = null) }
         }
+    }
+
+    /** 내 memberId 조회 — 더보기 메뉴의 신고/삭제 판별값. 실패 시 null 유지(메뉴 미노출). */
+    private fun loadMyMemberId() = viewModelScope.launch {
+        try {
+            val memberId = myPageRepository.getProfile().memberId
+            setState { copy(myMemberId = memberId) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 메뉴만 숨겨진다. 상세 보기 자체엔 지장 없음.
+        }
+    }
+
+    /** 신고 확인 "신고하기" → 서버 접수 후 완료/실패 다이얼로그. 피드 카드 신고와 같은 API·문구. */
+    private fun reportRecord() = viewModelScope.launch {
+        val recordId = currentState.reportTargetRecordId ?: return@launch
+        if (currentState.isReporting) return@launch
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다. 대상 id 는 위에서 붙들었다.
+        setState { copy(isReporting = true, reportTargetRecordId = null) }
+        try {
+            feedRepository.reportRecord(groupId, recordId)
+            setState { copy(isReporting = false, showReportComplete = true) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            setState { copy(isReporting = false, reportError = "신고 접수에 실패했어요. 다시 시도해주세요.") }
+        }
+    }
+
+    /**
+     * 삭제 확인 "삭제하기" → 서버 삭제 후 슬라이드에서 제거.
+     *
+     * 마지막 한 장이었으면 볼 게 없으니 화면을 닫는다. 남아 있으면 같은 자리(없으면 앞)의 기록으로
+     * 넘어가고 그 기록의 댓글을 다시 받는다 — 지운 기록의 댓글이 남아 보이면 안 된다.
+     * 피드 목록은 돌아갈 때 화면 재개(ScreenResumed)에서 다시 받는다.
+     */
+    private fun deleteRecord() = viewModelScope.launch {
+        val recordId = currentState.deleteTargetRecordId ?: return@launch
+        if (currentState.isDeleting) return@launch
+        setState { copy(isDeleting = true, deleteTargetRecordId = null) }
+        try {
+            recordRepository.deleteRecord(recordId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            setState { copy(isDeleting = false, deleteError = "게시물 삭제에 실패했어요. 다시 시도해주세요.") }
+            return@launch
+        }
+        val deletedIndex = currentState.records.indexOfFirst { it.id == recordId }
+        val remaining = currentState.records.filterNot { it.id == recordId }
+        if (remaining.isEmpty()) {
+            setState { copy(isDeleting = false, records = remaining) }
+            navigationHelper.navigate(NavigationEvent.Up)
+            return@launch
+        }
+        val nextIndex = (if (deletedIndex >= 0) deletedIndex else currentState.currentIndex)
+            .coerceAtMost(remaining.lastIndex)
+        setState {
+            copy(isDeleting = false, records = remaining, currentIndex = nextIndex, comments = emptyList())
+        }
+        loadComments(remaining[nextIndex].id)
     }
 
     /**
@@ -88,51 +199,227 @@ class RecordDetailViewModel @Inject constructor(
         return result.distinctBy { it.id }
     }
 
-    /** 페이지 스와이프 = 같은 게시물의 다른 사진. 댓글은 게시물 단위로 통일이라 재조회하지 않고 index 만 갱신. */
+    /**
+     * 페이지 스와이프 = 다른 기록(작성자도 바뀐다). 댓글은 기록 단위라 그 기록 것을 다시 받는다.
+     * 이전 기록의 댓글이 남아 보이면 그 위에 쓴 응원이 다른 사람 기록에 달린다.
+     */
     private fun onPageChanged(index: Int) {
         if (index == currentState.currentIndex) return
-        setState { copy(currentIndex = index) }
+        setState { copy(currentIndex = index, comments = emptyList()) }
+        recordIdAt(index)?.let(::loadComments)
     }
 
-    private fun loadComments(recordId: Long) = viewModelScope.launch {
-        setState { copy(isCommentsLoading = true) }
-        runCatching { feedRepository.getComments(groupId, recordId) }
-            .onSuccess { page ->
-                setState { copy(comments = page.comments.map { it.toUi() }, isCommentsLoading = false) }
+    /**
+     * [recordId] 의 댓글 조회. 응답이 왔을 때 그 기록을 아직 보고 있을 때만 반영한다 —
+     * 빠르게 넘기면 이전 페이지 응답이 늦게 와서 지금 페이지 댓글을 덮는다.
+     */
+    private fun loadComments(recordId: Long) {
+        commentsJob?.cancel()
+        commentsJob = viewModelScope.launch {
+            setState { copy(isCommentsLoading = true) }
+            val comments = try {
+                loadAllComments(recordId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
             }
-            .onFailure { setState { copy(comments = emptyList(), isCommentsLoading = false) } }
+            if (recordIdAt(currentState.currentIndex) != recordId) return@launch
+            setState { copy(comments = comments, isCommentsLoading = false) }
+        }
     }
 
-    private fun sendComment() = viewModelScope.launch {
+    /**
+     * 그 기록의 댓글을 커서 끝까지 모아 오래된 → 최신 순으로 정렬한다(화면은 최신이 맨 아래).
+     * 첫 페이지(기본 20개)만 받으면 서버 정렬에 따라 최신 댓글이 빠질 수 있다. 서버 정렬 방향에
+     * 기대지 않도록 id(생성 순) 로 다시 정렬한다.
+     */
+    private suspend fun loadAllComments(recordId: Long): List<CommentUi> {
+        val result = mutableListOf<Comment>()
+        var cursor: Long? = null
+        var pages = 0
+        do {
+            val page = feedRepository.getComments(groupId, recordId, cursor = cursor)
+            result += page.comments
+            cursor = page.nextCursor
+            pages++
+        } while (page.hasNext && cursor != null && pages < MAX_COMMENT_PAGES)
+        return result.distinctBy { it.commentId }.sortedBy { it.commentId }.map { it.toUi() }
+    }
+
+    private fun sendComment() {
         val current = currentState
-        if (!current.canSend) return@launch
-        val recordId = recordIdAt(current.currentIndex) ?: return@launch
-        val content = current.commentInput.trim()
+        if (!current.canSend) return
+        postComment(content = current.commentInput.trim(), emoji = null)
+    }
+
+    /**
+     * 이모지는 탭하면 바로 전송. 입력 중인 글은 건드리지 않는다.
+     *
+     * 서버 응답을 기다리지 않고 맨 아래에 미리 붙인다(반투명). 느린 서버에서 응답을 기다리는 동안
+     * 아무것도 안 보이면 눌리지 않은 줄 안다. 성공하면 목록을 다시 받아 진짜 댓글로 바꿔 끼우고,
+     * 실패하면 미리보기를 지우고 알린다. 전송은 누른 순서대로 하나씩 한다.
+     *
+     * 도배 방지: [EMOJI_LIMIT_WINDOW_MS] 안에 [EMOJI_LIMIT_COUNT] 개까지만 보낸다. 넘으면 안내만 띄운다.
+     */
+    private fun sendEmoji(emoji: CommentEmoji) {
+        val recordId = recordIdAt(currentState.currentIndex) ?: return
+        val now = System.currentTimeMillis()
+        while (recentEmojiSendTimes.isNotEmpty() && now - recentEmojiSendTimes.first() >= EMOJI_LIMIT_WINDOW_MS) {
+            recentEmojiSendTimes.removeFirst()
+        }
+        if (recentEmojiSendTimes.size >= EMOJI_LIMIT_COUNT) {
+            setState { copy(emojiLimitNotice = EMOJI_LIMIT_MESSAGE) }
+            return
+        }
+        recentEmojiSendTimes.addLast(now)
+
+        val pending = PendingEmoji(
+            recordId = recordId,
+            comment = CommentUi(
+                id = nextPendingId--,
+                authorName = "",
+                avatarUrl = null,
+                content = "",
+                isMine = true,
+                emoji = emoji,
+                timeLabel = formatCommentTime(Instant.ofEpochMilli(now)),
+                isPending = true,
+            ),
+        )
+        setState { copy(pendingEmojis = pendingEmojis + pending) }
+
+        viewModelScope.launch {
+            val sent = emojiSendMutex.withLock {
+                try {
+                    feedRepository.postComment(groupId, recordId, content = "", emojiId = emoji.id)
+                    true
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            if (!sent) {
+                setState {
+                    copy(pendingEmojis = pendingEmojis - pending, sendError = "이모지를 보내지 못했어요. 다시 시도해주세요.")
+                }
+                return@launch
+            }
+            // 목록을 받은 뒤에 미리보기를 뺀다 — 먼저 빼면 진짜 댓글이 오기 전까지 잠깐 사라진다.
+            val refreshed = try {
+                loadAllComments(recordId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            setState {
+                val stillViewing = records.getOrNull(currentIndex)?.id == recordId
+                copy(
+                    pendingEmojis = pendingEmojis - pending,
+                    comments = if (stillViewing && refreshed != null) refreshed else comments,
+                )
+            }
+        }
+    }
+
+    /**
+     * 글·이모지 공통 전송. 대상은 누른 순간 보고 있던 기록으로 고정한다.
+     * 성공하면 글 입력을 비우고(글일 때), 그 기록을 아직 보고 있으면 목록을 다시 받는다.
+     */
+    private fun postComment(content: String, emoji: CommentEmoji?) = viewModelScope.launch {
+        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
         setState { copy(isSending = true) }
-        runCatching { feedRepository.postComment(groupId, recordId, content) }
-            .onSuccess {
-                setState { copy(commentInput = "", isSending = false) }
-                loadComments(recordId) // 목록 갱신
+        try {
+            feedRepository.postComment(groupId, recordId, content, emojiId = emoji?.id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 글은 입력이 남아 다시 보낼 수 있지만, 이모지는 남는 게 없어 알려야 한다.
+            setState { copy(isSending = false, sendError = "댓글을 보내지 못했어요. 다시 시도해주세요.") }
+            return@launch
+        }
+        // 보내는 사이 새로 쓴 글은 지우지 않는다 — 입력이 아직 보낸 글 그대로일 때만 비운다.
+        setState {
+            val sentText = emoji == null && commentInput.trim() == content
+            copy(isSending = false, commentInput = if (sentText) "" else commentInput)
+        }
+        if (recordIdAt(currentState.currentIndex) == recordId) loadComments(recordId)
+    }
+
+    /**
+     * 내 댓글 삭제. 대상 기록·댓글 id 는 시작할 때 붙든다.
+     * 성공하면 그 기록을 아직 보고 있을 때만 목록에서 뺀다(넘겨버렸으면 다음에 다시 받을 때 반영된다).
+     */
+    private fun deleteComment() = viewModelScope.launch {
+        val commentId = currentState.commentDeleteTargetId ?: return@launch
+        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
+        if (currentState.isDeletingComment) return@launch
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다.
+        setState { copy(isDeletingComment = true, commentDeleteTargetId = null) }
+        try {
+            feedRepository.deleteComment(groupId, recordId, commentId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            setState {
+                copy(isDeletingComment = false, commentDeleteError = "댓글을 삭제하지 못했어요. 다시 시도해주세요.")
             }
-            .onFailure {
-                // TODO(feed): 전송 실패 노출. 지금은 입력 유지.
-                setState { copy(isSending = false) }
-            }
+            return@launch
+        }
+        setState {
+            copy(
+                isDeletingComment = false,
+                comments = if (recordIdAt(currentIndex) == recordId) comments.filterNot { it.id == commentId } else comments,
+            )
+        }
     }
 
     /** 현재 state 의 records 에서 index 위치 recordId. */
     private fun recordIdAt(index: Int): Long? = currentState.records.getOrNull(index)?.id
 
-    private fun Comment.toUi(): CommentUi = CommentUi(
-        id = commentId,
-        authorName = nickname,
-        avatarUrl = profileImageUrl,
-        content = content,
-        isMine = isMine,
-    )
+    private fun Comment.toUi(): CommentUi {
+        val emoji = CommentEmoji.of(emojiId)
+        return CommentUi(
+            id = commentId,
+            authorName = nickname,
+            avatarUrl = profileImageUrl,
+            // 모르는 이모지(구버전 앱)인데 본문이 비어 있으면 빈 말풍선 대신 대체 문구.
+            content = if (emojiId != null && emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
+            isMine = isMine,
+            emoji = emoji,
+            timeLabel = createdAt?.let(::formatCommentTime),
+        )
+    }
+
+    /** 오늘 쓴 댓글은 시각만, 그 전이면 날짜를 붙인다(기록 상세는 지난 날짜로도 들어온다). */
+    private fun formatCommentTime(createdAt: Instant): String {
+        val zone = ZoneId.systemDefault()
+        val time = createdAt.atZone(zone)
+        return if (time.toLocalDate() == LocalDate.now(zone)) {
+            time.format(TIME_FORMATTER)
+        } else {
+            time.format(DATE_TIME_FORMATTER)
+        }
+    }
 
     private companion object {
         /** 상세 슬라이드 이어붙이기 안전 상한(무한 루프 방지). */
         const val MAX_DETAIL_PAGES = 20
+
+        /** 이모지 도배 제한: [EMOJI_LIMIT_WINDOW_MS] 안에 최대 [EMOJI_LIMIT_COUNT] 개. */
+        const val EMOJI_LIMIT_COUNT = 5
+        const val EMOJI_LIMIT_WINDOW_MS = 10_000L
+        const val EMOJI_LIMIT_MESSAGE = "이모지는 잠시 후에 다시 보낼 수 있어요"
+
+        /** 댓글 이어받기 안전 상한(무한 루프 방지). 기본 20개 × 10 = 200개. */
+        const val MAX_COMMENT_PAGES = 10
+
+        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
+        val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d HH:mm", Locale.KOREAN)
+
+        /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
+        const val UNKNOWN_EMOJI_TEXT = "(이모지)"
     }
 }

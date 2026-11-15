@@ -35,8 +35,14 @@ interface FeedRepository {
         size: Int? = null,
     ): CommentPage
 
-    /** 기록에 댓글 작성 후, 생성된 댓글 id. */
-    suspend fun postComment(groupId: Long, recordId: Long, content: String): Long
+    /**
+     * 기록에 댓글 작성 후, 생성된 댓글 id.
+     * @param emojiId 이모지 댓글이면 아이디(이때 [content] 는 빈 문자열), 글 댓글은 null.
+     */
+    suspend fun postComment(groupId: Long, recordId: Long, content: String, emojiId: String? = null): Long
+
+    /** 내 댓글 삭제. */
+    suspend fun deleteComment(groupId: Long, recordId: Long, commentId: Long)
 
     /** 기록(게시물) 신고. 접수만 하고 삭제 등 처리는 서버 검토 후 진행. */
     suspend fun reportRecord(groupId: Long, recordId: Long)

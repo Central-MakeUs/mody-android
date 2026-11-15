@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 피그마 이모지(medal) export 를 손으로 옮긴 것. 원본: medal.svg (32x32). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <path android:pathData="M22.8867 3.11914L19.9102 12.8818C18.7751 12.1684 17.4328 11.7539 15.9932 11.7539C14.4506 11.7539 13.0187 12.2281 11.835 13.0381L8.8125 3.12207L13.8359 1.93848L15.8496 8.54395L17.8633 1.93652L22.8867 3.11914Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="11.3867"
+                android:startY="1.68358"
+                android:endX="19.6841"
+                android:endY="13.479">
+                <item android:offset="0" android:color="#FFC4CAFF" />
+                <item android:offset="1" android:color="#FF6E7CFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M7.4668,21.5285a8.5333,8.5333 0,1 0,17.0667,0a8.5333,8.5333 0,1 0,-17.0667,0z"
+        android:fillColor="#FFFFE24A" />
+    <path
+        android:pathData="M7.9788,21.5304a8.0213,8.0213 0,1 0,16.0427,0a8.0213,8.0213 0,1 0,-16.0427,0z"
+        android:strokeColor="#FFFFD24A"
+        android:strokeWidth="1.024" />
+    <path
+        android:pathData="M15.7941 16.4111L16.8976 19.8075H20.4687L17.5797 21.9065L18.6832 25.3028L15.7941 23.2038L12.905 25.3028L14.0086 21.9065L11.1195 19.8075H14.6906L15.7941 16.4111Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

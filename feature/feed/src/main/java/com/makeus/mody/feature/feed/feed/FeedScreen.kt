@@ -157,7 +157,7 @@ private fun FeedContent(
         ModyDialog(
             title = "게시물을 신고하시겠어요?",
             message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
-            confirmText = "신고하기",
+            confirmText = "신고",
             dismissText = "취소",
             // 접수 중 중복 탭 방지
             confirmEnabled = !state.isReporting,
@@ -179,8 +179,8 @@ private fun FeedContent(
     if (state.deleteTargetRecordId != null) {
         ModyDialog(
             title = "게시물을 삭제하시겠어요?",
-            message = "삭제한 게시물은 되돌릴 수 없어요.",
-            confirmText = "삭제하기",
+            message = "한번 삭제한 게시물은 복구할 수 없어요.",
+            confirmText = "삭제",
             dismissText = "취소",
             // 삭제 중 중복 탭 방지
             confirmEnabled = !state.isDeleting,

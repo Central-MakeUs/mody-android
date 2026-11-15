@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +31,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyPopupMenu
+import com.makeus.mody.core.designsystem.component.ModyPopupMenuItem
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
@@ -104,9 +105,9 @@ private fun FeedCardHeader(
     }
 }
 
-/** 미트볼(⋯) 버튼 + 드롭다운. 넘어온 동작만 항목으로 낸다. */
+/** 미트볼(⋯) 버튼 + 드롭다운. 넘어온 동작만 항목으로 낸다. 기록 상세 탑바도 같이 쓴다. */
 @Composable
-private fun FeedCardMenu(
+internal fun FeedCardMenu(
     onReportClick: (() -> Unit)?,
     onDeleteClick: (() -> Unit)?,
 ) {
@@ -123,52 +124,24 @@ private fun FeedCardMenu(
                     indication = null,
                 ) { expanded = true },
         )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(10.dp),
-            containerColor = ModyTheme.colors.white,
-        ) {
+        ModyPopupMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (onReportClick != null) {
-                FeedCardMenuItem(
-                    text = "신고",
-                    color = ModyTheme.colors.gray09,
-                    onClick = {
-                        expanded = false
-                        onReportClick()
-                    },
-                )
+                ModyPopupMenuItem(text = "신고", onClick = {
+                    expanded = false
+                    onReportClick()
+                })
             }
             if (onDeleteClick != null) {
-                // 되돌릴 수 없는 동작이라 색으로도 구분한다(확인 다이얼로그는 화면이 띄운다).
-                FeedCardMenuItem(
-                    text = "삭제",
-                    color = ModyTheme.colors.error,
-                    onClick = {
-                        expanded = false
-                        onDeleteClick()
-                    },
-                )
+                ModyPopupMenuItem(text = "삭제", onClick = {
+                    expanded = false
+                    onDeleteClick()
+                })
             }
         }
     }
 }
 
-@Composable
-private fun FeedCardMenuItem(
-    text: String,
-    color: Color,
-    onClick: () -> Unit,
-) {
-    Text(
-        text = text,
-        style = ModyTheme.typography.c1,
-        color = color,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-    )
-}
+
 
 /** "N일차 🔥" 칩. */
 @Composable

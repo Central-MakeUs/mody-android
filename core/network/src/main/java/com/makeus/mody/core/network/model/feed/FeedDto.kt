@@ -91,12 +91,18 @@ data class CommentResponse(
     val nickname: String = "",
     val profileImageUrl: String? = null,
     val content: String = "",
+    /** 이모지 댓글의 이모지 아이디(clap·medal·fire·heart·run). 글 댓글은 null. */
+    val emojiId: String? = null,
+    /** 작성 시각(ISO-8601). 오프셋이 없으면 KST. */
+    val createdAt: String? = null,
     val isMine: Boolean = false,
 )
 
 @Serializable
 data class CommentCreateRequest(
     val content: String,
+    /** 이모지 댓글이면 아이디, 이때 [content] 는 빈 문자열. null 이면 직렬화에서 빠진다(encodeDefaults=false). */
+    val emojiId: String? = null,
 )
 
 @Serializable

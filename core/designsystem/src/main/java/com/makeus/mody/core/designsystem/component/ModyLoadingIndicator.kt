@@ -1,6 +1,5 @@
 package com.makeus.mody.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -113,13 +112,13 @@ fun ModyLoadingOverlay(
             decorFitsSystemWindows = false,
         ),
     ) {
-        // 창 기본 딤은 끄고 아래 Box 하나로 그린다 — 두 딤이 겹치면 값이 어긋난다.
+        // 딤은 창 기본 딤(FLAG_DIM_BEHIND)으로 칠한다. 창 안쪽 Box 에 칠하면 대화상자 창이
+        // 상태바·내비게이션 바 영역을 덮지 못해 그 두 줄만 밝게 남는다. 창 딤은 화면 전체에 깔린다.
+        // Box 에는 칠하지 않는다 — 두 딤이 겹치면 값이 어긋난다.
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
+        SideEffect { window?.setDimAmount(OVERLAY_DIM_ALPHA) }
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(ModyTheme.colors.black.copy(alpha = OVERLAY_DIM_ALPHA)),
+            modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
             ModyLoadingIndicator(loadingDescription = loadingDescription)

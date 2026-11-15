@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 임시 자리표시. 피그마 이모지(fire) export 로 같은 파일명에 덮어쓴다. -->
+<!-- 피그마 이모지(fire) export 를 손으로 옮긴 것. 원본: fire_fill.svg (32x32).
+     원본 원형 그라데이션은 타원(가로 12.47 x 세로 14.22)인데 VectorDrawable 은 원형만 돼 세로 반경으로 근사했다. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
     <path
-        android:fillColor="#FFFF7043"
-        android:pathData="M24,4a20,20 0,1 1,0 40a20,20 0,1 1,0 -40z" />
+        android:pathData="M8.88867 24.8881L12.4442 29.3326H18.6664L21.3331 25.777L20.4442 20.4437L16.8887 15.1104L12.4442 18.6659L8.88867 24.8881Z"
+        android:fillColor="#FFFBD406" />
+    <path android:pathData="M15.3505 2.8553L13.6705 1.84863L13.3505 3.78063C12.8412 6.8313 10.7572 9.66597 8.45849 11.658C3.95849 15.5593 2.97316 19.7993 4.36649 23.2993C5.69982 26.6486 9.08382 28.942 12.5185 29.3246L13.3324 29.333C11.367 28.1317 10.0865 25.4046 10.5265 23.3073C10.9612 21.246 12.4438 19.3153 15.2918 17.534L16.7278 16.638L17.2638 18.2446C17.5798 19.194 18.1265 19.9566 18.6825 20.7313C18.9492 21.1046 19.2198 21.482 19.4678 21.8833C20.3252 23.2766 20.5518 24.826 19.9985 26.3633C19.4945 27.7606 18.6258 28.7237 17.4805 29.333L18.8118 29.3246C22.0358 28.966 24.4025 27.8633 25.9398 26.0193C27.4638 24.1913 27.9985 21.838 27.9985 19.3326C27.9985 16.9993 27.0398 14.594 25.9092 12.5926C24.5838 10.2486 22.8545 8.30197 20.9665 6.4153C20.6398 7.06863 20.6652 7.33263 19.9932 8.38197C19.1205 6.06458 17.4825 4.11474 15.3505 2.8553Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="15.9986"
+                android:centerY="22.2219"
+                android:gradientRadius="14.2222">
+                <item android:offset="0" android:color="#FFFFC79B" />
+                <item android:offset="1" android:color="#FFFC2C30" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

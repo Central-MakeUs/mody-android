@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 임시 자리표시. 피그마 이모지(heart) export 로 같은 파일명에 덮어쓴다. -->
+<!-- 피그마 이모지(heart) export 를 손으로 옮긴 것. 원본: heart.svg (32x32). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
     <path
-        android:fillColor="#FFEF5350"
-        android:pathData="M24,4a20,20 0,1 1,0 40a20,20 0,1 1,0 -40z" />
+        android:pathData="M10.3739 6.15039C6.97232 6.15039 4.21387 8.77489 4.21387 12.0129C4.21387 14.6267 5.29187 20.8303 15.9031 27.1014C16.0934 27.212 16.3115 27.2704 16.5339 27.2704C16.7562 27.2704 16.9743 27.212 17.1647 27.1014C27.7771 20.8303 28.8539 14.6267 28.8539 12.0129C28.8539 8.77489 26.0954 6.15039 22.6939 6.15039C19.2923 6.15039 16.5339 9.70342 16.5339 9.70342C16.5339 9.70342 13.7754 6.15039 10.3739 6.15039Z"
+        android:fillColor="#FFFFE24A" />
 </vector>

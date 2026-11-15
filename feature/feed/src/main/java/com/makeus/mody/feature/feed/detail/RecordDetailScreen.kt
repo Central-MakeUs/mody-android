@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -431,7 +432,11 @@ private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) 
     val haptic = LocalHapticFeedback.current
     Box {
         Box(
+            // 누름 효과(사각 하이라이트)는 끈다 — 말풍선 모양과 안 맞아 검은 네모가 비친다.
+            // 꾹 누르면 진동과 "삭제" 칩이 바로 떠서 피드백은 그걸로 충분하다.
             modifier = Modifier.combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
                 onClick = {},
                 onLongClickLabel = "댓글 메뉴 열기",
                 onLongClick = {

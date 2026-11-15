@@ -179,7 +179,7 @@ private fun FeedContent(
     if (state.deleteTargetRecordId != null) {
         ModyDialog(
             title = "게시물을 삭제하시겠어요?",
-            message = "삭제한 게시물은 되돌릴 수 없어요.",
+            message = "한번 삭제한 게시물은 복구할 수 없어요.",
             confirmText = "삭제하기",
             dismissText = "취소",
             // 삭제 중 중복 탭 방지

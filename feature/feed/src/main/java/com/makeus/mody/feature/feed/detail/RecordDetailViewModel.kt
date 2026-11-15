@@ -303,10 +303,8 @@ class RecordDetailViewModel @Inject constructor(
             id = commentId,
             authorName = nickname,
             avatarUrl = profileImageUrl,
-            // 본문이 비었는데 그릴 이모지가 없으면 빈 말풍선 대신 대체 문구. 글 댓글은 빈 문자열로
-            // 보낼 수 없으니 이 경우는 이모지 댓글이다 — 모르는 아이디(구버전 앱)이거나, 서버가
-            // emojiId 를 저장·반환하지 않은 경우(배포 전 서버).
-            content = if (emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
+            // 모르는 이모지(구버전 앱)인데 본문이 비어 있으면 빈 말풍선 대신 대체 문구.
+            content = if (emojiId != null && emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
             isMine = isMine,
             emoji = emoji,
             timeLabel = createdAt?.let(::formatCommentTime),

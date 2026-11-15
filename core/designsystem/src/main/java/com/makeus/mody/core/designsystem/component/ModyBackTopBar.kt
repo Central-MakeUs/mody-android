@@ -31,6 +31,7 @@ import com.makeus.mody.core.designsystem.theme.ModyTheme
  * 아바타↔타이틀(및 뒤로↔아바타) 간격 8dp.
  *
  * @param onCloseClick null 이 아니면 우측에 닫기 X 노출.
+ * @param titleTrailing 타이틀 바로 뒤 슬롯(예: 내 글 "나" 배지).
  * @param trailingContent 우측 끝 슬롯(더보기 메뉴 등). [onCloseClick] 과 함께 주면 닫기 X 뒤에 온다.
  */
 // 다른 모듈(:feature:*)에서만 쓰는 public API → 모듈 내부 미사용 오탐 억제.
@@ -43,6 +44,7 @@ fun ModyBackTopBar(
     showAvatar: Boolean = false,
     avatarUrl: String? = null,
     onCloseClick: (() -> Unit)? = null,
+    titleTrailing: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
@@ -78,6 +80,7 @@ fun ModyBackTopBar(
                     modifier = Modifier.weight(1f, fill = false),
                 )
             }
+            titleTrailing?.invoke()
         }
 
         if (onCloseClick != null) {

@@ -21,6 +21,9 @@ sealed class RecordDetailIntent : UiIntent {
     /** 전송 실패 다이얼로그 닫힘 */
     data object SendErrorShown : RecordDetailIntent()
 
+    /** 이모지 도배 제한 안내를 띄웠음 */
+    data object EmojiLimitNoticeShown : RecordDetailIntent()
+
     /** 내 댓글 꾹 누름 → 뜬 "삭제" 탭 */
     data class CommentDeleteClicked(val commentId: Long) : RecordDetailIntent()
 

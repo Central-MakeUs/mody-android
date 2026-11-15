@@ -13,6 +13,7 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
+import com.makeus.mody.feature.feed.detail.contract.PendingEmoji
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
@@ -27,6 +28,8 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel
 class RecordDetailViewModel @Inject constructor(
@@ -43,6 +46,15 @@ class RecordDetailViewModel @Inject constructor(
 
     /** 진행 중인 댓글 조회. 페이지를 빠르게 넘기면 이전 조회를 취소한다. */
     private var commentsJob: Job? = null
+
+    /** 이모지는 누른 순서대로 보낸다(연속으로 눌러도 순서가 섞이지 않게). */
+    private val emojiSendMutex = Mutex()
+
+    /** 최근 이모지를 보낸 시각(ms). 도배 제한용 슬라이딩 윈도. */
+    private val recentEmojiSendTimes = ArrayDeque<Long>()
+
+    /** 미리보기 이모지의 임시 id. 서버 id(양수)와 겹치지 않게 음수로 센다. */
+    private var nextPendingId = -1L
 
     init {
         loadDetail()
@@ -62,6 +74,7 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.EmojiClicked ->
                 if (currentState.commentEnabled) sendEmoji(intent.emoji)
             is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
+            is RecordDetailIntent.EmojiLimitNoticeShown -> setState { copy(emojiLimitNotice = null) }
             is RecordDetailIntent.CommentDeleteClicked ->
                 setState { copy(commentDeleteTargetId = intent.commentId) }
             is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTargetId = null) }
@@ -240,10 +253,75 @@ class RecordDetailViewModel @Inject constructor(
         postComment(content = current.commentInput.trim(), emoji = null)
     }
 
-    /** 이모지는 탭하면 바로 전송. 입력 중인 글은 건드리지 않는다. */
+    /**
+     * 이모지는 탭하면 바로 전송. 입력 중인 글은 건드리지 않는다.
+     *
+     * 서버 응답을 기다리지 않고 맨 아래에 미리 붙인다(반투명). 느린 서버에서 응답을 기다리는 동안
+     * 아무것도 안 보이면 눌리지 않은 줄 안다. 성공하면 목록을 다시 받아 진짜 댓글로 바꿔 끼우고,
+     * 실패하면 미리보기를 지우고 알린다. 전송은 누른 순서대로 하나씩 한다.
+     *
+     * 도배 방지: [EMOJI_LIMIT_WINDOW_MS] 안에 [EMOJI_LIMIT_COUNT] 개까지만 보낸다. 넘으면 안내만 띄운다.
+     */
     private fun sendEmoji(emoji: CommentEmoji) {
-        if (currentState.isSending) return
-        postComment(content = "", emoji = emoji)
+        val recordId = recordIdAt(currentState.currentIndex) ?: return
+        val now = System.currentTimeMillis()
+        while (recentEmojiSendTimes.isNotEmpty() && now - recentEmojiSendTimes.first() >= EMOJI_LIMIT_WINDOW_MS) {
+            recentEmojiSendTimes.removeFirst()
+        }
+        if (recentEmojiSendTimes.size >= EMOJI_LIMIT_COUNT) {
+            setState { copy(emojiLimitNotice = EMOJI_LIMIT_MESSAGE) }
+            return
+        }
+        recentEmojiSendTimes.addLast(now)
+
+        val pending = PendingEmoji(
+            recordId = recordId,
+            comment = CommentUi(
+                id = nextPendingId--,
+                authorName = "",
+                avatarUrl = null,
+                content = "",
+                isMine = true,
+                emoji = emoji,
+                timeLabel = formatCommentTime(Instant.ofEpochMilli(now)),
+                isPending = true,
+            ),
+        )
+        setState { copy(pendingEmojis = pendingEmojis + pending) }
+
+        viewModelScope.launch {
+            val sent = emojiSendMutex.withLock {
+                try {
+                    feedRepository.postComment(groupId, recordId, content = "", emojiId = emoji.id)
+                    true
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            if (!sent) {
+                setState {
+                    copy(pendingEmojis = pendingEmojis - pending, sendError = "이모지를 보내지 못했어요. 다시 시도해주세요.")
+                }
+                return@launch
+            }
+            // 목록을 받은 뒤에 미리보기를 뺀다 — 먼저 빼면 진짜 댓글이 오기 전까지 잠깐 사라진다.
+            val refreshed = try {
+                loadAllComments(recordId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            setState {
+                val stillViewing = records.getOrNull(currentIndex)?.id == recordId
+                copy(
+                    pendingEmojis = pendingEmojis - pending,
+                    comments = if (stillViewing && refreshed != null) refreshed else comments,
+                )
+            }
+        }
     }
 
     /**
@@ -325,6 +403,11 @@ class RecordDetailViewModel @Inject constructor(
     private companion object {
         /** 상세 슬라이드 이어붙이기 안전 상한(무한 루프 방지). */
         const val MAX_DETAIL_PAGES = 20
+
+        /** 이모지 도배 제한: [EMOJI_LIMIT_WINDOW_MS] 안에 최대 [EMOJI_LIMIT_COUNT] 개. */
+        const val EMOJI_LIMIT_COUNT = 5
+        const val EMOJI_LIMIT_WINDOW_MS = 10_000L
+        const val EMOJI_LIMIT_MESSAGE = "이모지는 잠시 후에 다시 보낼 수 있어요"
 
         /** 댓글 이어받기 안전 상한(무한 루프 방지). 기본 20개 × 10 = 200개. */
         const val MAX_COMMENT_PAGES = 10

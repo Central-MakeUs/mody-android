@@ -15,7 +15,12 @@ data class CommentUi(
     val emoji: CommentEmoji? = null,
     /** 작성 시각 표시 문구(예: "14:04", 오늘이 아니면 "11/14 14:04"). 시각이 없으면 null. */
     val timeLabel: String? = null,
+    /** 서버 응답 전 미리 보여주는 내 이모지(반투명, 꾹 눌러 삭제 불가). */
+    val isPending: Boolean = false,
 )
+
+/** 전송 중인 내 이모지 미리보기. 보낸 기록을 함께 붙들어, 넘겨도 다른 기록에 안 보이게 한다. */
+data class PendingEmoji(val recordId: Long, val comment: CommentUi)
 
 data class RecordDetailState(
     val isLoading: Boolean = true,
@@ -29,6 +34,9 @@ data class RecordDetailState(
     val isSending: Boolean = false,
     /** 전송 실패 안내. 이모지는 입력이 남지 않아 알리지 않으면 보낸 줄 안다. */
     val sendError: String? = null,
+    val pendingEmojis: List<PendingEmoji> = emptyList(),
+    /** 이모지 도배 제한 안내(한 번 띄우고 지운다). */
+    val emojiLimitNotice: String? = null,
     // 댓글 삭제: 확인 다이얼로그 대상(null 이면 닫힘) → 삭제 중 → 실패 다이얼로그
     val commentDeleteTargetId: Long? = null,
     val isDeletingComment: Boolean = false,
@@ -51,6 +59,13 @@ data class RecordDetailState(
 ) : UiState {
     /** 전송 가능: 공백 아님 + 전송 중 아님. */
     val canSend: Boolean get() = commentInput.isNotBlank() && !isSending
+
+    /** 화면에 그릴 댓글: 받은 댓글 + 지금 기록으로 보내는 중인 이모지. 오래된 → 최신. */
+    val visibleComments: List<CommentUi>
+        get() {
+            val recordId = currentRecord?.id
+            return comments + pendingEmojis.filter { it.recordId == recordId }.map { it.comment }
+        }
 
     /** 지금 보고 있는 기록. 탑바 작성자·더보기 메뉴의 대상. */
     val currentRecord: FeedCardUi? get() = records.getOrNull(currentIndex)

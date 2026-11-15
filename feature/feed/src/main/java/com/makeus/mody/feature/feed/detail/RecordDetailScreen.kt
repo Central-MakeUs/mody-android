@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.detail
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -133,7 +136,8 @@ private fun RecordDetailContent(
         // 응원 댓글 입력바: 기능이 열렸을 때만 노출(닫히면 전송도 차단).
         if (state.commentEnabled) {
             EmojiBar(
-                enabled = !state.isSending && state.records.isNotEmpty(),
+                // 전송 중에도 누를 수 있다 — 미리 붙고 순서대로 보내진다(도배 제한은 ViewModel 이 한다).
+                enabled = state.records.isNotEmpty(),
                 onClick = { onIntent(RecordDetailIntent.EmojiClicked(it)) },
             )
             CommentInputBar(
@@ -146,6 +150,14 @@ private fun RecordDetailContent(
     }
 
     if (state.isReporting || state.isDeleting || state.isDeletingComment) ModyLoadingOverlay()
+
+    // 이모지 도배 제한 안내. 화면을 막을 일이 아니라 다이얼로그 대신 토스트.
+    val context = LocalContext.current
+    LaunchedEffect(state.emojiLimitNotice) {
+        val notice = state.emojiLimitNotice ?: return@LaunchedEffect
+        Toast.makeText(context, notice, Toast.LENGTH_SHORT).show()
+        onIntent(RecordDetailIntent.EmojiLimitNoticeShown)
+    }
     RecordActionDialogs(state = state, onIntent = onIntent)
 }
 
@@ -267,9 +279,10 @@ private fun DetailBody(
         // 댓글: 헤더 뒤로 스크롤되어 숨음. 헤더 높이만큼 top content padding.
         // 채팅처럼 최신 댓글이 맨 아래. reverseLayout 이라 0번(=최신)이 아래에 붙고, 키보드가 올라와
         // 목록이 줄어도 아래(최신)가 유지된다. 빈 상태 문구는 위에서부터 보여야 해 그때만 정방향.
-        val hasComments = state.comments.isNotEmpty()
+        val comments = state.visibleComments
+        val hasComments = comments.isNotEmpty()
         val listState = rememberLazyListState()
-        val newestId = state.comments.lastOrNull()?.id
+        val newestId = comments.lastOrNull()?.id
         // 기록을 넘기거나(댓글이 바뀜) 내가 보내 새 댓글이 붙으면 최신으로 내린다.
         LaunchedEffect(state.currentRecord?.id, newestId) {
             if (hasComments) listState.scrollToItem(0)
@@ -285,7 +298,7 @@ private fun DetailBody(
                 if (!hasComments && !state.isCommentsLoading) {
                     item { EmptyComments() }
                 } else {
-                    items(state.comments.asReversed(), key = { it.id }) { comment ->
+                    items(comments.asReversed(), key = { it.id }) { comment ->
                         CommentBubble(
                             comment = comment,
                             onDeleteClick = { onIntent(RecordDetailIntent.CommentDeleteClicked(comment.id)) },
@@ -372,7 +385,9 @@ private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 6.dp),
+                .padding(horizontal = 24.dp, vertical = 6.dp)
+                // 보내는 중인 미리보기는 반투명.
+                .alpha(if (comment.isPending) PENDING_ALPHA else 1f),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
             verticalAlignment = Alignment.Bottom,
         ) {
@@ -440,6 +455,8 @@ private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) 
                 onClick = {},
                 onLongClickLabel = "댓글 메뉴 열기",
                 onLongClick = {
+                    // 보내는 중인 미리보기는 아직 서버 id 가 없어 지울 수 없다.
+                    if (comment.isPending) return@combinedClickable
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     menuExpanded = true
                 },
@@ -509,6 +526,7 @@ private fun EmojiBar(enabled: Boolean, onClick: (CommentEmoji) -> Unit) {
 }
 
 private val EMOJI_COMMENT_SIZE = 44.dp
+private const val PENDING_ALPHA = 0.5f
 private val EMOJI_BUTTON_SIZE = 32.dp
 
 /**

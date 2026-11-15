@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +31,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.component.CroppedAsyncImage
 import com.makeus.mody.core.designsystem.component.ModyAvatar
+import com.makeus.mody.core.designsystem.component.ModyPopupMenu
+import com.makeus.mody.core.designsystem.component.ModyPopupMenuItem
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
@@ -125,55 +124,24 @@ internal fun FeedCardMenu(
                     indication = null,
                 ) { expanded = true },
         )
-        RecordMenuPopup(expanded = expanded, onDismiss = { expanded = false }) {
+        ModyPopupMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (onReportClick != null) {
-                RecordMenuItem(text = "신고") {
+                ModyPopupMenuItem(text = "신고", onClick = {
                     expanded = false
                     onReportClick()
-                }
+                })
             }
             if (onDeleteClick != null) {
-                RecordMenuItem(text = "삭제") {
+                ModyPopupMenuItem(text = "삭제", onClick = {
                     expanded = false
                     onDeleteClick()
-                }
+                })
             }
         }
     }
 }
 
 
-/**
- * 더보기·꾹 누르기 메뉴 칩(시안 9:3503). 흰 바탕 88x34, 둥근 8, 그림자.
- * 신고·삭제 모두 되돌리기 어려운 동작이라 빨간 글자다(확인 다이얼로그는 화면이 띄운다).
- */
-@Composable
-internal fun RecordMenuPopup(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(8.dp),
-        containerColor = ModyTheme.colors.white,
-        border = BorderStroke(1.dp, ModyTheme.colors.gray01),
-        content = content,
-    )
-}
-
-@Composable
-internal fun RecordMenuItem(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(width = 88.dp, height = 34.dp)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = text, style = ModyTheme.typography.c1, color = ModyTheme.colors.error)
-    }
-}
 
 /** "N일차 🔥" 칩. */
 @Composable

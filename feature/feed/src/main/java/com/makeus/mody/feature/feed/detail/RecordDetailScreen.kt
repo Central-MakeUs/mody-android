@@ -64,6 +64,8 @@ import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingOverlay
 import com.makeus.mody.core.designsystem.component.ModyLoadingScreen
 import com.makeus.mody.core.designsystem.component.ModyPageIndicator
+import com.makeus.mody.core.designsystem.component.ModyPopupMenu
+import com.makeus.mody.core.designsystem.component.ModyPopupMenuItem
 import com.makeus.mody.core.designsystem.icon.ModyIcons
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import com.makeus.mody.feature.feed.R
@@ -73,8 +75,6 @@ import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.component.FeedCard
 import com.makeus.mody.feature.feed.feed.component.FeedCardMenu
-import com.makeus.mody.feature.feed.feed.component.RecordMenuItem
-import com.makeus.mody.feature.feed.feed.component.RecordMenuPopup
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 
 @Composable
@@ -442,11 +442,12 @@ private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) 
         ) {
             CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300, bubbleShape = MineBubbleShape)
         }
-        RecordMenuPopup(expanded = menuExpanded, onDismiss = { menuExpanded = false }) {
-            RecordMenuItem(text = "삭제") {
+        // 시안: 말풍선 오른쪽 끝에 맞추고 아래쪽에 4dp 겹친다.
+        ModyPopupMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }, offsetY = (-4).dp) {
+            ModyPopupMenuItem(text = "삭제", onClick = {
                 menuExpanded = false
                 onDeleteClick()
-            }
+            })
         }
     }
 }

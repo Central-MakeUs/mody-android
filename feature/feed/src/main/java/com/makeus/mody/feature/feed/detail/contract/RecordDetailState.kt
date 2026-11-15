@@ -13,6 +13,8 @@ data class CommentUi(
     val isMine: Boolean,
     /** 이모지 댓글이면 그릴 이모지. null 이면 글 댓글(또는 모르는 이모지 → [content] 에 대체 문구). */
     val emoji: CommentEmoji? = null,
+    /** 작성 시각 표시 문구(예: "오후 3:12", 오늘이 아니면 "11/14 오후 3:12"). 시각이 없으면 null. */
+    val timeLabel: String? = null,
 )
 
 data class RecordDetailState(
@@ -27,6 +29,10 @@ data class RecordDetailState(
     val isSending: Boolean = false,
     /** 전송 실패 안내. 이모지는 입력이 남지 않아 알리지 않으면 보낸 줄 안다. */
     val sendError: String? = null,
+    // 댓글 삭제: 확인 다이얼로그 대상(null 이면 닫힘) → 삭제 중 → 실패 다이얼로그
+    val commentDeleteTargetId: Long? = null,
+    val isDeletingComment: Boolean = false,
+    val commentDeleteError: String? = null,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 더보기 메뉴 자체를 숨긴다 — 판별이 뒤집히면

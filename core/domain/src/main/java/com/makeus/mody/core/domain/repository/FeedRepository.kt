@@ -41,6 +41,9 @@ interface FeedRepository {
      */
     suspend fun postComment(groupId: Long, recordId: Long, content: String, emojiId: String? = null): Long
 
+    /** 내 댓글 삭제. */
+    suspend fun deleteComment(groupId: Long, recordId: Long, commentId: Long)
+
     /** 기록(게시물) 신고. 접수만 하고 삭제 등 처리는 서버 검토 후 진행. */
     suspend fun reportRecord(groupId: Long, recordId: Long)
 }

@@ -18,7 +18,11 @@ import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 import com.makeus.mody.feature.feed.feed.contract.toFeedCardUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -58,6 +62,11 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.EmojiClicked ->
                 if (currentState.commentEnabled) sendEmoji(intent.emoji)
             is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
+            is RecordDetailIntent.CommentDeleteClicked ->
+                setState { copy(commentDeleteTargetId = intent.commentId) }
+            is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTargetId = null) }
+            is RecordDetailIntent.CommentDeleteConfirmed -> deleteComment()
+            is RecordDetailIntent.CommentDeleteErrorShown -> setState { copy(commentDeleteError = null) }
 
             // 대상 id 는 누른 순간에 붙든다 — 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 그 기록이다.
             is RecordDetailIntent.ReportClicked ->
@@ -257,6 +266,34 @@ class RecordDetailViewModel @Inject constructor(
         if (recordIdAt(currentState.currentIndex) == recordId) loadComments(recordId)
     }
 
+    /**
+     * 내 댓글 삭제. 대상 기록·댓글 id 는 시작할 때 붙든다.
+     * 성공하면 그 기록을 아직 보고 있을 때만 목록에서 뺀다(넘겨버렸으면 다음에 다시 받을 때 반영된다).
+     */
+    private fun deleteComment() = viewModelScope.launch {
+        val commentId = currentState.commentDeleteTargetId ?: return@launch
+        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
+        if (currentState.isDeletingComment) return@launch
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다.
+        setState { copy(isDeletingComment = true, commentDeleteTargetId = null) }
+        try {
+            feedRepository.deleteComment(groupId, recordId, commentId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            setState {
+                copy(isDeletingComment = false, commentDeleteError = "댓글을 삭제하지 못했어요. 다시 시도해주세요.")
+            }
+            return@launch
+        }
+        setState {
+            copy(
+                isDeletingComment = false,
+                comments = if (recordIdAt(currentIndex) == recordId) comments.filterNot { it.id == commentId } else comments,
+            )
+        }
+    }
+
     /** 현재 state 의 records 에서 index 위치 recordId. */
     private fun recordIdAt(index: Int): Long? = currentState.records.getOrNull(index)?.id
 
@@ -270,7 +307,19 @@ class RecordDetailViewModel @Inject constructor(
             content = if (emojiId != null && emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
             isMine = isMine,
             emoji = emoji,
+            timeLabel = createdAt?.let(::formatCommentTime),
         )
+    }
+
+    /** 오늘 쓴 댓글은 시각만, 그 전이면 날짜를 붙인다(기록 상세는 지난 날짜로도 들어온다). */
+    private fun formatCommentTime(createdAt: Instant): String {
+        val zone = ZoneId.systemDefault()
+        val time = createdAt.atZone(zone)
+        return if (time.toLocalDate() == LocalDate.now(zone)) {
+            time.format(TIME_FORMATTER)
+        } else {
+            time.format(DATE_TIME_FORMATTER)
+        }
     }
 
     private companion object {
@@ -279,6 +328,9 @@ class RecordDetailViewModel @Inject constructor(
 
         /** 댓글 이어받기 안전 상한(무한 루프 방지). 기본 20개 × 10 = 200개. */
         const val MAX_COMMENT_PAGES = 10
+
+        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN)
+        val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d a h:mm", Locale.KOREAN)
 
         /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
         const val UNKNOWN_EMOJI_TEXT = "(이모지)"

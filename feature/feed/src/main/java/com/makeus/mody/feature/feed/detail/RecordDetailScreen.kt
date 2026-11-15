@@ -2,7 +2,9 @@ package com.makeus.mody.feature.feed.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -44,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -132,7 +138,7 @@ private fun RecordDetailContent(
         }
     }
 
-    if (state.isReporting || state.isDeleting) ModyLoadingOverlay()
+    if (state.isReporting || state.isDeleting || state.isDeletingComment) ModyLoadingOverlay()
     RecordActionDialogs(state = state, onIntent = onIntent)
 }
 
@@ -190,6 +196,23 @@ private fun RecordActionDialogs(
         message = state.sendError,
         onDismiss = { onIntent(RecordDetailIntent.SendErrorShown) },
     )
+
+    if (state.commentDeleteTargetId != null) {
+        ModyDialog(
+            title = "댓글을 삭제하시겠어요?",
+            message = "한번 삭제한 댓글은 복구할 수 없어요.",
+            confirmText = "삭제하기",
+            dismissText = "취소",
+            confirmEnabled = !state.isDeletingComment,
+            onConfirm = { onIntent(RecordDetailIntent.CommentDeleteConfirmed) },
+            onDismissRequest = { onIntent(RecordDetailIntent.CommentDeleteDialogDismissed) },
+        )
+    }
+
+    ModyErrorDialog(
+        message = state.commentDeleteError,
+        onDismiss = { onIntent(RecordDetailIntent.CommentDeleteErrorShown) },
+    )
 }
 
 @Composable
@@ -242,7 +265,10 @@ private fun DetailBody(
                     item { EmptyComments() }
                 } else {
                     items(state.comments.asReversed(), key = { it.id }) { comment ->
-                        CommentBubble(comment)
+                        CommentBubble(
+                            comment = comment,
+                            onDeleteClick = { onIntent(RecordDetailIntent.CommentDeleteClicked(comment.id)) },
+                        )
                     }
                 }
             }
@@ -312,9 +338,13 @@ private fun EmptyComments() {
     }
 }
 
-/** 응원 댓글 버블. 내 댓글 = 우측 primary300, 남의 댓글 = 좌측 gray01. */
+/**
+ * 응원 댓글 버블. 내 댓글 = 우측 primary300, 남의 댓글 = 좌측 gray01.
+ * 작성 시각은 말풍선 바깥 아래쪽에 붙는다(내 댓글은 왼쪽, 남의 댓글은 오른쪽).
+ * 내 댓글은 꾹 누르면 "삭제"가 뜬다.
+ */
 @Composable
-private fun CommentBubble(comment: CommentUi) {
+private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
     if (comment.isMine) {
         Column(
             modifier = Modifier
@@ -334,13 +364,21 @@ private fun CommentBubble(comment: CommentUi) {
                 ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300)
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                CommentTime(comment.timeLabel)
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    DeletableCommentBody(comment = comment, onDeleteClick = onDeleteClick)
+                }
+            }
         }
     } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+                .padding(horizontal = 20.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
@@ -351,8 +389,68 @@ private fun CommentBubble(comment: CommentUi) {
                     color = ModyTheme.colors.gray06,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01)
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    // 시각 자리를 남기고 말풍선이 줄바꿈되도록 weight(fill=false).
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01)
+                    }
+                    CommentTime(comment.timeLabel)
+                }
             }
+        }
+    }
+}
+
+/** 말풍선 옆 작성 시각. TODO(design): 시안 확인 전 임시 스타일. */
+@Composable
+private fun CommentTime(label: String?) {
+    if (label == null) return
+    Text(
+        text = label,
+        style = ModyTheme.typography.c3,
+        color = ModyTheme.colors.gray05,
+    )
+}
+
+/** 내 댓글 본문. 꾹 누르면 바로 아래에 "삭제" 메뉴가 뜬다. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+    Box {
+        Box(
+            modifier = Modifier.combinedClickable(
+                onClick = {},
+                onLongClickLabel = "댓글 메뉴 열기",
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    menuExpanded = true
+                },
+            ),
+        ) {
+            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300)
+        }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+            shape = RoundedCornerShape(10.dp),
+            containerColor = ModyTheme.colors.white,
+        ) {
+            Text(
+                text = "삭제",
+                style = ModyTheme.typography.c1,
+                color = ModyTheme.colors.error,
+                modifier = Modifier
+                    .clickable {
+                        menuExpanded = false
+                        onDeleteClick()
+                    }
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+            )
         }
     }
 }

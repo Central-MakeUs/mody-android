@@ -21,6 +21,18 @@ sealed class RecordDetailIntent : UiIntent {
     /** 전송 실패 다이얼로그 닫힘 */
     data object SendErrorShown : RecordDetailIntent()
 
+    /** 내 댓글 꾹 누름 → 뜬 "삭제" 탭 */
+    data class CommentDeleteClicked(val commentId: Long) : RecordDetailIntent()
+
+    /** 댓글 삭제 확인 "삭제하기" */
+    data object CommentDeleteConfirmed : RecordDetailIntent()
+
+    /** 댓글 삭제 확인 다이얼로그 닫기 */
+    data object CommentDeleteDialogDismissed : RecordDetailIntent()
+
+    /** 댓글 삭제 실패 다이얼로그 닫힘 */
+    data object CommentDeleteErrorShown : RecordDetailIntent()
+
     /** 더보기 → 신고(남의 글). 대상은 지금 보고 있는 기록. */
     data object ReportClicked : RecordDetailIntent()
 

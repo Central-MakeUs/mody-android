@@ -93,6 +93,8 @@ data class CommentResponse(
     val content: String = "",
     /** 이모지 댓글의 이모지 아이디(clap·medal·fire·heart·run). 글 댓글은 null. */
     val emojiId: String? = null,
+    /** 작성 시각(ISO-8601). 오프셋이 없으면 KST. */
+    val createdAt: String? = null,
     val isMine: Boolean = false,
 )
 

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -220,16 +221,27 @@ private fun DetailBody(
 
     Box(modifier = modifier.fillMaxSize()) {
         // 댓글: 헤더 뒤로 스크롤되어 숨음. 헤더 높이만큼 top content padding.
+        // 채팅처럼 최신 댓글이 맨 아래. reverseLayout 이라 0번(=최신)이 아래에 붙고, 키보드가 올라와
+        // 목록이 줄어도 아래(최신)가 유지된다. 빈 상태 문구는 위에서부터 보여야 해 그때만 정방향.
+        val hasComments = state.comments.isNotEmpty()
+        val listState = rememberLazyListState()
+        val newestId = state.comments.lastOrNull()?.id
+        // 기록을 넘기거나(댓글이 바뀜) 내가 보내 새 댓글이 붙으면 최신으로 내린다.
+        LaunchedEffect(state.currentRecord?.id, newestId) {
+            if (hasComments) listState.scrollToItem(0)
+        }
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
+            reverseLayout = hasComments,
             contentPadding = PaddingValues(top = headerHeightDp, bottom = 12.dp),
         ) {
             // 응원 댓글: 기능이 열렸을 때만 노출(빈 상태 문구 포함).
             if (state.commentEnabled) {
-                if (state.comments.isEmpty() && !state.isCommentsLoading) {
+                if (!hasComments && !state.isCommentsLoading) {
                     item { EmptyComments() }
                 } else {
-                    items(state.comments, key = { it.id }) { comment ->
+                    items(state.comments.asReversed(), key = { it.id }) { comment ->
                         CommentBubble(comment)
                     }
                 }

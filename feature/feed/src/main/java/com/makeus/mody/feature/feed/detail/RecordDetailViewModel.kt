@@ -196,7 +196,7 @@ class RecordDetailViewModel @Inject constructor(
         commentsJob = viewModelScope.launch {
             setState { copy(isCommentsLoading = true) }
             val comments = try {
-                feedRepository.getComments(groupId, recordId).comments.map { it.toUi() }
+                loadAllComments(recordId)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -205,6 +205,24 @@ class RecordDetailViewModel @Inject constructor(
             if (recordIdAt(currentState.currentIndex) != recordId) return@launch
             setState { copy(comments = comments, isCommentsLoading = false) }
         }
+    }
+
+    /**
+     * 그 기록의 댓글을 커서 끝까지 모아 오래된 → 최신 순으로 정렬한다(화면은 최신이 맨 아래).
+     * 첫 페이지(기본 20개)만 받으면 서버 정렬에 따라 최신 댓글이 빠질 수 있다. 서버 정렬 방향에
+     * 기대지 않도록 id(생성 순) 로 다시 정렬한다.
+     */
+    private suspend fun loadAllComments(recordId: Long): List<CommentUi> {
+        val result = mutableListOf<Comment>()
+        var cursor: Long? = null
+        var pages = 0
+        do {
+            val page = feedRepository.getComments(groupId, recordId, cursor = cursor)
+            result += page.comments
+            cursor = page.nextCursor
+            pages++
+        } while (page.hasNext && cursor != null && pages < MAX_COMMENT_PAGES)
+        return result.distinctBy { it.commentId }.sortedBy { it.commentId }.map { it.toUi() }
     }
 
     private fun sendComment() {
@@ -258,6 +276,9 @@ class RecordDetailViewModel @Inject constructor(
     private companion object {
         /** 상세 슬라이드 이어붙이기 안전 상한(무한 루프 방지). */
         const val MAX_DETAIL_PAGES = 20
+
+        /** 댓글 이어받기 안전 상한(무한 루프 방지). 기본 20개 × 10 = 200개. */
+        const val MAX_COMMENT_PAGES = 10
 
         /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
         const val UNKNOWN_EMOJI_TEXT = "(이모지)"

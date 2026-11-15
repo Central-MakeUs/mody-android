@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -123,51 +125,54 @@ internal fun FeedCardMenu(
                     indication = null,
                 ) { expanded = true },
         )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(10.dp),
-            containerColor = ModyTheme.colors.white,
-        ) {
+        RecordMenuPopup(expanded = expanded, onDismiss = { expanded = false }) {
             if (onReportClick != null) {
-                FeedCardMenuItem(
-                    text = "신고",
-                    color = ModyTheme.colors.gray09,
-                    onClick = {
-                        expanded = false
-                        onReportClick()
-                    },
-                )
+                RecordMenuItem(text = "신고") {
+                    expanded = false
+                    onReportClick()
+                }
             }
             if (onDeleteClick != null) {
-                // 되돌릴 수 없는 동작이라 색으로도 구분한다(확인 다이얼로그는 화면이 띄운다).
-                FeedCardMenuItem(
-                    text = "삭제",
-                    color = ModyTheme.colors.error,
-                    onClick = {
-                        expanded = false
-                        onDeleteClick()
-                    },
-                )
+                RecordMenuItem(text = "삭제") {
+                    expanded = false
+                    onDeleteClick()
+                }
             }
         }
     }
 }
 
+
+/**
+ * 더보기·꾹 누르기 메뉴 칩(시안 9:3503). 흰 바탕 88x34, 둥근 8, 그림자.
+ * 신고·삭제 모두 되돌리기 어려운 동작이라 빨간 글자다(확인 다이얼로그는 화면이 띄운다).
+ */
 @Composable
-private fun FeedCardMenuItem(
-    text: String,
-    color: Color,
-    onClick: () -> Unit,
+internal fun RecordMenuPopup(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    Text(
-        text = text,
-        style = ModyTheme.typography.c1,
-        color = color,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(8.dp),
+        containerColor = ModyTheme.colors.white,
+        border = BorderStroke(1.dp, ModyTheme.colors.gray01),
+        content = content,
     )
+}
+
+@Composable
+internal fun RecordMenuItem(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(width = 88.dp, height = 34.dp)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = text, style = ModyTheme.typography.c1, color = ModyTheme.colors.error)
+    }
 }
 
 /** "N일차 🔥" 칩. */

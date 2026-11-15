@@ -13,7 +13,7 @@ data class CommentUi(
     val isMine: Boolean,
     /** 이모지 댓글이면 그릴 이모지. null 이면 글 댓글(또는 모르는 이모지 → [content] 에 대체 문구). */
     val emoji: CommentEmoji? = null,
-    /** 작성 시각 표시 문구(예: "오후 3:12", 오늘이 아니면 "11/14 오후 3:12"). 시각이 없으면 null. */
+    /** 작성 시각 표시 문구(예: "14:04", 오늘이 아니면 "11/14 14:04"). 시각이 없으면 null. */
     val timeLabel: String? = null,
 )
 

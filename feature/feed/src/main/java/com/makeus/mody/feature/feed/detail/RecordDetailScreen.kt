@@ -28,14 +28,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -74,6 +73,8 @@ import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailState
 import com.makeus.mody.feature.feed.feed.component.FeedCard
 import com.makeus.mody.feature.feed.feed.component.FeedCardMenu
+import com.makeus.mody.feature.feed.feed.component.RecordMenuItem
+import com.makeus.mody.feature.feed.feed.component.RecordMenuPopup
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
 
 @Composable
@@ -100,6 +101,11 @@ private fun RecordDetailContent(
             onBackClick = { onIntent(RecordDetailIntent.BackClicked) },
             showAvatar = true,
             avatarUrl = author?.avatarUrl,
+            titleTrailing = if (isMine == true) {
+                { MeBadge() }
+            } else {
+                null
+            },
             // 남의 글이면 신고, 내 글이면 삭제. 판별 전(null)엔 메뉴를 숨긴다(피드 카드와 같은 정책).
             trailingContent = if (isMine == null) {
                 null
@@ -142,6 +148,20 @@ private fun RecordDetailContent(
     RecordActionDialogs(state = state, onIntent = onIntent)
 }
 
+/** 내 글 표시 "나" 배지(시안 9:3784). primary300 원 24dp. */
+@Composable
+private fun MeBadge() {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(ModyTheme.colors.primary300),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = "나", style = ModyTheme.typography.c2, color = ModyTheme.colors.gray07)
+    }
+}
+
 /** 신고·삭제 확인/완료/실패 다이얼로그. 문구는 피드 카드 메뉴와 같다. */
 @Composable
 private fun RecordActionDialogs(
@@ -152,7 +172,7 @@ private fun RecordActionDialogs(
         ModyDialog(
             title = "게시물을 신고하시겠어요?",
             message = "신고한 게시물은 검토 후 삭제 처리할 예정입니다.",
-            confirmText = "신고하기",
+            confirmText = "신고",
             dismissText = "취소",
             confirmEnabled = !state.isReporting,
             onConfirm = { onIntent(RecordDetailIntent.ReportConfirmed) },
@@ -174,7 +194,7 @@ private fun RecordActionDialogs(
         ModyDialog(
             title = "게시물을 삭제하시겠어요?",
             message = "한번 삭제한 게시물은 복구할 수 없어요.",
-            confirmText = "삭제하기",
+            confirmText = "삭제",
             dismissText = "취소",
             confirmEnabled = !state.isDeleting,
             onConfirm = { onIntent(RecordDetailIntent.DeleteConfirmed) },
@@ -201,7 +221,7 @@ private fun RecordActionDialogs(
         ModyDialog(
             title = "댓글을 삭제하시겠어요?",
             message = "한번 삭제한 댓글은 복구할 수 없어요.",
-            confirmText = "삭제하기",
+            confirmText = "삭제",
             dismissText = "취소",
             confirmEnabled = !state.isDeletingComment,
             onConfirm = { onIntent(RecordDetailIntent.CommentDeleteConfirmed) },
@@ -339,83 +359,71 @@ private fun EmptyComments() {
 }
 
 /**
- * 응원 댓글 버블. 내 댓글 = 우측 primary300, 남의 댓글 = 좌측 gray01.
- * 작성 시각은 말풍선 바깥 아래쪽에 붙는다(내 댓글은 왼쪽, 남의 댓글은 오른쪽).
- * 내 댓글은 꾹 누르면 "삭제"가 뜬다.
+ * 응원 댓글 한 줄(시안 9:3643).
+ * - 남의 댓글: 아바타·이름 줄 아래에 말풍선(gray01, 왼쪽 위만 각짐) + 오른쪽에 시각.
+ * - 내 댓글: 아바타·이름 없이 오른쪽 정렬, 왼쪽에 시각 + 말풍선(primary300, 오른쪽 위만 각짐).
+ *   꾹 누르면 말풍선 아래에 "삭제"가 뜬다.
+ * - 이모지 댓글은 말풍선 없이 이모지만(44dp).
  */
 @Composable
 private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
     if (comment.isMine) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.End,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = comment.authorName,
-                    style = ModyTheme.typography.c1,
-                    color = ModyTheme.colors.gray06,
-                )
-                ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                CommentTime(comment.timeLabel)
-                Box(modifier = Modifier.weight(1f, fill = false)) {
-                    DeletableCommentBody(comment = comment, onDeleteClick = onDeleteClick)
-                }
-            }
-        }
-    } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = 24.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+            verticalAlignment = Alignment.Bottom,
         ) {
-            ModyAvatar(imageUrl = comment.avatarUrl, size = 28.dp)
-            Column {
+            CommentTime(comment.timeLabel)
+            // 시각 자리를 남기고 말풍선이 줄바꿈되도록 weight(fill=false).
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                DeletableCommentBody(comment = comment, onDeleteClick = onDeleteClick)
+            }
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ModyAvatar(imageUrl = comment.avatarUrl, size = 32.dp)
                 Text(
                     text = comment.authorName,
-                    style = ModyTheme.typography.c1,
-                    color = ModyTheme.colors.gray06,
+                    style = ModyTheme.typography.c2,
+                    color = ModyTheme.colors.gray07,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    // 시각 자리를 남기고 말풍선이 줄바꿈되도록 weight(fill=false).
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01)
-                    }
-                    CommentTime(comment.timeLabel)
+            }
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01, bubbleShape = OthersBubbleShape)
                 }
+                CommentTime(comment.timeLabel)
             }
         }
     }
 }
 
-/** 말풍선 옆 작성 시각. TODO(design): 시안 확인 전 임시 스타일. */
+/** 말풍선 옆 작성 시각. 시안 C4_Medium / Gray4. */
 @Composable
 private fun CommentTime(label: String?) {
     if (label == null) return
     Text(
         text = label,
-        style = ModyTheme.typography.c3,
-        color = ModyTheme.colors.gray05,
+        style = ModyTheme.typography.c4,
+        color = ModyTheme.colors.gray04,
     )
 }
 
-/** 내 댓글 본문. 꾹 누르면 바로 아래에 "삭제" 메뉴가 뜬다. */
+/** 내 댓글 본문. 꾹 누르면 바로 아래에 "삭제" 칩이 뜬다(시안 9:3713). */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) {
@@ -432,32 +440,20 @@ private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) 
                 },
             ),
         ) {
-            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300)
+            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300, bubbleShape = MineBubbleShape)
         }
-        DropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false },
-            shape = RoundedCornerShape(10.dp),
-            containerColor = ModyTheme.colors.white,
-        ) {
-            Text(
-                text = "삭제",
-                style = ModyTheme.typography.c1,
-                color = ModyTheme.colors.error,
-                modifier = Modifier
-                    .clickable {
-                        menuExpanded = false
-                        onDeleteClick()
-                    }
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-            )
+        RecordMenuPopup(expanded = menuExpanded, onDismiss = { menuExpanded = false }) {
+            RecordMenuItem(text = "삭제") {
+                menuExpanded = false
+                onDeleteClick()
+            }
         }
     }
 }
 
 /** 댓글 본문: 이모지 댓글이면 말풍선 없이 이모지 이미지, 글 댓글이면 말풍선. */
 @Composable
-private fun CommentBody(comment: CommentUi, bubbleColor: Color) {
+private fun CommentBody(comment: CommentUi, bubbleColor: Color, bubbleShape: Shape) {
     val emoji = comment.emoji
     if (emoji != null) {
         Image(
@@ -471,23 +467,26 @@ private fun CommentBody(comment: CommentUi, bubbleColor: Color) {
             style = ModyTheme.typography.b7,
             color = ModyTheme.colors.gray10,
             modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(bubbleShape)
                 .background(bubbleColor)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
 }
 
-/**
- * 입력바 위 이모지 줄. 탭하면 바로 전송된다(글 입력과 무관).
- * TODO(design): 시안 확정 전 임시 배치 — 크기·간격·배경은 피그마 대로 맞춘다.
- */
+/** 남의 말풍선: 왼쪽 위(아바타 쪽)만 각지고, 왼쪽 아래 16·오른쪽은 완전히 둥글다. */
+private val OthersBubbleShape = RoundedCornerShape(topStart = 0.dp, topEnd = 100.dp, bottomEnd = 100.dp, bottomStart = 16.dp)
+
+/** 내 말풍선: 오른쪽 위만 각지고, 오른쪽 아래 16·왼쪽은 완전히 둥글다. */
+private val MineBubbleShape = RoundedCornerShape(topStart = 100.dp, topEnd = 0.dp, bottomEnd = 16.dp, bottomStart = 100.dp)
+
+/** 입력바 위 이모지 줄(시안 "임티" 9:3731). 탭하면 바로 전송된다(글 입력과 무관). */
 @Composable
 private fun EmojiBar(enabled: Boolean, onClick: (CommentEmoji) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp),
+            .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CommentEmoji.entries.forEach { emoji ->
@@ -503,9 +502,13 @@ private fun EmojiBar(enabled: Boolean, onClick: (CommentEmoji) -> Unit) {
     }
 }
 
-private val EMOJI_COMMENT_SIZE = 56.dp
-private val EMOJI_BUTTON_SIZE = 36.dp
+private val EMOJI_COMMENT_SIZE = 44.dp
+private val EMOJI_BUTTON_SIZE = 32.dp
 
+/**
+ * 댓글 입력바(시안 9:3612). 회색 둥근 입력칸, 글이 있으면 오른쪽에 노란 전송 버튼(44dp)이 붙는다.
+ * 이모지 줄과의 간격 8, 좌우 24.
+ */
 @Composable
 private fun CommentInputBar(
     value: String,
@@ -518,41 +521,55 @@ private fun CommentInputBar(
             .fillMaxWidth()
             .imePadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TextField(
+        BasicTextField(
             value = value,
             onValueChange = onChange,
-            modifier = Modifier
-                .weight(1f)
-                .clip(CircleShape)
-                .border(1.dp, ModyTheme.colors.gray02, CircleShape),
-            placeholder = {
-                Text(
-                    text = "버디에게 응원 한마디를 남겨보세요!",
-                    style = ModyTheme.typography.b7,
-                    color = ModyTheme.colors.gray04,
-                )
-            },
-            textStyle = ModyTheme.typography.b5,
             singleLine = true,
+            textStyle = ModyTheme.typography.b7.copy(color = ModyTheme.colors.gray10),
+            cursorBrush = SolidColor(ModyTheme.colors.primary100),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = ModyTheme.colors.gray01,
-                unfocusedContainerColor = ModyTheme.colors.gray01,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
+            modifier = Modifier.weight(1f),
+            decorationBox = { inner ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clip(CircleShape)
+                        .background(ModyTheme.colors.gray01)
+                        .border(1.dp, ModyTheme.colors.gray02, CircleShape)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = "버디에게 응원 한마디를 남겨보세요!",
+                            style = ModyTheme.typography.b7,
+                            color = ModyTheme.colors.gray04,
+                        )
+                    }
+                    inner()
+                }
+            },
         )
         if (canSend) {
-            IconButton(onClick = onSend) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(ModyTheme.colors.primary100)
+                    .clickable(onClick = onSend),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
-                    painter = painterResource(ModyIcons.SendFilled),
+                    painter = painterResource(ModyIcons.Send),
                     contentDescription = "전송",
-                    tint = Color.Unspecified,
+                    tint = ModyTheme.colors.gray10,
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }

@@ -329,8 +329,8 @@ class RecordDetailViewModel @Inject constructor(
         /** 댓글 이어받기 안전 상한(무한 루프 방지). 기본 20개 × 10 = 200개. */
         const val MAX_COMMENT_PAGES = 10
 
-        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN)
-        val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d a h:mm", Locale.KOREAN)
+        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
+        val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d HH:mm", Locale.KOREAN)
 
         /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
         const val UNKNOWN_EMOJI_TEXT = "(이모지)"

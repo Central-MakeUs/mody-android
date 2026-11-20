@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.mody.android.hilt)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
+    // 앱 시작 경로 baseline profile 을 :baselineprofile 에서 받아 release 에 넣는다.
+    alias(libs.plugins.baselineprofile)
 }
 
 // local.properties(gitignore)에서 카카오 네이티브 키 로드. 없으면 빈 문자열(컴파일은 됨).
@@ -100,6 +102,9 @@ android {
 
 dependencies {
     implementation(project(":presentation"))
+    // 설치 시 baseline profile 을 바로 적용(Play 클라우드 프로필이 오기 전·사이드로드 설치에도).
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     // DI 조립: Repository/DataSource 구현 바인딩(:core:data)을 Hilt 그래프에 포함
     implementation(project(":core:data"))
     implementation(project(":core:common-ui")) // CurrentActivityHolder 등록용

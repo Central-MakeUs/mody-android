@@ -9,4 +9,5 @@ android {
 
 dependencies {
     implementation(libs.androidx.activity.compose)
+    testImplementation(libs.junit)
 }

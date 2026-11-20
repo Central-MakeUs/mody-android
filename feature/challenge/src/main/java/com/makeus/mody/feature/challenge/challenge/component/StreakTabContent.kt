@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge.component
 
+import com.makeus.mody.core.designsystem.component.LocalBottomBarInset
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,6 +66,8 @@ fun StreakTabContent(
             nudgingMemberIds = nudgingMemberIds,
             onNudgeClick = onNudgeClick,
         )
+        // 떠 있는 하단 탭 바에 마지막 항목이 가리지 않게.
+        Spacer(modifier = Modifier.height(LocalBottomBarInset.current))
     }
 }
 

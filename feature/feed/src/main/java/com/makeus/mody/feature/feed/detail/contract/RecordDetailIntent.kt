@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.detail.contract
 
+import androidx.compose.ui.text.input.TextFieldValue
 import com.makeus.mody.core.commonui.base.UiIntent
 
 sealed class RecordDetailIntent : UiIntent {
@@ -10,12 +11,12 @@ sealed class RecordDetailIntent : UiIntent {
     data class PageChanged(val index: Int) : RecordDetailIntent()
 
     /** 댓글 입력 변경 */
-    data class CommentInputChanged(val text: String) : RecordDetailIntent()
+    data class CommentInputChanged(val value: TextFieldValue) : RecordDetailIntent()
 
     /** 댓글 전송 */
     data object SendCommentClicked : RecordDetailIntent()
 
-    /** 이모지 탭 → 글 입력 없이 바로 전송 */
+    /** 이모지 탭 → 입력칸이 비었으면 바로 전송, 글을 쓰는 중이면 커서 자리에 넣기 */
     data class EmojiClicked(val emoji: CommentEmoji) : RecordDetailIntent()
 
     /** 전송 실패 다이얼로그 닫힘 */

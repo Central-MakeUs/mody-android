@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.challenge.challenge.component
 
+import com.makeus.mody.core.designsystem.component.LocalBottomBarInset
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +45,8 @@ fun SoloGroupEmpty(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
+            // 떠 있는 하단 탭 바 위 영역에서 가운데.
+            .padding(start = 24.dp, end = 24.dp, bottom = LocalBottomBarInset.current),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

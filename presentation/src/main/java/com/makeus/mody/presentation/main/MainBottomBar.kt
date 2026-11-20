@@ -232,7 +232,7 @@ private val ShadowColor = Color(0x0D000000)
 private val ShadowOffsetY = 8.dp
 private val ShadowBlur = 6.dp
 /**
- * 바 글래스: 흰색 40% + 흐림 24.
+ * 바 글래스: 흰색 40% + 흐림 20.
  *
  * 시안은 흰색 20% + 흐림 15 인데, 그러면 뒤 색이 80% 비쳐 검은 사진 위에서 바가 어두워지고 검은 아이콘·
  * 글자가 묻힌다. 흐림을 키워 뒤 사진을 색 덩어리로만 비치게 하고(글래스 느낌 유지), 흰색을 40% 로 올려
@@ -240,7 +240,7 @@ private val ShadowBlur = 6.dp
  * 흰 화면에서는 시안과 같게 보인다.
  */
 private val BarTint = Color.White.copy(alpha = 0.4f)
-private val BarBlur = 24.dp
+private val BarBlur = 20.dp
 
 /** 선택 표시(안쪽 알약): 시안대로 흰색 20% 한 겹을 바 위에 더 얹는다. */
 private val GlassTint = Color.White.copy(alpha = 0.2f)

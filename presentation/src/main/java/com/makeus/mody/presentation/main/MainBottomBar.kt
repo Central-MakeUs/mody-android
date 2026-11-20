@@ -88,7 +88,15 @@ fun MainBottomBar(
                 .clip(CircleShape)
                 // 시안: 흰색 20% + 배경 흐림 15. 흰 화면 위에선 20% 면 거의 안 보여 흐림을 조금 키우고
                 // 흰색을 살짝 더 얹는다(아래 BarTint).
-                .hazeChild(state = hazeState, style = HazeStyle(tint = HazeTint(BarTint), blurRadius = BarBlur))
+                // backgroundColor 는 필수 — 흐림 가장자리를 채울 바탕색. 없으면 그리는 순간 예외로 죽는다.
+                .hazeChild(
+                    state = hazeState,
+                    style = HazeStyle(
+                        backgroundColor = Color.White,
+                        tint = HazeTint(BarTint),
+                        blurRadius = BarBlur,
+                    ),
+                )
                 // 시안 안쪽 하이라이트(흰 테두리 빛).
                 .border(1.dp, BarHighlight, CircleShape),
         ) {

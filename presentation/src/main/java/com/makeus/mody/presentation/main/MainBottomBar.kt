@@ -132,14 +132,13 @@ fun MainBottomBar(
                 .height(BarHeight)
                 .glassDropShadow()
                 .clip(CircleShape)
-                // 시안: 흰색 20% + 배경 흐림 15.
                 // backgroundColor 는 필수 — 흐림 가장자리를 채울 바탕색. 없으면 그리는 순간 예외로 죽는다.
                 .hazeChild(
                     state = hazeState,
                     style = HazeStyle(
                         backgroundColor = Color.White,
-                        tint = HazeTint(GlassTint),
-                        blurRadius = GlassBlur,
+                        tint = HazeTint(BarTint),
+                        blurRadius = BarBlur,
                     ),
                 )
                 .glassHighlight(),
@@ -232,9 +231,19 @@ private fun Modifier.glassHighlight(): Modifier = border(
 private val ShadowColor = Color(0x0D000000)
 private val ShadowOffsetY = 8.dp
 private val ShadowBlur = 6.dp
-/** 시안 글래스: 흰색 20% + 배경 흐림 15. 바와 선택 표시가 같은 값을 쓴다. */
+/**
+ * 바 글래스: 흰색 60% + 흐림 24.
+ *
+ * 시안은 흰색 20% + 흐림 15 인데, 그러면 뒤 색이 80% 비쳐 검은 사진 위에서 바가 어두워지고 검은 아이콘·
+ * 글자가 묻힌다. 흐림을 키워 뒤 사진을 색 덩어리로만 비치게 하고(글래스 느낌 유지), 흰색을 60% 로 올려
+ * 어떤 배경에서도 글자 대비를 지킨다(검은 배경에서도 바가 중간 회색 이상 → gray10 글자 대비 약 5:1).
+ * 흰 화면에서는 시안과 같게 보인다.
+ */
+private val BarTint = Color.White.copy(alpha = 0.6f)
+private val BarBlur = 24.dp
+
+/** 선택 표시(안쪽 알약): 시안대로 흰색 20% 한 겹을 바 위에 더 얹는다. */
 private val GlassTint = Color.White.copy(alpha = 0.2f)
-private val GlassBlur = 15.dp
 
 /** 시안 좌표계(바 폭 354)의 값들. */
 private val DESIGN_BAR_WIDTH = 354.dp

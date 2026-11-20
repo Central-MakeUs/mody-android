@@ -15,8 +15,8 @@ enum class MainTab(
     @DrawableRes val icon: Int,
     @DrawableRes val selectedIcon: Int,
 ) {
-    // 선택/미선택 동일 아이콘, 상태는 tint(gray10/gray05)로만 구분.
-    FEED("피드", "Feed", ModyIcons.Feed, ModyIcons.Feed),
-    CHALLENGE("챌린지", "Challenge", ModyIcons.Challenge, ModyIcons.Challenge),
-    MY("마이", "MyPage", ModyIcons.Mypage, ModyIcons.Mypage),
+    // 선택 시 채운 아이콘(시안 menu 35:3564). 색은 선택 여부와 무관하게 gray10.
+    FEED("피드", "Feed", ModyIcons.TabFeed, ModyIcons.TabFeedFill),
+    CHALLENGE("챌린지", "Challenge", ModyIcons.TabChallenge, ModyIcons.TabChallengeFill),
+    MY("마이", "MyPage", ModyIcons.TabMy, ModyIcons.TabMyFill),
 }

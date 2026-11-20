@@ -37,9 +37,9 @@ interface FeedRepository {
 
     /**
      * 기록에 댓글 작성 후, 생성된 댓글 id.
-     * @param emojiId 이모지 댓글이면 아이디(이때 [content] 는 빈 문자열), 글 댓글은 null.
+     * @param content 글과 이모지 토큰(`:mody-clap:`)을 섞은 본문. 이모지만 보낼 때도 토큰 하나로.
      */
-    suspend fun postComment(groupId: Long, recordId: Long, content: String, emojiId: String? = null): Long
+    suspend fun postComment(groupId: Long, recordId: Long, content: String): Long
 
     /** 내 댓글 삭제. */
     suspend fun deleteComment(groupId: Long, recordId: Long, commentId: Long)

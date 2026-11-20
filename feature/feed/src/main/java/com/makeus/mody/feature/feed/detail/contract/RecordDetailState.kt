@@ -35,6 +35,11 @@ data class RecordDetailState(
     val isCommentsLoading: Boolean = false,
     /** 입력칸 글과 커서. 이모지를 커서 자리에 끼워 넣어야 해서 문자열이 아니라 [TextFieldValue] 로 둔다. */
     val commentInput: TextFieldValue = TextFieldValue(),
+    /**
+     * 입력칸 포커스 해제 요청(전송할 때마다 1씩 늘린다). 화면이 바뀐 값을 보고 포커스를 풀고 키보드를 내린다.
+     * 불리언이 아니라 카운터인 건, 연달아 보내도 매번 다른 값이라 화면이 놓치지 않게 하려는 것.
+     */
+    val clearInputFocusRequest: Int = 0,
     val isSending: Boolean = false,
     /** 전송 실패 안내. 이모지는 입력이 남지 않아 알리지 않으면 보낸 줄 안다. */
     val sendError: String? = null,

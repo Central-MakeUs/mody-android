@@ -264,6 +264,7 @@ class RecordDetailViewModel @Inject constructor(
             setState { copy(sendError = "댓글이 너무 길어요. 조금 줄여서 보내주세요.") }
             return
         }
+        setState { copy(clearInputFocusRequest = clearInputFocusRequest + 1) }
         postComment(content = content, input = input)
     }
 
@@ -312,7 +313,8 @@ class RecordDetailViewModel @Inject constructor(
                 isPending = true,
             ),
         )
-        setState { copy(pendingEmojis = pendingEmojis + pending) }
+        // 이모지만 보내는 것도 전송이라 입력칸 포커스를 푼다(글 사이에 넣을 때는 insertEmoji 라 유지).
+        setState { copy(pendingEmojis = pendingEmojis + pending, clearInputFocusRequest = clearInputFocusRequest + 1) }
 
         viewModelScope.launch {
             val sent = emojiSendMutex.withLock {

@@ -54,6 +54,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -159,6 +160,12 @@ private fun RecordDetailContent(
     }
 
     if (state.isReporting || state.isDeleting || state.isDeletingComment) ModyLoadingOverlay()
+
+    // 전송하면 입력칸 포커스를 풀어 키보드를 내린다. 첫 진입(0)은 무시.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.clearInputFocusRequest) {
+        if (state.clearInputFocusRequest > 0) focusManager.clearFocus()
+    }
 
     // 이모지 도배 제한 안내. 화면을 막을 일이 아니라 다이얼로그 대신 토스트.
     val context = LocalContext.current

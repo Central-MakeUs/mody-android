@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.mypage
 
+import com.makeus.mody.core.designsystem.component.LocalBottomBarInset
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -119,6 +120,8 @@ private fun MyPageContent(
 
         // 스토어 정책 필수: 이용약관·개인정보처리방침·문의를 모은 지원 페이지(인앱 WebView).
         SettingsRow("문의 및 약관확인") { onIntent(MyPageIntent.SupportClicked) }
+        // 떠 있는 하단 탭 바에 마지막 항목이 가리지 않게.
+        Spacer(modifier = Modifier.height(LocalBottomBarInset.current))
     }
 
     if (state.showWeightSheet) {

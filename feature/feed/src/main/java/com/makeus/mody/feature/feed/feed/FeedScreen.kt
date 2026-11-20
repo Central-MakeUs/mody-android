@@ -39,6 +39,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyBottomSheet
+import com.makeus.mody.core.designsystem.component.LocalBottomBarInset
 import com.makeus.mody.core.designsystem.component.ModyDialog
 import com.makeus.mody.core.designsystem.component.ModyErrorDialog
 import com.makeus.mody.core.designsystem.component.ModyLoadingIndicator
@@ -288,7 +289,13 @@ private fun FeedList(
         state = listState,
         modifier = modifier.fillMaxWidth(),
         // top 16: 시안 주간 스트립 끝 283 → 첫 카드 299.
-        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 80.dp),
+        // bottom: 떠 있는 하단 탭 바(LocalBottomBarInset) + 그 위 글쓰기 버튼 자리(80).
+        contentPadding = PaddingValues(
+            start = 24.dp,
+            end = 24.dp,
+            top = 16.dp,
+            bottom = 80.dp + LocalBottomBarInset.current,
+        ),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(state.feeds, key = { it.id }) { card ->

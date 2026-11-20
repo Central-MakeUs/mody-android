@@ -28,11 +28,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeChild
 
 /** 바 높이(시안 58). */
 private val BarHeight = 58.dp
@@ -56,20 +61,21 @@ val MainBottomBarContentHeight = BarTopMargin + BarHeight + BarBottomMargin
  * 좌우 24 여백의 알약 모양 바 안에서, 선택 탭 뒤에 안쪽 알약(선택 표시)이 깔리고 탭을 바꾸면 미끄러진다.
  * 선택 탭은 채운 아이콘 + C3, 나머지는 선 아이콘 + C4. 색은 모두 gray10.
  *
- * 시안은 반투명 흰색 + 배경 흐림(backdrop blur 15)이다. 안드로이드는 뒤 화면 흐림을 바로 그릴 수 없고,
- * 이 바는 콘텐츠 아래 별도 영역에 놓여 뒤가 늘 흰 바탕이라 불투명 흰색 + 그림자로 같은 인상을 낸다.
+ * 콘텐츠 위에 떠서 뒤를 흐리게 비춘다(Haze — [MainScreen] 의 콘텐츠가 원본). 배경 흐림은 API 31+ 에서만
+ * 되고, 그 아래는 같은 반투명 흰색만 그려진다.
  */
 @Composable
 fun MainBottomBar(
     tabs: List<MainTab>,
     selected: MainTab,
     onSelect: (MainTab) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(ModyTheme.colors.white)
+            // 바 바깥은 투명 — 콘텐츠가 바 양옆·아래로 그대로 보인다.
             .navigationBarsPadding()
             .padding(start = 24.dp, end = 24.dp, top = BarTopMargin, bottom = BarBottomMargin),
     ) {
@@ -79,8 +85,12 @@ fun MainBottomBar(
                 .height(BarHeight)
                 // 시안 그림자: y 8, blur 6, 검정 5%.
                 .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = BarShadow, spotColor = BarShadow)
-                .background(ModyTheme.colors.white, CircleShape)
-                .border(1.dp, ModyTheme.colors.gray01, CircleShape),
+                .clip(CircleShape)
+                // 시안: 흰색 20% + 배경 흐림 15. 흰 화면 위에선 20% 면 거의 안 보여 흐림을 조금 키우고
+                // 흰색을 살짝 더 얹는다(아래 BarTint).
+                .hazeChild(state = hazeState, style = HazeStyle(tint = HazeTint(BarTint), blurRadius = BarBlur))
+                // 시안 안쪽 하이라이트(흰 테두리 빛).
+                .border(1.dp, BarHighlight, CircleShape),
         ) {
             val cellWidth = (maxWidth - IndicatorInset * 2) / tabs.size.coerceAtLeast(1)
             val selectedIndex = tabs.indexOf(selected).coerceAtLeast(0)
@@ -94,7 +104,9 @@ fun MainBottomBar(
                     .offset(x = indicatorOffset, y = IndicatorInset)
                     .width(cellWidth)
                     .height(BarHeight - IndicatorInset * 2)
-                    .background(ModyTheme.colors.gray01, CircleShape),
+                    // 시안: 안쪽 알약도 흰색 20% 글래스 — 바 위에 한 겹 더 밝게 얹는다.
+                    .background(IndicatorTint, CircleShape)
+                    .border(1.dp, BarHighlight, CircleShape),
             )
             Row(
                 modifier = Modifier
@@ -114,6 +126,10 @@ fun MainBottomBar(
 }
 
 private val BarShadow = Color(0x0D000000)
+private val BarTint = Color.White.copy(alpha = 0.55f)
+private val IndicatorTint = Color.White.copy(alpha = 0.6f)
+private val BarHighlight = Color.White.copy(alpha = 0.6f)
+private val BarBlur = 20.dp
 
 @Composable
 private fun RowScope.TabItem(

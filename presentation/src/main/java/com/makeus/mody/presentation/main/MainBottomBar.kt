@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -30,8 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.makeus.mody.core.designsystem.theme.ModyTheme
 import dev.chrisbanes.haze.HazeState
@@ -63,6 +62,9 @@ val MainBottomBarContentHeight = BarTopMargin + BarHeight + BarBottomMargin
  *
  * 콘텐츠 위에 떠서 뒤를 흐리게 비춘다(Haze — [MainScreen] 의 콘텐츠가 원본). 배경 흐림은 API 31+ 에서만
  * 되고, 그 아래는 같은 반투명 흰색만 그려진다.
+ *
+ * 시안과 다른 점: 바 아래 여백. 시안은 28 이지만 시스템 내비게이션 바 위로 28 을 더 띄우면 너무 올라가
+ * [BarBottomMargin](12)만 둔다.
  */
 @Composable
 fun MainBottomBar(
@@ -86,69 +88,96 @@ fun MainBottomBar(
                 // 시안 그림자: y 8, blur 6, 검정 5%.
                 .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = BarShadow, spotColor = BarShadow)
                 .clip(CircleShape)
-                // 시안: 흰색 20% + 배경 흐림 15. 흰 화면 위에선 20% 면 거의 안 보여 흐림을 조금 키우고
-                // 흰색을 살짝 더 얹는다(아래 BarTint).
+                // 시안: 흰색 20% + 배경 흐림 15.
                 // backgroundColor 는 필수 — 흐림 가장자리를 채울 바탕색. 없으면 그리는 순간 예외로 죽는다.
                 .hazeChild(
                     state = hazeState,
                     style = HazeStyle(
                         backgroundColor = Color.White,
-                        tint = HazeTint(BarTint),
-                        blurRadius = BarBlur,
+                        tint = HazeTint(GlassTint),
+                        blurRadius = GlassBlur,
                     ),
                 )
-                // 시안 안쪽 하이라이트(흰 테두리 빛).
-                .border(1.dp, BarHighlight, CircleShape),
+                .glassHighlight(),
         ) {
-            val cellWidth = (maxWidth - IndicatorInset * 2) / tabs.size.coerceAtLeast(1)
+            // 시안 좌표(바 폭 354 기준)를 비율로 옮긴다 — 화면 폭이 달라도 같은 자리에 놓이게.
+            val scale = maxWidth / DESIGN_BAR_WIDTH
+            val indicatorWidth = DESIGN_INDICATOR_WIDTH * scale
+            val centers = tabCenters(tabs.size).map { it * scale }
+            val slotWidth = if (centers.size > 1) centers[1] - centers[0] else maxWidth
             val selectedIndex = tabs.indexOf(selected).coerceAtLeast(0)
-            val indicatorOffset by animateDpAsState(
-                targetValue = IndicatorInset + cellWidth * selectedIndex,
+            val indicatorLeft by animateDpAsState(
+                targetValue = (centers.getOrElse(selectedIndex) { maxWidth / 2 }) - indicatorWidth / 2,
                 label = "tabIndicator",
             )
-            // 선택 표시(안쪽 알약).
+            // 선택 표시(안쪽 알약). 시안: 흰색 20% 글래스 한 겹 + 같은 안쪽 빛.
             Box(
                 modifier = Modifier
-                    .offset(x = indicatorOffset, y = IndicatorInset)
-                    .width(cellWidth)
+                    .offset(x = indicatorLeft, y = IndicatorInset)
+                    .width(indicatorWidth)
                     .height(BarHeight - IndicatorInset * 2)
-                    // 시안: 안쪽 알약도 흰색 20% 글래스 — 바 위에 한 겹 더 밝게 얹는다.
-                    .background(IndicatorTint, CircleShape)
-                    .border(1.dp, BarHighlight, CircleShape),
+                    .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = BarShadow, spotColor = BarShadow)
+                    .background(GlassTint, CircleShape)
+                    .glassHighlight(),
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = IndicatorInset),
-            ) {
-                tabs.forEach { tab ->
-                    TabItem(
-                        tab = tab,
-                        isSelected = tab == selected,
-                        onClick = { onSelect(tab) },
-                    )
-                }
+            tabs.forEachIndexed { index, tab ->
+                TabItem(
+                    tab = tab,
+                    isSelected = tab == selected,
+                    onClick = { onSelect(tab) },
+                    modifier = Modifier
+                        .offset(x = centers[index] - slotWidth / 2)
+                        .width(slotWidth)
+                        .fillMaxHeight(),
+                )
             }
         }
     }
 }
 
+/**
+ * 시안 탭 중심 x(바 폭 354 기준). 피드 69.5 · 챌린지 177 · 마이 284.5 — 양 끝 탭은 바 끝에서 69.5 안쪽,
+ * 그 사이는 같은 간격. 탭 수가 다르면 같은 양 끝 사이에 고르게 놓는다.
+ */
+private fun tabCenters(count: Int): List<Dp> = when (count) {
+    0 -> emptyList()
+    1 -> listOf(DESIGN_BAR_WIDTH / 2)
+    else -> {
+        val first = DESIGN_EDGE_CENTER
+        val last = DESIGN_BAR_WIDTH - DESIGN_EDGE_CENTER
+        List(count) { i -> first + (last - first) * i / (count - 1) }
+    }
+}
+
+/**
+ * 시안 안쪽 빛(inset shadow 3겹: 위·왼쪽 흰 60%, 위아래 가장자리 흰 25%)을 테두리 한 줄로 근사한다.
+ * Compose 엔 inset shadow 가 없어, 위쪽이 밝고 아래로 옅어지는 흰 그라데이션 테두리로 같은 인상을 낸다.
+ */
+private fun Modifier.glassHighlight(): Modifier = border(
+    width = 1.dp,
+    brush = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.25f))),
+    shape = CircleShape,
+)
+
 private val BarShadow = Color(0x0D000000)
-private val BarTint = Color.White.copy(alpha = 0.55f)
-private val IndicatorTint = Color.White.copy(alpha = 0.6f)
-private val BarHighlight = Color.White.copy(alpha = 0.6f)
-private val BarBlur = 20.dp
+/** 시안 글래스: 흰색 20% + 배경 흐림 15. 바와 선택 표시가 같은 값을 쓴다. */
+private val GlassTint = Color.White.copy(alpha = 0.2f)
+private val GlassBlur = 15.dp
+
+/** 시안 좌표계(바 폭 354)의 값들. */
+private val DESIGN_BAR_WIDTH = 354.dp
+private val DESIGN_INDICATOR_WIDTH = 127.dp
+private val DESIGN_EDGE_CENTER = 69.5.dp
 
 @Composable
-private fun RowScope.TabItem(
+private fun TabItem(
     tab: MainTab,
     isSelected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null, // 시안에 리플 없음. 선택 표시가 미끄러지는 것으로 피드백.

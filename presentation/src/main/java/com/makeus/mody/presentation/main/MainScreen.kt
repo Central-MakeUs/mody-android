@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,8 +41,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
     // 하단 탭 바는 콘텐츠 위에 떠서 뒤를 흐리게 비춘다(시안 menu 35:3564, 글래스).
     // 콘텐츠는 화면 맨 아래까지 깔고, 탭 화면이 스크롤 끝에 바 높이만큼 여백을 두도록 알려 준다.
     val hazeState = remember { HazeState() }
-    val bottomBarInset = MainBottomBarContentHeight +
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomBarLayout = rememberMainBottomBarLayout()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -56,7 +52,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                 .haze(hazeState)
                 .statusBarsPadding(),
         ) {
-            CompositionLocalProvider(LocalBottomBarInset provides bottomBarInset) {
+            CompositionLocalProvider(LocalBottomBarInset provides bottomBarLayout.contentInset) {
                 when (selectedTab) {
                     MainTab.FEED -> FeedScreen(viewModel = feedViewModel)
                     MainTab.CHALLENGE -> ChallengeScreen()
@@ -69,6 +65,7 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
             selected = selectedTab,
             onSelect = viewModel::selectTab,
             hazeState = hazeState,
+            layout = bottomBarLayout,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
 
@@ -81,8 +78,8 @@ fun MainScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                 onDismiss = { feedViewModel.onIntent(FeedIntent.FabDismissed) },
                 onWriteExercise = { feedViewModel.onIntent(FeedIntent.WriteExerciseClicked) },
                 onWriteMeal = { feedViewModel.onIntent(FeedIntent.WriteMealClicked) },
-                // 하단 네비 바(콘텐츠 높이)만큼 더 띄워 FAB이 바 위에 오도록.
-                fabBottomPadding = 12.dp + MainBottomBarContentHeight,
+                // 떠 있는 하단 탭 바 위로.
+                fabBottomPadding = bottomBarLayout.fabBottomPadding,
             )
         }
     }

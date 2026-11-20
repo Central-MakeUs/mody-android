@@ -12,7 +12,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,18 +44,52 @@ import dev.chrisbanes.haze.hazeChild
 /** 바 높이(시안 58). */
 private val BarHeight = 58.dp
 
-/** 바 위·아래 여백. 바는 화면 아래에 떠 있는 알약 모양이라 위아래로 띄운다. */
+/** 바 위 여백(스크롤 끝 여백 계산용). */
 private val BarTopMargin = 8.dp
-private val BarBottomMargin = 12.dp
+
+/** 버튼 내비게이션(◁ ○ ▢)일 때 그 위로 띄우는 간격. 시안 28 을 버튼 위로 더하면 너무 올라간다. */
+private val BarMarginAboveNavButtons = 12.dp
+
+/** 제스처 내비게이션(또는 없음)일 때 화면 맨 아래에서 바까지(시안 28). */
+private val BarMarginFromScreenBottom = 28.dp
+
+/** FAB 와 바 사이 간격. */
+private val FabGapAboveBar = 12.dp
 
 /** 선택 표시(안쪽 알약)와 바 테두리 사이 간격(시안 6). */
 private val IndicatorInset = 6.dp
 
 /**
- * [MainBottomBar] 가 차지하는 높이(시스템 내비게이션 인셋 제외).
- * 피드 FAB 등 바 위에 떠야 하는 요소가 겹치지 않게 띄울 때 사용.
+ * 하단 탭 바 배치. 시스템 내비게이션 방식에 따라 바 높이가 달라져, 바·스크롤 여백·FAB 가 같은 값을 쓴다.
+ *
+ * @param barBottom 화면 맨 아래 → 바 아래쪽 거리.
+ * @param contentInset 탭 콘텐츠가 스크롤 끝에 둘 여백(화면 맨 아래 → 바 위쪽 + 바 위 여백).
+ * @param fabBottomPadding FAB 가 시스템 내비게이션 인셋 위로 띄울 거리(FAB 는 인셋을 따로 더한다).
  */
-val MainBottomBarContentHeight = BarTopMargin + BarHeight + BarBottomMargin
+data class MainBottomBarLayout(val barBottom: Dp, val contentInset: Dp, val fabBottomPadding: Dp)
+
+/**
+ * - 버튼 내비게이션: 버튼 줄 위로 [BarMarginAboveNavButtons].
+ * - 제스처 내비게이션(또는 없음): 화면 맨 아래에서 [BarMarginFromScreenBottom](시안 28). 제스처 핸들
+ *   인셋이 그보다 크면 핸들 위로.
+ *
+ * 둘은 tappableElement 인셋으로 가른다 — 버튼은 누를 수 있는 영역이라 값이 있고, 제스처 핸들은 0 이다.
+ */
+@Composable
+fun rememberMainBottomBarLayout(): MainBottomBarLayout {
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val tappableBottom = WindowInsets.tappableElement.asPaddingValues().calculateBottomPadding()
+    val barBottom = if (tappableBottom > 0.dp) {
+        navBottom + BarMarginAboveNavButtons
+    } else {
+        maxOf(BarMarginFromScreenBottom, navBottom)
+    }
+    return MainBottomBarLayout(
+        barBottom = barBottom,
+        contentInset = barBottom + BarHeight + BarTopMargin,
+        fabBottomPadding = barBottom + BarHeight + FabGapAboveBar - navBottom,
+    )
+}
 
 /**
  * 메인 하단 탭 바(시안 menu 35:3564).
@@ -63,8 +100,7 @@ val MainBottomBarContentHeight = BarTopMargin + BarHeight + BarBottomMargin
  * 콘텐츠 위에 떠서 뒤를 흐리게 비춘다(Haze — [MainScreen] 의 콘텐츠가 원본). 배경 흐림은 API 31+ 에서만
  * 되고, 그 아래는 같은 반투명 흰색만 그려진다.
  *
- * 시안과 다른 점: 바 아래 여백. 시안은 28 이지만 시스템 내비게이션 바 위로 28 을 더 띄우면 너무 올라가
- * [BarBottomMargin](12)만 둔다.
+ * 바 아래 여백은 시스템 내비게이션 방식에 따라 다르다([rememberMainBottomBarLayout]).
  */
 @Composable
 fun MainBottomBar(
@@ -72,14 +108,14 @@ fun MainBottomBar(
     selected: MainTab,
     onSelect: (MainTab) -> Unit,
     hazeState: HazeState,
+    layout: MainBottomBarLayout,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             // 바 바깥은 투명 — 콘텐츠가 바 양옆·아래로 그대로 보인다.
-            .navigationBarsPadding()
-            .padding(start = 24.dp, end = 24.dp, top = BarTopMargin, bottom = BarBottomMargin),
+            .padding(start = 24.dp, end = 24.dp, bottom = layout.barBottom),
     ) {
         BoxWithConstraints(
             modifier = Modifier

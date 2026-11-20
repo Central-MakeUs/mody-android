@@ -1,5 +1,7 @@
 package com.makeus.mody.feature.feed.detail
 
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
@@ -12,6 +14,7 @@ import com.makeus.mody.core.navigation.FeedGraph
 import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
+import com.makeus.mody.feature.feed.detail.contract.CommentEmojiCodec
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.PendingEmoji
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
@@ -67,12 +70,16 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.BackClicked -> navigationHelper.navigate(NavigationEvent.Up)
             is RecordDetailIntent.PageChanged -> onPageChanged(intent.index)
             is RecordDetailIntent.CommentInputChanged ->
-                setState { copy(commentInput = intent.text) }
+                setState { copy(commentInput = intent.value) }
             // UI 는 숨겨져 있지만 만약을 위해 전송 자체도 차단.
             is RecordDetailIntent.SendCommentClicked ->
                 if (currentState.commentEnabled) sendComment()
-            is RecordDetailIntent.EmojiClicked ->
-                if (currentState.commentEnabled) sendEmoji(intent.emoji)
+            is RecordDetailIntent.EmojiClicked -> when {
+                !currentState.commentEnabled -> Unit
+                // 글을 쓰는 중이면 커서 자리에 넣고, 비어 있으면 이모지만 바로 보낸다.
+                currentState.commentInput.text.isNotBlank() -> insertEmoji(intent.emoji)
+                else -> sendEmoji(intent.emoji)
+            }
             is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
             is RecordDetailIntent.EmojiLimitNoticeShown -> setState { copy(emojiLimitNotice = null) }
             is RecordDetailIntent.CommentDeleteClicked ->
@@ -250,7 +257,25 @@ class RecordDetailViewModel @Inject constructor(
     private fun sendComment() {
         val current = currentState
         if (!current.canSend) return
-        postComment(content = current.commentInput.trim(), emoji = null)
+        val input = current.commentInput.text.trim()
+        // 입력칸의 이모지 대체 문자를 서버 토큰으로. 토큰이 길어 글자 수가 늘 수 있어 바꾼 뒤에 잰다.
+        val content = CommentEmojiCodec.encode(input)
+        if (content.length > MAX_COMMENT_LENGTH) {
+            setState { copy(sendError = "댓글이 너무 길어요. 조금 줄여서 보내주세요.") }
+            return
+        }
+        postComment(content = content, input = input)
+    }
+
+    /** 글을 쓰는 중 이모지 탭 → 선택 영역(없으면 커서) 자리에 넣고 커서를 그 뒤로. */
+    private fun insertEmoji(emoji: CommentEmoji) {
+        setState {
+            val value = commentInput
+            val start = minOf(value.selection.start, value.selection.end).coerceIn(0, value.text.length)
+            val end = maxOf(value.selection.start, value.selection.end).coerceIn(0, value.text.length)
+            val text = value.text.replaceRange(start, end, emoji.inputChar)
+            copy(commentInput = TextFieldValue(text, TextRange(start + emoji.inputChar.length)))
+        }
     }
 
     /**
@@ -292,7 +317,7 @@ class RecordDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val sent = emojiSendMutex.withLock {
                 try {
-                    feedRepository.postComment(groupId, recordId, content = "", emojiId = emoji.id)
+                    feedRepository.postComment(groupId, recordId, content = emoji.token)
                     true
                 } catch (e: CancellationException) {
                     throw e
@@ -328,11 +353,11 @@ class RecordDetailViewModel @Inject constructor(
      * 글·이모지 공통 전송. 대상은 누른 순간 보고 있던 기록으로 고정한다.
      * 성공하면 글 입력을 비우고(글일 때), 그 기록을 아직 보고 있으면 목록을 다시 받는다.
      */
-    private fun postComment(content: String, emoji: CommentEmoji?) = viewModelScope.launch {
+    private fun postComment(content: String, input: String) = viewModelScope.launch {
         val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
         setState { copy(isSending = true) }
         try {
-            feedRepository.postComment(groupId, recordId, content, emojiId = emoji?.id)
+            feedRepository.postComment(groupId, recordId, content)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -342,8 +367,8 @@ class RecordDetailViewModel @Inject constructor(
         }
         // 보내는 사이 새로 쓴 글은 지우지 않는다 — 입력이 아직 보낸 글 그대로일 때만 비운다.
         setState {
-            val sentText = emoji == null && commentInput.trim() == content
-            copy(isSending = false, commentInput = if (sentText) "" else commentInput)
+            val unchanged = commentInput.text.trim() == input
+            copy(isSending = false, commentInput = if (unchanged) TextFieldValue() else commentInput)
         }
         if (recordIdAt(currentState.currentIndex) == recordId) loadComments(recordId)
     }
@@ -379,16 +404,22 @@ class RecordDetailViewModel @Inject constructor(
     /** 현재 state 의 records 에서 index 위치 recordId. */
     private fun recordIdAt(index: Int): Long? = currentState.records.getOrNull(index)?.id
 
+    /**
+     * - 이모지 하나만 있는 댓글: emojiId 이모지를 크게. 1.2.0 시절 댓글(emojiId + 빈 본문)도 같이 본다.
+     * - 그 밖: 본문 안 `:mody-id:` 토큰을 그림 조각으로(모르는 토큰은 글자 그대로).
+     */
     private fun Comment.toUi(): CommentUi {
-        val emoji = CommentEmoji.of(emojiId)
+        val isEmojiOnly = emojiOnly || (emojiId != null && content.isBlank())
+        val emoji = if (isEmojiOnly) CommentEmoji.of(emojiId) else null
         return CommentUi(
             id = commentId,
             authorName = nickname,
             avatarUrl = profileImageUrl,
             // 모르는 이모지(구버전 앱)인데 본문이 비어 있으면 빈 말풍선 대신 대체 문구.
-            content = if (emojiId != null && emoji == null && content.isBlank()) UNKNOWN_EMOJI_TEXT else content,
+            content = if (isEmojiOnly && emoji == null) UNKNOWN_EMOJI_TEXT else content,
             isMine = isMine,
             emoji = emoji,
+            segments = if (isEmojiOnly) emptyList() else CommentEmojiCodec.parse(content),
             timeLabel = createdAt?.let(::formatCommentTime),
         )
     }
@@ -418,6 +449,9 @@ class RecordDetailViewModel @Inject constructor(
 
         val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
         val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d HH:mm", Locale.KOREAN)
+
+        /** 서버 댓글 본문 상한(토큰 포함). */
+        const val MAX_COMMENT_LENGTH = 500
 
         /** 이 앱이 모르는 이모지 댓글의 대체 표시. */
         const val UNKNOWN_EMOJI_TEXT = "(이모지)"

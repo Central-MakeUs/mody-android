@@ -1,5 +1,6 @@
 package com.makeus.mody.feature.feed.detail.contract
 
+import androidx.compose.ui.text.input.TextFieldValue
 import com.makeus.mody.core.commonui.base.UiState
 import com.makeus.mody.core.domain.feature.CommentFeature
 import com.makeus.mody.feature.feed.feed.contract.FeedCardUi
@@ -11,8 +12,10 @@ data class CommentUi(
     val avatarUrl: String?,
     val content: String,
     val isMine: Boolean,
-    /** 이모지 댓글이면 그릴 이모지. null 이면 글 댓글(또는 모르는 이모지 → [content] 에 대체 문구). */
+    /** 이모지 하나만 있는 댓글이면 크게 그릴 이모지. null 이면 [segments] 를 말풍선에 그린다. */
     val emoji: CommentEmoji? = null,
+    /** 글 + 이모지 토큰을 나눈 본문 조각. 비어 있으면 [content] 를 그대로 그린다. */
+    val segments: List<CommentSegment> = emptyList(),
     /** 작성 시각 표시 문구(예: "14:04", 오늘이 아니면 "11/14 14:04"). 시각이 없으면 null. */
     val timeLabel: String? = null,
     /** 서버 응답 전 미리 보여주는 내 이모지(반투명, 꾹 눌러 삭제 불가). */
@@ -30,7 +33,8 @@ data class RecordDetailState(
     // 현재 보고 있는 기록의 댓글
     val comments: List<CommentUi> = emptyList(),
     val isCommentsLoading: Boolean = false,
-    val commentInput: String = "",
+    /** 입력칸 글과 커서. 이모지를 커서 자리에 끼워 넣어야 해서 문자열이 아니라 [TextFieldValue] 로 둔다. */
+    val commentInput: TextFieldValue = TextFieldValue(),
     val isSending: Boolean = false,
     /** 전송 실패 안내. 이모지는 입력이 남지 않아 알리지 않으면 보낸 줄 안다. */
     val sendError: String? = null,
@@ -58,7 +62,7 @@ data class RecordDetailState(
     val deleteError: String? = null,
 ) : UiState {
     /** 전송 가능: 공백 아님 + 전송 중 아님. */
-    val canSend: Boolean get() = commentInput.isNotBlank() && !isSending
+    val canSend: Boolean get() = commentInput.text.isNotBlank() && !isSending
 
     /** 화면에 그릴 댓글: 받은 댓글 + 지금 기록으로 보내는 중인 이모지. 오래된 → 최신. */
     val visibleComments: List<CommentUi>

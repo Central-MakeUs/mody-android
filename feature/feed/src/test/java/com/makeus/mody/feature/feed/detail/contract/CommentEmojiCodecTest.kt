@@ -14,6 +14,23 @@ class CommentEmojiCodecTest {
         assertEquals("오늘도 :mody-fire: 화이팅 :mody-clap:", CommentEmojiCodec.encode(input))
     }
 
+    /** 피부색·ZWJ·표시 선택자가 붙은 이모지는 다른 이모지라 바꾸지 않는다(앞 글자만 바뀌면 깨진다). */
+    @Test
+    fun `결합 문자가 붙은 이모지는 그대로 둔다`() {
+        val runningWoman = "\uD83C\uDFC3\uD83C\uDFFB\u200D\u2640\uFE0F" // 🏃🏻‍♀️
+        val clapMedium = "\uD83D\uDC4F\uD83C\uDFFD" // 👏🏽
+        val clapPresentation = "\uD83D\uDC4F\uFE0F" // 👏 + VS16
+        listOf(runningWoman, clapMedium, clapPresentation).forEach { input ->
+            assertEquals(input, CommentEmojiCodec.encode(input))
+        }
+    }
+
+    @Test
+    fun `단독 이모지는 결합 이모지와 섞여 있어도 바꾼다`() {
+        val input = "${CommentEmoji.RUN.inputChar} 와 \uD83C\uDFC3\uD83C\uDFFB ${CommentEmoji.CLAP.inputChar}"
+        assertEquals(":mody-run: 와 \uD83C\uDFC3\uD83C\uDFFB :mody-clap:", CommentEmojiCodec.encode(input))
+    }
+
     @Test
     fun `이모지만 있으면 토큰 하나가 된다`() {
         assertEquals(":mody-heart:", CommentEmojiCodec.encode(CommentEmoji.HEART.inputChar))

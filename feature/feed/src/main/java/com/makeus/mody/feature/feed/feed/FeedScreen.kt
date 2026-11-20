@@ -115,7 +115,9 @@ private fun FeedContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        // 떠 있는 하단 탭 바 위 영역에서 가운데 — 안 빼면 버튼이 바 밑으로 내려간다.
+                        .padding(bottom = LocalBottomBarInset.current),
                     contentAlignment = Alignment.Center,
                 ) {
                     FeedEmptyContent(

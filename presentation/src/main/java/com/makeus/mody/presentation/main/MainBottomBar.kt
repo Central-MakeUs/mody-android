@@ -29,7 +29,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -121,8 +130,7 @@ fun MainBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(BarHeight)
-                // 시안 그림자: y 8, blur 6, 검정 5%.
-                .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = BarShadow, spotColor = BarShadow)
+                .glassDropShadow()
                 .clip(CircleShape)
                 // 시안: 흰색 20% + 배경 흐림 15.
                 // backgroundColor 는 필수 — 흐림 가장자리를 채울 바탕색. 없으면 그리는 순간 예외로 죽는다.
@@ -152,7 +160,7 @@ fun MainBottomBar(
                     .offset(x = indicatorLeft, y = IndicatorInset)
                     .width(indicatorWidth)
                     .height(BarHeight - IndicatorInset * 2)
-                    .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = BarShadow, spotColor = BarShadow)
+                    .glassDropShadow()
                     .background(GlassTint, CircleShape)
                     .glassHighlight(),
             )
@@ -186,6 +194,31 @@ private fun tabCenters(count: Int): List<Dp> = when (count) {
 }
 
 /**
+ * 시안 그림자(drop shadow: x 0, y 8, blur 6, 검정 5%)를 피그마처럼 그린다.
+ *
+ * Compose `shadow()` 는 시스템 elevation 그림자라 아래로 내리는 거리를 줄 수 없고, 색 알파가 시스템 그림자
+ * 농도와 곱해져 5% 가 사실상 안 보인다 — 흰 화면에서 바가 떠 보이지 않던 이유다. 그래서 그림자 레이어를
+ * 직접 그린다. 바 안쪽은 잘라내 반투명 글래스 밑에 그림자가 비치지 않게 한다(CSS box-shadow 와 같다).
+ * API 28 미만은 하드웨어 가속에서 그림자 레이어가 안 그려져 그림자만 빠진다.
+ */
+private fun Modifier.glassDropShadow(): Modifier = drawBehind {
+    val radius = size.height / 2
+    val shape = Path().apply {
+        addRoundRect(RoundRect(0f, 0f, size.width, size.height, CornerRadius(radius)))
+    }
+    clipPath(shape, clipOp = ClipOp.Difference) {
+        drawIntoCanvas { canvas ->
+            val paint = Paint().asFrameworkPaint().apply {
+                isAntiAlias = true
+                color = ShadowColor.toArgb()
+                setShadowLayer(ShadowBlur.toPx(), 0f, ShadowOffsetY.toPx(), ShadowColor.toArgb())
+            }
+            canvas.nativeCanvas.drawRoundRect(0f, 0f, size.width, size.height, radius, radius, paint)
+        }
+    }
+}
+
+/**
  * 시안 안쪽 빛(inset shadow 3겹: 위·왼쪽 흰 60%, 위아래 가장자리 흰 25%)을 테두리 한 줄로 근사한다.
  * Compose 엔 inset shadow 가 없어, 위쪽이 밝고 아래로 옅어지는 흰 그라데이션 테두리로 같은 인상을 낸다.
  */
@@ -195,7 +228,10 @@ private fun Modifier.glassHighlight(): Modifier = border(
     shape = CircleShape,
 )
 
-private val BarShadow = Color(0x0D000000)
+/** 시안 drop shadow: y 8, blur 6, 검정 5%. */
+private val ShadowColor = Color(0x0D000000)
+private val ShadowOffsetY = 8.dp
+private val ShadowBlur = 6.dp
 /** 시안 글래스: 흰색 20% + 배경 흐림 15. 바와 선택 표시가 같은 값을 쓴다. */
 private val GlassTint = Color.White.copy(alpha = 0.2f)
 private val GlassBlur = 15.dp

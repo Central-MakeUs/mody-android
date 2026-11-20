@@ -54,11 +54,21 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.makeus.mody.feature.feed.detail.contract.CommentSegment
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.text.InlineTextContent
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.makeus.mody.core.designsystem.component.ModyAvatar
@@ -150,6 +160,12 @@ private fun RecordDetailContent(
     }
 
     if (state.isReporting || state.isDeleting || state.isDeletingComment) ModyLoadingOverlay()
+
+    // 전송하면 입력칸 포커스를 풀어 키보드를 내린다. 첫 진입(0)은 무시.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.clearInputFocusRequest) {
+        if (state.clearInputFocusRequest > 0) focusManager.clearFocus()
+    }
 
     // 이모지 도배 제한 안내. 화면을 막을 일이 아니라 다이얼로그 대신 토스트.
     val context = LocalContext.current
@@ -485,8 +501,10 @@ private fun CommentBody(comment: CommentUi, bubbleColor: Color, bubbleShape: Sha
             modifier = Modifier.size(EMOJI_COMMENT_SIZE),
         )
     } else {
+        val (text, inlineContent) = rememberCommentText(comment)
         Text(
-            text = comment.content,
+            text = text,
+            inlineContent = inlineContent,
             style = ModyTheme.typography.b7,
             color = ModyTheme.colors.gray10,
             modifier = Modifier
@@ -495,6 +513,37 @@ private fun CommentBody(comment: CommentUi, bubbleColor: Color, bubbleShape: Sha
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
+}
+
+/**
+ * 말풍선 글 + 사이사이 이모지 그림. 조각이 없으면(구버전 대체 문구 등) 본문을 그대로.
+ * 이모지는 글자 한 칸 자리를 차지하는 인라인 그림으로 끼운다(줄높이 22.4 안에 20sp).
+ */
+@Composable
+private fun rememberCommentText(comment: CommentUi): Pair<AnnotatedString, Map<String, InlineTextContent>> =
+    remember(comment.segments, comment.content) {
+        if (comment.segments.isEmpty()) return@remember AnnotatedString(comment.content) to emptyMap()
+        val text = buildAnnotatedString {
+            comment.segments.forEach { segment ->
+                when (segment) {
+                    is CommentSegment.Text -> append(segment.text)
+                    is CommentSegment.Emoji -> appendInlineContent(segment.emoji.id, segment.emoji.inputChar)
+                }
+            }
+        }
+        val inline = comment.segments.filterIsInstance<CommentSegment.Emoji>().map { it.emoji }.distinct()
+            .associate { emoji ->
+                emoji.id to InlineTextContent(
+                    Placeholder(INLINE_EMOJI_SIZE, INLINE_EMOJI_SIZE, PlaceholderVerticalAlign.TextCenter),
+                ) {
+                    Image(
+                        painter = painterResource(emoji.iconRes),
+                        contentDescription = emoji.description,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        text to inline
 }
 
 /** 남의 말풍선: 왼쪽 위(아바타 쪽)만 각지고, 왼쪽 아래 16·오른쪽은 완전히 둥글다. */
@@ -526,6 +575,7 @@ private fun EmojiBar(enabled: Boolean, onClick: (CommentEmoji) -> Unit) {
 }
 
 private val EMOJI_COMMENT_SIZE = 44.dp
+private val INLINE_EMOJI_SIZE = 20.sp
 private const val PENDING_ALPHA = 0.5f
 private val EMOJI_BUTTON_SIZE = 32.dp
 
@@ -535,9 +585,9 @@ private val EMOJI_BUTTON_SIZE = 32.dp
  */
 @Composable
 private fun CommentInputBar(
-    value: String,
+    value: TextFieldValue,
     canSend: Boolean,
-    onChange: (String) -> Unit,
+    onChange: (TextFieldValue) -> Unit,
     onSend: () -> Unit,
 ) {
     Row(
@@ -569,7 +619,7 @@ private fun CommentInputBar(
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    if (value.isEmpty()) {
+                    if (value.text.isEmpty()) {
                         Text(
                             text = "버디에게 응원 한마디를 남겨보세요!",
                             style = ModyTheme.typography.b7,

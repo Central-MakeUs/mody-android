@@ -53,4 +53,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
+    // 하단 탭 바 배경 흐림(글래스). API 31 미만은 흐림 없이 반투명으로만 그려진다.
+    implementation(libs.haze)
 }

@@ -59,6 +59,14 @@ object ModyIcons {
     @DrawableRes val Plus2 = R.drawable.ic_plus_2
     @DrawableRes val Profile = R.drawable.ic_profile
     @DrawableRes val Profile1 = R.drawable.ic_profile_1
+
+    // 하단 탭(시안 menu 35:3564). 선택 시 _fill.
+    @DrawableRes val TabFeed = R.drawable.ic_tab_feed
+    @DrawableRes val TabFeedFill = R.drawable.ic_tab_feed_fill
+    @DrawableRes val TabChallenge = R.drawable.ic_tab_challenge
+    @DrawableRes val TabChallengeFill = R.drawable.ic_tab_challenge_fill
+    @DrawableRes val TabMy = R.drawable.ic_tab_my
+    @DrawableRes val TabMyFill = R.drawable.ic_tab_my_fill
     @DrawableRes val Record = R.drawable.ic_record
     /** 새로고침(원형 화살표). */
     @DrawableRes val Reset = R.drawable.ic_reset

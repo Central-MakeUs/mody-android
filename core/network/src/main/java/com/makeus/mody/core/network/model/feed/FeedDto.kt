@@ -91,8 +91,10 @@ data class CommentResponse(
     val nickname: String = "",
     val profileImageUrl: String? = null,
     val content: String = "",
-    /** 이모지 댓글의 이모지 아이디(clap·medal·fire·heart·run). 글 댓글은 null. */
+    /** 이모지 하나만 있는 댓글이면 그 아이디(clap·medal·fire·heart·run). 아니면 null. */
     val emojiId: String? = null,
+    /** 이모지 하나만 있는 댓글. 이때 [content] 는 빈 문자열이고 [emojiId] 를 크게 그린다. */
+    val emojiOnly: Boolean = false,
     /** 작성 시각(ISO-8601). 오프셋이 없으면 KST. */
     val createdAt: String? = null,
     val isMine: Boolean = false,
@@ -100,9 +102,8 @@ data class CommentResponse(
 
 @Serializable
 data class CommentCreateRequest(
+    /** 글과 이모지 토큰(`:mody-clap:`)을 섞은 본문. 이모지 하나만 보낼 때도 토큰 하나로 보낸다. 최대 500자. */
     val content: String,
-    /** 이모지 댓글이면 아이디, 이때 [content] 는 빈 문자열. null 이면 직렬화에서 빠진다(encodeDefaults=false). */
-    val emojiId: String? = null,
 )
 
 @Serializable

@@ -87,6 +87,10 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTargetId = null) }
             is RecordDetailIntent.CommentDeleteConfirmed -> deleteComment()
             is RecordDetailIntent.CommentDeleteErrorShown -> setState { copy(commentDeleteError = null) }
+            is RecordDetailIntent.CommentReportClicked ->
+                setState { copy(commentReportTargetId = intent.commentId) }
+            is RecordDetailIntent.CommentReportDialogDismissed -> setState { copy(commentReportTargetId = null) }
+            is RecordDetailIntent.CommentReportConfirmed -> reportComment()
 
             // 대상 id 는 누른 순간에 붙든다 — 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 그 기록이다.
             is RecordDetailIntent.ReportClicked ->
@@ -400,6 +404,26 @@ class RecordDetailViewModel @Inject constructor(
                 isDeletingComment = false,
                 comments = if (recordIdAt(currentIndex) == recordId) comments.filterNot { it.id == commentId } else comments,
             )
+        }
+    }
+
+    /**
+     * 남의 댓글 신고. 대상 기록·댓글 id 는 시작할 때 붙든다.
+     * 접수만 하고 목록은 그대로 둔다(숨김은 서버 검토 후). 완료/실패 다이얼로그는 게시물 신고와 같다.
+     */
+    private fun reportComment() = viewModelScope.launch {
+        val commentId = currentState.commentReportTargetId ?: return@launch
+        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
+        if (currentState.isReporting) return@launch
+        // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다.
+        setState { copy(isReporting = true, commentReportTargetId = null) }
+        try {
+            feedRepository.reportComment(groupId, recordId, commentId)
+            setState { copy(isReporting = false, showReportComplete = true) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            setState { copy(isReporting = false, reportError = "신고 접수에 실패했어요. 다시 시도해주세요.") }
         }
     }
 

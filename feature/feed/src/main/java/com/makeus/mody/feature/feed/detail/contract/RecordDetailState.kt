@@ -50,6 +50,8 @@ data class RecordDetailState(
     val commentDeleteTargetId: Long? = null,
     val isDeletingComment: Boolean = false,
     val commentDeleteError: String? = null,
+    // 댓글 신고: 확인 다이얼로그 대상(null 이면 닫힘) → 접수 중. 완료/실패는 게시물 신고 다이얼로그를 같이 쓴다.
+    val commentReportTargetId: Long? = null,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 더보기 메뉴 자체를 숨긴다 — 판별이 뒤집히면

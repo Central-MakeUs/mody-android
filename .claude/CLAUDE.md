@@ -290,6 +290,9 @@ AAB 쪽 grep 패턴에 `permission\.` 을 반드시 붙인다. 그냥 `adservice
 **Play 배포는 `vX.Y.Z` annotated 태그로 한다.** `.github/workflows/cd.yml` 의 `playstore` 잡이
 release AAB 를 말아(서명 JDK 21) 광고 권한·debug 서명을 검사한 뒤 프로덕션 트랙에 **단계적 출시 20%** 로
 올린다. 이상 없으면 Play Console 에서 100% 로 올린다.
+**단, 자동 업로드는 repo 변수 `PLAY_UPLOAD_ENABLED=true` 일 때만 돈다.** Play Console 이 CMC 공식 계정
+소유라 서비스 계정(`play-deploy@mody-500711.iam.gserviceaccount.com`) 초대를 우리가 못 한다. 꺼져 있으면
+서명·검증된 AAB 와 mapping 을 GitHub Release 에 붙이고 Slack 으로 링크를 보낸다 — 받아서 콘솔에 수동 업로드.
 ```bash
 git tag -a v1.2.1 -m "<ko-KR 출시 노트, 500자 이내>"   # 태그 메시지가 곧 출시 노트. 없으면 잡이 실패
 git push origin v1.2.1

@@ -128,6 +128,9 @@ jobs:
     needs: validate
     if: ${{ !endsWith(github.ref_name, '-dev') }}
     runs-on: ubuntu-latest
+    # 자동 업로드가 꺼져 있으면 서명된 AAB 를 GitHub Release 에 붙인다(release 생성 권한).
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -214,7 +217,10 @@ jobs:
 
       # 프로덕션 단계적 출시 20%. 문제가 없으면 Play Console 에서 100% 로 올린다.
       # 서비스 계정은 Play Console > 사용자 및 권한에 "출시 관리" 권한으로 초대돼 있어야 한다.
+      # Play Console 이 CMC 공식 계정 소유라 초대 권한이 없다 — 초대가 끝나면 repo 변수
+      # PLAY_UPLOAD_ENABLED=true 로 켠다. 그 전엔 아래 GitHub Release 로 AAB 를 받아 수동 업로드한다.
       - name: Upload to Google Play
+        if: ${{ vars.PLAY_UPLOAD_ENABLED == 'true' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -227,14 +233,32 @@ jobs:
           whatsNewDirectory: whatsnew
           mappingFile: app/build/outputs/mapping/release/mapping.txt
 
+      # 수동 업로드용: 서명·검증까지 끝난 AAB 와 R8 mapping 을 GitHub Release 에 붙인다.
+      # 출시 노트도 그대로 본문에 들어가 콘솔에 복사해 넣으면 된다.
+      - name: Attach AAB to GitHub Release
+        if: ${{ vars.PLAY_UPLOAD_ENABLED != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DIR="$RUNNER_TEMP/release"; mkdir -p "$DIR"
+          cp app/build/outputs/bundle/release/app-release.aab "$DIR/mody-${VERSION_NAME}-${VERSION_CODE}.aab"
+          cp app/build/outputs/mapping/release/mapping.txt "$DIR/mapping-${VERSION_NAME}-${VERSION_CODE}.txt"
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME (versionCode $VERSION_CODE)" \
+            --notes-file whatsnew/whatsnew-ko-KR \
+            "$DIR"/*
+
       - name: Notify Slack
         if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           STATUS: ${{ job.status }}
+          PLAY_UPLOAD_ENABLED: ${{ vars.PLAY_UPLOAD_ENABLED }}
         run: |
-          if [ "$STATUS" = "success" ]; then
+          if [ "$STATUS" = "success" ] && [ "$PLAY_UPLOAD_ENABLED" = "true" ]; then
             EMOJI=":rocket:"; TITLE="Play 스토어 업로드 완료(단계적 출시 20%)"
+          elif [ "$STATUS" = "success" ]; then
+            EMOJI=":package:"; TITLE="릴리스 AAB 준비 완료 — Play Console 에 올려주세요\\n${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
           else
             EMOJI=":x:"; TITLE="Play 스토어 업로드 실패"
           fi

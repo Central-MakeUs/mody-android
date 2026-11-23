@@ -287,11 +287,18 @@ AAB 쪽 grep 패턴에 `permission\.` 을 반드시 붙인다. 그냥 `adservice
 같이 걸리는데 **둘 다 권한이 아니고 지울 필요도 없다.** 문제가 되는 건
 `android.permission.ACCESS_ADSERVICES_*` 와 `com.google.android.gms.permission.AD_ID` 뿐이다.
 
-**Play 자동 배포는 아직 없다.** `.github/workflows/cd.yml` 의 `playstore` 잡은 미구성 상태로
-`exit 1` 한다 — `v1.2.3` 같은 릴리스 태그를 밀면 CI 가 실패한다. 동작하는 건 `-dev` 태그
-(Firebase App Distribution, debug APK)뿐이고, Play 제출은 위 명령으로 로컬 AAB 를 말아
-콘솔에 수동 업로드한다. CD 의 versionCode 는 `v*` 태그 개수로 매긴다(태그를 지우면 값이
-되돌아가므로 배포한 태그는 지우지 않는다).
+**Play 배포는 `vX.Y.Z` annotated 태그로 한다.** `.github/workflows/cd.yml` 의 `playstore` 잡이
+release AAB 를 말아(서명 JDK 21) 광고 권한·debug 서명을 검사한 뒤 프로덕션 트랙에 **단계적 출시 20%** 로
+올린다. 이상 없으면 Play Console 에서 100% 로 올린다.
+```bash
+git tag -a v1.2.1 -m "<ko-KR 출시 노트, 500자 이내>"   # 태그 메시지가 곧 출시 노트. 없으면 잡이 실패
+git push origin v1.2.1
+```
+`-dev` 태그는 Firebase App Distribution(debug APK)이다. CD 의 versionCode 는 `v*` 태그 개수(`-dev`
+포함)로 매긴다 — 태그를 지우면 값이 되돌아가므로 배포한 태그는 지우지 않는다. 로컬에서 수동으로 올린
+버전이 있으면 태그 개수가 Play 최고 versionCode 보다 커야 한다(작으면 업로드 거부).
+필요 시크릿: `PLAY_SERVICE_ACCOUNT_JSON`(Play Console 에 "출시 관리" 권한으로 초대한 서비스 계정),
+`SIGNING_KEYSTORE`(base64) 외 서명 비번 3종, `KAKAO_NATIVE_KEY_PROD`.
 
 release 서명은 **Android Studio JBR 21** 로만 된다. Homebrew JDK 17 이면 keystore 비번을
 틀렸다는 에러가 난다(PKCS12 non-ASCII 처리 차이). `~/.gradle/gradle.properties` 의

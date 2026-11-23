@@ -37,7 +37,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :feature:record             ← 기록 작성(촬영)
 :feature:notification       ← 알림함
 :feature:mypage             ← 마이페이지, 알림 설정, 건강 연동 안내
+:baselineprofile            ← (com.android.test) 앱 시작 baseline profile 생성·시작 시간 측정
 ```
+
+**Baseline profile**: 앱 시작 경로 프로필은 `app/src/release/generated/baselineProfiles/` 에 커밋돼
+release 빌드에 들어간다(일반 빌드는 기기 불필요). 시작 경로가 크게 바뀌면 기기를 연결해 다시 만든다.
+기기에 더 높은 versionCode 앱이 깔려 있으면 설치가 거부되니 같은 값으로 맞춘다.
+```bash
+VERSION_CODE=<기기 설치본과 같게> ./gradlew --no-daemon :app:generateReleaseBaselineProfile \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.makeus.mody.baselineprofile.BaselineProfileGenerator
+# 시작 시간 비교(프로필 없음 vs 적용, 콜드 10회)
+VERSION_CODE=<같게> ./gradlew --no-daemon :baselineprofile:connectedBenchmarkReleaseAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.makeus.mody.baselineprofile.StartupBenchmarks
+```
+Android 16 기기는 Macrobenchmark 1.5.0 이상이 필요하다(1.3.x 는 `pm dump-profiles` 출력 변경으로 실패).
 
 모듈을 새로 추가/제거하면 `settings.gradle.kts` 와 이 표를 같이 고친다. 디렉터리만 남고
 `include` 가 빠지면 빌드에서 조용히 사라진다(`core/health/` 가 그 상태로 남아 있었다).

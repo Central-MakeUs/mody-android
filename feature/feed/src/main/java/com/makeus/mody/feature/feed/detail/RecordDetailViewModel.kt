@@ -15,6 +15,7 @@ import com.makeus.mody.core.navigation.NavigationEvent
 import com.makeus.mody.core.navigation.NavigationHelper
 import com.makeus.mody.feature.feed.detail.contract.CommentEmoji
 import com.makeus.mody.feature.feed.detail.contract.CommentEmojiCodec
+import com.makeus.mody.feature.feed.detail.contract.CommentTarget
 import com.makeus.mody.feature.feed.detail.contract.CommentUi
 import com.makeus.mody.feature.feed.detail.contract.PendingEmoji
 import com.makeus.mody.feature.feed.detail.contract.RecordDetailIntent
@@ -83,13 +84,13 @@ class RecordDetailViewModel @Inject constructor(
             is RecordDetailIntent.SendErrorShown -> setState { copy(sendError = null) }
             is RecordDetailIntent.EmojiLimitNoticeShown -> setState { copy(emojiLimitNotice = null) }
             is RecordDetailIntent.CommentDeleteClicked ->
-                setState { copy(commentDeleteTargetId = intent.commentId) }
-            is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTargetId = null) }
+                setState { copy(commentDeleteTarget = commentTargetOf(intent.commentId)) }
+            is RecordDetailIntent.CommentDeleteDialogDismissed -> setState { copy(commentDeleteTarget = null) }
             is RecordDetailIntent.CommentDeleteConfirmed -> deleteComment()
             is RecordDetailIntent.CommentDeleteErrorShown -> setState { copy(commentDeleteError = null) }
             is RecordDetailIntent.CommentReportClicked ->
-                setState { copy(commentReportTargetId = intent.commentId) }
-            is RecordDetailIntent.CommentReportDialogDismissed -> setState { copy(commentReportTargetId = null) }
+                setState { copy(commentReportTarget = commentTargetOf(intent.commentId)) }
+            is RecordDetailIntent.CommentReportDialogDismissed -> setState { copy(commentReportTarget = null) }
             is RecordDetailIntent.CommentReportConfirmed -> reportComment()
 
             // 대상 id 는 누른 순간에 붙든다 — 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 그 기록이다.
@@ -384,11 +385,10 @@ class RecordDetailViewModel @Inject constructor(
      * 성공하면 그 기록을 아직 보고 있을 때만 목록에서 뺀다(넘겨버렸으면 다음에 다시 받을 때 반영된다).
      */
     private fun deleteComment() = viewModelScope.launch {
-        val commentId = currentState.commentDeleteTargetId ?: return@launch
-        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
+        val (recordId, commentId) = currentState.commentDeleteTarget ?: return@launch
         if (currentState.isDeletingComment) return@launch
         // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다.
-        setState { copy(isDeletingComment = true, commentDeleteTargetId = null) }
+        setState { copy(isDeletingComment = true, commentDeleteTarget = null) }
         try {
             feedRepository.deleteComment(groupId, recordId, commentId)
         } catch (e: CancellationException) {
@@ -412,11 +412,10 @@ class RecordDetailViewModel @Inject constructor(
      * 접수만 하고 목록은 그대로 둔다(숨김은 서버 검토 후). 완료/실패 다이얼로그는 게시물 신고와 같다.
      */
     private fun reportComment() = viewModelScope.launch {
-        val commentId = currentState.commentReportTargetId ?: return@launch
-        val recordId = recordIdAt(currentState.currentIndex) ?: return@launch
+        val (recordId, commentId) = currentState.commentReportTarget ?: return@launch
         if (currentState.isReporting) return@launch
         // 다이얼로그는 바로 닫고 오버레이로 대기를 보여준다.
-        setState { copy(isReporting = true, commentReportTargetId = null) }
+        setState { copy(isReporting = true, commentReportTarget = null) }
         try {
             feedRepository.reportComment(groupId, recordId, commentId)
             setState { copy(isReporting = false, showReportComplete = true) }
@@ -426,6 +425,10 @@ class RecordDetailViewModel @Inject constructor(
             setState { copy(isReporting = false, reportError = "신고 접수에 실패했어요. 다시 시도해주세요.") }
         }
     }
+
+    /** 꾹 누른 순간 보고 있던 기록과 댓글을 묶는다. 기록이 없으면(로딩 전) null — 다이얼로그를 띄우지 않는다. */
+    private fun commentTargetOf(commentId: Long): CommentTarget? =
+        recordIdAt(currentState.currentIndex)?.let { CommentTarget(recordId = it, commentId = commentId) }
 
     /** 현재 state 의 records 에서 index 위치 recordId. */
     private fun recordIdAt(index: Int): Long? = currentState.records.getOrNull(index)?.id

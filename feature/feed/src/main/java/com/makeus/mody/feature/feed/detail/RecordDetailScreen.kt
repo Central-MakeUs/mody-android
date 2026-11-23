@@ -246,7 +246,7 @@ private fun RecordActionDialogs(
         onDismiss = { onIntent(RecordDetailIntent.SendErrorShown) },
     )
 
-    if (state.commentDeleteTargetId != null) {
+    if (state.commentDeleteTarget != null) {
         ModyDialog(
             title = "댓글을 삭제하시겠어요?",
             message = "한번 삭제한 댓글은 복구할 수 없어요.",
@@ -258,7 +258,7 @@ private fun RecordActionDialogs(
         )
     }
 
-    if (state.commentReportTargetId != null) {
+    if (state.commentReportTarget != null) {
         ModyDialog(
             title = "댓글을 신고하시겠어요?",
             message = "신고한 댓글은 검토 후 삭제 처리할 예정입니다.",

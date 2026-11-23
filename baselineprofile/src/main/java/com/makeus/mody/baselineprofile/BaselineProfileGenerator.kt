@@ -3,6 +3,9 @@ package com.makeus.mody.baselineprofile
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
+import java.util.regex.Pattern
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +31,15 @@ class BaselineProfileGenerator {
     ) {
         pressHome()
         startActivityAndWait()
-        device.waitForIdle()
+        // startActivityAndWait 는 첫 프레임에서 돌아오는데, 그 프레임은 스플래시 게이트·시작 경로가
+        // 정해지기 전의 빈 화면일 수 있다. 첫 화면이 실제로 그려질 때까지 기다려야 그 코드가 프로필에 담긴다.
+        val firstScreenShown = device.wait(Until.hasObject(FIRST_SCREEN), FIRST_SCREEN_TIMEOUT_MS)
+        check(firstScreenShown) { "첫 화면(로그인 또는 메인 탭)이 ${FIRST_SCREEN_TIMEOUT_MS}ms 안에 뜨지 않았다" }
+    }
+
+    private companion object {
+        /** 로그인 화면 로고(contentDescription "MODY") 또는 메인 하단 탭 아이콘("피드"). 로그인 여부와 무관하게 잡힌다. */
+        val FIRST_SCREEN = By.pkg(TARGET_PACKAGE).desc(Pattern.compile("MODY|피드"))
+        const val FIRST_SCREEN_TIMEOUT_MS = 10_000L
     }
 }

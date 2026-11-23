@@ -22,6 +22,9 @@ data class CommentUi(
     val isPending: Boolean = false,
 )
 
+/** 꾹 눌러 고른 댓글과 그 댓글이 달린 기록. 다이얼로그가 떠 있는 동안 페이지가 바뀌어도 이 쌍으로 요청한다. */
+data class CommentTarget(val recordId: Long, val commentId: Long)
+
 /** 전송 중인 내 이모지 미리보기. 보낸 기록을 함께 붙들어, 넘겨도 다른 기록에 안 보이게 한다. */
 data class PendingEmoji(val recordId: Long, val comment: CommentUi)
 
@@ -47,9 +50,11 @@ data class RecordDetailState(
     /** 이모지 도배 제한 안내(한 번 띄우고 지운다). */
     val emojiLimitNotice: String? = null,
     // 댓글 삭제: 확인 다이얼로그 대상(null 이면 닫힘) → 삭제 중 → 실패 다이얼로그
-    val commentDeleteTargetId: Long? = null,
+    val commentDeleteTarget: CommentTarget? = null,
     val isDeletingComment: Boolean = false,
     val commentDeleteError: String? = null,
+    // 댓글 신고: 확인 다이얼로그 대상(null 이면 닫힘) → 접수 중. 완료/실패는 게시물 신고 다이얼로그를 같이 쓴다.
+    val commentReportTarget: CommentTarget? = null,
     /** 응원 댓글 노출 여부. 끄면 목록·입력바가 숨고 전송도 막힌다. 출처는 [CommentFeature]. */
     val commentEnabled: Boolean = CommentFeature.ENABLED,
     // 내 memberId(/mypage/me). 로딩 전(null)에는 더보기 메뉴 자체를 숨긴다 — 판별이 뒤집히면

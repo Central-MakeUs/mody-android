@@ -246,7 +246,7 @@ private fun RecordActionDialogs(
         onDismiss = { onIntent(RecordDetailIntent.SendErrorShown) },
     )
 
-    if (state.commentDeleteTargetId != null) {
+    if (state.commentDeleteTarget != null) {
         ModyDialog(
             title = "댓글을 삭제하시겠어요?",
             message = "한번 삭제한 댓글은 복구할 수 없어요.",
@@ -255,6 +255,18 @@ private fun RecordActionDialogs(
             confirmEnabled = !state.isDeletingComment,
             onConfirm = { onIntent(RecordDetailIntent.CommentDeleteConfirmed) },
             onDismissRequest = { onIntent(RecordDetailIntent.CommentDeleteDialogDismissed) },
+        )
+    }
+
+    if (state.commentReportTarget != null) {
+        ModyDialog(
+            title = "댓글을 신고하시겠어요?",
+            message = "신고한 댓글은 검토 후 삭제 처리할 예정입니다.",
+            confirmText = "신고",
+            dismissText = "취소",
+            confirmEnabled = !state.isReporting,
+            onConfirm = { onIntent(RecordDetailIntent.CommentReportConfirmed) },
+            onDismissRequest = { onIntent(RecordDetailIntent.CommentReportDialogDismissed) },
         )
     }
 
@@ -318,6 +330,7 @@ private fun DetailBody(
                         CommentBubble(
                             comment = comment,
                             onDeleteClick = { onIntent(RecordDetailIntent.CommentDeleteClicked(comment.id)) },
+                            onReportClick = { onIntent(RecordDetailIntent.CommentReportClicked(comment.id)) },
                         )
                     }
                 }
@@ -392,11 +405,11 @@ private fun EmptyComments() {
  * 응원 댓글 한 줄(시안 9:3643).
  * - 남의 댓글: 아바타·이름 줄 아래에 말풍선(gray01, 왼쪽 위만 각짐) + 오른쪽에 시각.
  * - 내 댓글: 아바타·이름 없이 오른쪽 정렬, 왼쪽에 시각 + 말풍선(primary300, 오른쪽 위만 각짐).
- *   꾹 누르면 말풍선 아래에 "삭제"가 뜬다.
+ *   꾹 누르면 말풍선 아래에 "삭제"가 뜬다(남의 댓글은 "신고").
  * - 이모지 댓글은 말풍선 없이 이모지만(44dp).
  */
 @Composable
-private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
+private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit, onReportClick: () -> Unit) {
     if (comment.isMine) {
         Row(
             modifier = Modifier
@@ -410,7 +423,14 @@ private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
             CommentTime(comment.timeLabel)
             // 시각 자리를 남기고 말풍선이 줄바꿈되도록 weight(fill=false).
             Box(modifier = Modifier.weight(1f, fill = false)) {
-                DeletableCommentBody(comment = comment, onDeleteClick = onDeleteClick)
+                LongPressMenuCommentBody(
+                    comment = comment,
+                    menuText = "삭제",
+                    onMenuClick = onDeleteClick,
+                    bubbleColor = ModyTheme.colors.primary300,
+                    bubbleShape = MineBubbleShape,
+                    alignEnd = true,
+                )
             }
         }
     } else {
@@ -436,7 +456,14 @@ private fun CommentBubble(comment: CommentUi, onDeleteClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Box(modifier = Modifier.weight(1f, fill = false)) {
-                    CommentBody(comment = comment, bubbleColor = ModyTheme.colors.gray01, bubbleShape = OthersBubbleShape)
+                    LongPressMenuCommentBody(
+                        comment = comment,
+                        menuText = "신고",
+                        onMenuClick = onReportClick,
+                        bubbleColor = ModyTheme.colors.gray01,
+                        bubbleShape = OthersBubbleShape,
+                        alignEnd = false,
+                    )
                 }
                 CommentTime(comment.timeLabel)
             }
@@ -455,36 +482,51 @@ private fun CommentTime(label: String?) {
     )
 }
 
-/** 내 댓글 본문. 꾹 누르면 바로 아래에 "삭제" 칩이 뜬다(시안 9:3713). */
+/**
+ * 꾹 누르면 바로 아래에 칩 하나가 뜨는 댓글 본문(시안 9:3713).
+ * 내 댓글은 "삭제"(말풍선 오른쪽 끝 정렬), 남의 댓글은 "신고"(왼쪽 끝 정렬).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DeletableCommentBody(comment: CommentUi, onDeleteClick: () -> Unit) {
+private fun LongPressMenuCommentBody(
+    comment: CommentUi,
+    menuText: String,
+    onMenuClick: () -> Unit,
+    bubbleColor: Color,
+    bubbleShape: Shape,
+    alignEnd: Boolean,
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
     Box {
         Box(
             // 누름 효과(사각 하이라이트)는 끈다 — 말풍선 모양과 안 맞아 검은 네모가 비친다.
-            // 꾹 누르면 진동과 "삭제" 칩이 바로 떠서 피드백은 그걸로 충분하다.
+            // 꾹 누르면 진동과 칩이 바로 떠서 피드백은 그걸로 충분하다.
             modifier = Modifier.combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {},
                 onLongClickLabel = "댓글 메뉴 열기",
                 onLongClick = {
-                    // 보내는 중인 미리보기는 아직 서버 id 가 없어 지울 수 없다.
+                    // 보내는 중인 미리보기는 아직 서버 id 가 없어 지우거나 신고할 수 없다.
                     if (comment.isPending) return@combinedClickable
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     menuExpanded = true
                 },
             ),
         ) {
-            CommentBody(comment = comment, bubbleColor = ModyTheme.colors.primary300, bubbleShape = MineBubbleShape)
+            CommentBody(comment = comment, bubbleColor = bubbleColor, bubbleShape = bubbleShape)
         }
-        // 시안: 말풍선 오른쪽 끝에 맞추고 아래쪽에 4dp 겹친다.
-        ModyPopupMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }, offsetY = (-4).dp) {
-            ModyPopupMenuItem(text = "삭제", onClick = {
+        // 시안: 말풍선 끝에 맞추고 아래쪽에 4dp 겹친다.
+        ModyPopupMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+            alignEnd = alignEnd,
+            offsetY = (-4).dp,
+        ) {
+            ModyPopupMenuItem(text = menuText, onClick = {
                 menuExpanded = false
-                onDeleteClick()
+                onMenuClick()
             })
         }
     }

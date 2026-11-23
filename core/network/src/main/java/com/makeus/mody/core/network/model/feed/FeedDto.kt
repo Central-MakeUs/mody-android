@@ -118,3 +118,10 @@ data class RecordReportResponse(
     val reportId: Long = 0,
     val recordId: Long = 0,
 )
+
+/** 댓글 신고 접수 응답. */
+@Serializable
+data class CommentReportResponse(
+    val reportId: Long = 0,
+    val commentId: Long = 0,
+)

@@ -46,4 +46,7 @@ interface FeedRepository {
 
     /** 기록(게시물) 신고. 접수만 하고 삭제 등 처리는 서버 검토 후 진행. */
     suspend fun reportRecord(groupId: Long, recordId: Long)
+
+    /** 남의 댓글 신고. 접수만 하고 숨김 등 처리는 서버 검토 후 진행. */
+    suspend fun reportComment(groupId: Long, recordId: Long, commentId: Long)
 }

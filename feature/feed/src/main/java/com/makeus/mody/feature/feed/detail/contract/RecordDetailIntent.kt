@@ -37,6 +37,15 @@ sealed class RecordDetailIntent : UiIntent {
     /** 댓글 삭제 실패 다이얼로그 닫힘 */
     data object CommentDeleteErrorShown : RecordDetailIntent()
 
+    /** 남의 댓글 꾹 누름 → 뜬 "신고" 탭 */
+    data class CommentReportClicked(val commentId: Long) : RecordDetailIntent()
+
+    /** 댓글 신고 확인 "신고" */
+    data object CommentReportConfirmed : RecordDetailIntent()
+
+    /** 댓글 신고 확인 다이얼로그 닫기 */
+    data object CommentReportDialogDismissed : RecordDetailIntent()
+
     /** 더보기 → 신고(남의 글). 대상은 지금 보고 있는 기록. */
     data object ReportClicked : RecordDetailIntent()
 

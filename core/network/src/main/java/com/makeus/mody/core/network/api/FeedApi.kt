@@ -5,6 +5,7 @@ import com.makeus.mody.core.network.model.feed.ActivityCalendarResponse
 import com.makeus.mody.core.network.model.feed.CommentCreateRequest
 import com.makeus.mody.core.network.model.feed.CommentCreateResponse
 import com.makeus.mody.core.network.model.feed.CommentCursorResponse
+import com.makeus.mody.core.network.model.feed.CommentReportResponse
 import com.makeus.mody.core.network.model.feed.RecordCursorResponse
 import com.makeus.mody.core.network.model.feed.RecordDetailResponse
 import com.makeus.mody.core.network.model.feed.RecordReportResponse
@@ -73,4 +74,12 @@ interface FeedApi {
         @Path("groupId") groupId: Long,
         @Path("recordId") recordId: Long,
     ): ApiResponse<RecordReportResponse>
+
+    /** 댓글 신고. 접수만 하고 숨김 등 처리는 서버 검토 후 진행. */
+    @POST("api/v1/groups/{groupId}/records/{recordId}/comments/{commentId}/report")
+    suspend fun reportComment(
+        @Path("groupId") groupId: Long,
+        @Path("recordId") recordId: Long,
+        @Path("commentId") commentId: Long,
+    ): ApiResponse<CommentReportResponse>
 }

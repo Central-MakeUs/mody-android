@@ -2,7 +2,7 @@ name: CD
 
 # 태그로 배포 트랙 분기
 #   vX.Y.Z-dev  -> Firebase App Distribution (debug APK, 내부 테스트)
-#   vX.Y.Z      -> Google Play Store (release AAB, 출시)  [미구성: Play 등록 후 활성화]
+#   vX.Y.Z      -> Google Play Store (release AAB, 프로덕션 단계적 출시)
 on:
   push:
     tags:
@@ -129,13 +129,115 @@ jobs:
     if: ${{ !endsWith(github.ref_name, '-dev') }}
     runs-on: ubuntu-latest
     steps:
-      # TODO(Play 출시 준비되면 활성화):
-      #   1) Play Console 앱 등록 + 최초 1회 수동 업로드
-      #   2) Service Account JSON -> secrets.PLAY_SERVICE_ACCOUNT_JSON
-      #   3) 서명 keystore base64 -> secret, 디코드 스텝 추가
-      #   4) ./gradlew bundleRelease 후 Gradle Play Publisher 로 업로드
-      - name: Not configured
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # versionCode 를 태그 개수로 매긴다(firebase 잡 주석 참고).
+          fetch-depth: 0
+
+      # release 서명은 JDK 21 이어야 한다 — 17 에서는 keystore(PKCS12) 비번이 틀렸다고 나온다.
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version
         run: |
-          echo "::error::Play Store 배포 미구성. release 태그($GITHUB_REF_NAME) 배포하려면 Service Account/Play Console 설정 필요."
-          echo "내부 테스트는 -dev 태그(예: ${GITHUB_REF_NAME}-dev) 사용."
-          exit 1
+          CORE="${GITHUB_REF_NAME#v}"
+          CODE=$(git tag -l 'v*' | wc -l | tr -d ' ')
+          if [ "$CODE" -lt 1 ]; then
+            echo "::error::태그를 못 찾았다 — versionCode 를 셀 수 없다(fetch-depth 확인)."
+            exit 1
+          fi
+          echo "VERSION_NAME=$CORE" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "versionName=$CORE versionCode=$CODE"
+
+      # Play 출시 노트(ko-KR). annotated 태그 메시지를 쓰고, 없으면 실패시킨다 —
+      # 사용자에게 "v1.2.1 (커밋 abc1234)" 같은 문구가 나가면 안 된다.
+      - name: Resolve release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES=""
+          TAG_OBJ_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" \
+            --jq 'select(.object.type == "tag") | .object.sha' 2>/dev/null || true)
+          if [ -n "$TAG_OBJ_SHA" ]; then
+            NOTES=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJ_SHA}" --jq '.message' 2>/dev/null || true)
+          fi
+          if [ -z "${NOTES//[[:space:]]/}" ]; then
+            echo "::error::출시 노트가 없다. annotated 태그로 찍는다: git tag -a ${GITHUB_REF_NAME} -m \"<출시 노트>\""
+            exit 1
+          fi
+          # Play 출시 노트 상한 500자.
+          if [ "$(printf '%s' "$NOTES" | wc -m)" -gt 500 ]; then
+            echo "::error::출시 노트가 500자를 넘는다."
+            exit 1
+          fi
+          mkdir -p whatsnew
+          printf '%s\n' "$NOTES" > whatsnew/whatsnew-ko-KR
+          echo "----- release notes -----"; cat whatsnew/whatsnew-ko-KR
+
+      - name: Decode keystore
+        env:
+          SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
+        run: |
+          printf '%s' "$SIGNING_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "SIGNING_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build Release AAB
+        env:
+          KAKAO_NATIVE_KEY_PROD: ${{ secrets.KAKAO_NATIVE_KEY_PROD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew :app:bundleRelease
+
+      # 업로드 전에 산출물을 직접 확인한다. 빌드 성공만으로는 Play 제출 단계에서 막히는 것들이다.
+      - name: Verify AAB
+        run: |
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          MANIFEST=$(unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings)
+          # 광고 권한이 라이브러리로 다시 끌려오면 "광고 ID 사용: 아니요" 제출이 막힌다.
+          if printf '%s' "$MANIFEST" | grep -qE 'permission\.(AD_ID|ACCESS_ADSERVICES)'; then
+            echo "::error::광고 권한이 AAB 에 들어 있다:"
+            printf '%s' "$MANIFEST" | grep -E 'permission\.(AD_ID|ACCESS_ADSERVICES)'
+            exit 1
+          fi
+          # 서명이 debug 키로 빠지지 않았는지(키 별칭이 debug 면 Play 가 거부한다).
+          if jarsigner -verify -verbose -certs "$AAB" | grep -q 'CN=Android Debug'; then
+            echo "::error::debug 키로 서명됐다."
+            exit 1
+          fi
+
+      # 프로덕션 단계적 출시 20%. 문제가 없으면 Play Console 에서 100% 로 올린다.
+      # 서비스 계정은 Play Console > 사용자 및 권한에 "출시 관리" 권한으로 초대돼 있어야 한다.
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.makeus.mody
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          releaseName: ${{ env.VERSION_NAME }} (${{ env.VERSION_CODE }})
+          track: production
+          status: inProgress
+          userFraction: 0.2
+          whatsNewDirectory: whatsnew
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ job.status }}
+        run: |
+          if [ "$STATUS" = "success" ]; then
+            EMOJI=":rocket:"; TITLE="Play 스토어 업로드 완료(단계적 출시 20%)"
+          else
+            EMOJI=":x:"; TITLE="Play 스토어 업로드 실패"
+          fi
+          curl -sf -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"${EMOJI} Mody ${TITLE}\n버전: ${GITHUB_REF_NAME} (versionCode ${VERSION_CODE:-?})\n커밋: ${GITHUB_SHA:0:7} (${GITHUB_ACTOR})\"}" \
+            "$SLACK_WEBHOOK_URL" || true

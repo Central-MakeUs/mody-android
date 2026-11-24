@@ -126,3 +126,53 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+/**
+ * Compose 핵심 라이브러리(ui·foundation·animation) 버전이 한 줄로 맞는지 검사한다.
+ *
+ * 다른 라이브러리(예: lifecycle 2.10 → ui 1.9)가 BOM 보다 높은 버전을 끌어올리면 release 에는
+ * ui 1.9 + foundation 1.7 처럼 섞인 조합이 들어간다. debug 는 ui-tooling(debugImplementation)이
+ * 나머지까지 올려 우연히 맞기 때문에 개발 중엔 안 보이고 스토어 빌드에서만 터진다
+ * (1.2.x 댓글 이모지 탭 먹통). release 안에서 셋이 같은지, debug 와 release 가 같은지 본다.
+ */
+val checkComposeVersions by tasks.registering {
+    group = "verification"
+    description = "Compose ui/foundation/animation 버전이 release 안에서, 그리고 debug 와 같은지 검사"
+    val groups = setOf("androidx.compose.ui", "androidx.compose.foundation", "androidx.compose.animation")
+    fun composeVersions(configuration: String) = configurations.named(configuration)
+        .flatMap { it.incoming.resolutionResult.rootComponent }
+        .map { root ->
+            val seen = mutableSetOf<ResolvedComponentResult>()
+            val found = sortedMapOf<String, String>()
+            fun walk(component: ResolvedComponentResult) {
+                if (!seen.add(component)) return
+                val id = component.moduleVersion
+                if (id != null && id.group in groups) found["${id.group}:${id.name}"] = id.version
+                component.dependencies.filterIsInstance<ResolvedDependencyResult>().forEach { walk(it.selected) }
+            }
+            walk(root)
+            found.toMap()
+        }
+    val release = composeVersions("releaseRuntimeClasspath")
+    val debug = composeVersions("debugRuntimeClasspath")
+    doLast {
+        val releaseVersions = release.get()
+        val debugVersions = debug.get()
+        val problems = mutableListOf<String>()
+        val distinct = releaseVersions.values.toSortedSet()
+        if (distinct.size > 1) {
+            problems += "release 안에서 버전이 섞임 $distinct:\n" +
+                releaseVersions.entries.joinToString("\n") { "  ${it.key} = ${it.value}" }
+        }
+        releaseVersions.forEach { (module, version) ->
+            val other = debugVersions[module]
+            if (other != null && other != version) problems += "debug/release 불일치: $module debug=$other release=$version"
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException(
+                "Compose 버전 정렬 실패 — composeBom 을 끌어올려진 ui 버전에 맞추세요.\n" + problems.joinToString("\n"),
+            )
+        }
+        logger.lifecycle("Compose 버전 정렬 OK: ${distinct.single()}")
+    }
+}

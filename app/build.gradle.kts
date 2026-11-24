@@ -148,7 +148,16 @@ val checkComposeVersions by tasks.registering {
                 if (!seen.add(component)) return
                 val id = component.moduleVersion
                 if (id != null && id.group in groups) found["${id.group}:${id.name}"] = id.version
-                component.dependencies.filterIsInstance<ResolvedDependencyResult>().forEach { walk(it.selected) }
+                component.dependencies.forEach { dependency ->
+                    when (dependency) {
+                        is ResolvedDependencyResult -> walk(dependency.selected)
+                        // 해석 실패한 간선을 건너뛰면 남은 모듈만 보고 "OK" 가 나온다 — 그대로 실패시킨다.
+                        is UnresolvedDependencyResult -> throw GradleException(
+                            "$configuration 의존성 해석 실패: ${dependency.attempted.displayName}",
+                            dependency.failure,
+                        )
+                    }
+                }
             }
             walk(root)
             found.toMap()

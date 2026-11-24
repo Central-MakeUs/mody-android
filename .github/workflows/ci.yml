@@ -26,6 +26,11 @@ jobs:
       - name: Check design tokens
         run: python3 tools/figma/check_design_tokens.py
 
+      # Compose ui/foundation/animation 버전이 섞이면 debug 는 멀쩡하고 release 에서만
+      # 클릭이 먹통이 된다(1.2.x 댓글 이모지). 의존성 해석만 하므로 몇 초면 끝난다.
+      - name: Check Compose Versions
+        run: ./gradlew :app:checkComposeVersions
+
       - name: Build Debug
         run: ./gradlew assembleDebug
 

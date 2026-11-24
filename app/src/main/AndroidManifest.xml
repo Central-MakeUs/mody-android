@@ -58,6 +58,12 @@
         android:name="android.hardware.camera.any"
         android:required="false" />
 
+    <!-- 세로 고정(presentation 의 screenOrientation=portrait)이 "세로 화면 필수"로 해석돼
+         Play 에서 세로 화면 없는 기기(데스크톱·XR 등) 설치가 막히지 않게. 세로 지원 기기에선 그대로 세로 고정. -->
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+
     <!-- Android 11+ 패키지 가시성: 카카오톡 설치 여부 확인(isKakaoTalkSharingAvailable) -->
     <queries>
         <package android:name="com.kakao.talk" />

@@ -10,4 +10,5 @@ dependencies {
     implementation(libs.coil.compose)
     // 공용 로딩 인디케이터(ModyLoadingIndicator)의 로티 재생용.
     implementation(libs.lottie.compose)
+    implementation(libs.androidx.material.icons.core)
 }

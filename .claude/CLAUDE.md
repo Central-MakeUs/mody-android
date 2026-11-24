@@ -290,6 +290,17 @@ AAB 쪽 grep 패턴에 `permission\.` 을 반드시 붙인다. 그냥 `adservice
 **Play 배포는 `vX.Y.Z` annotated 태그로 한다.** `.github/workflows/cd.yml` 의 `playstore` 잡이
 release AAB 를 말아(서명 JDK 21) 광고 권한·debug 서명을 검사한 뒤 프로덕션 트랙에 **단계적 출시 20%** 로
 올린다. 이상 없으면 Play Console 에서 100% 로 올린다.
+**단, 자동 업로드는 repo 변수 `PLAY_UPLOAD_ENABLED=true` 일 때만 돈다.** Play Console 이 CMC 공식 계정
+소유라 서비스 계정(`play-deploy@mody-500711.iam.gserviceaccount.com`) 초대를 우리가 못 한다. 꺼져 있으면
+서명·검증된 AAB 를 **암호화해** workflow artifact(`mody-release`, 7일 보관)로 남기고 Slack 으로 링크를 보낸다.
+레포가 공개라 artifact·Release 는 누구나 받을 수 있고, AAB 안에 R8 mapping 이 들어 있어 평문으로 올리면 안 된다.
+암호는 시크릿 `RELEASE_ARTIFACT_PASSPHRASE` 와 같은 값을 `~/Project/keys/mody-release-artifact.pass` 에 둔다.
+```bash
+D=$(mktemp -d)   # 매번 새 폴더 — 같은 폴더에 다시 받으면 기존 파일과 충돌해 실패한다
+gh run download <run-id> -n mody-release -D "$D" && \
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$D"/mody-*.aab.enc \
+  -out ~/Downloads/mody-release.aab -pass file:$HOME/Project/keys/mody-release-artifact.pass
+```
 ```bash
 git tag -a v1.2.1 -m "<ko-KR 출시 노트, 500자 이내>"   # 태그 메시지가 곧 출시 노트. 없으면 잡이 실패
 git push origin v1.2.1

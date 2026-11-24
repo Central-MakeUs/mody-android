@@ -263,7 +263,8 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           STATUS: ${{ job.status }}
-          PLAY_UPLOAD_ENABLED: ${{ vars.PLAY_UPLOAD_ENABLED }}
+          # 업로드/암호화 스텝의 if 와 같은 판정(Actions 비교는 대소문자 무시, 셸 비교는 아님).
+          PLAY_UPLOAD_ENABLED: ${{ vars.PLAY_UPLOAD_ENABLED == 'true' }}
         run: |
           if [ "$STATUS" = "success" ] && [ "$PLAY_UPLOAD_ENABLED" = "true" ]; then
             EMOJI=":rocket:"; TITLE="Play 스토어 업로드 완료(단계적 출시 20%)"

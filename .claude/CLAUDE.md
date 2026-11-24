@@ -296,8 +296,9 @@ release AAB 를 말아(서명 JDK 21) 광고 권한·debug 서명을 검사한 �
 레포가 공개라 artifact·Release 는 누구나 받을 수 있고, AAB 안에 R8 mapping 이 들어 있어 평문으로 올리면 안 된다.
 암호는 시크릿 `RELEASE_ARTIFACT_PASSPHRASE` 와 같은 값을 `~/Project/keys/mody-release-artifact.pass` 에 둔다.
 ```bash
-gh run download <run-id> -n mody-release -D /tmp/mody-release
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in /tmp/mody-release/mody-*.aab.enc \
+D=$(mktemp -d)   # 매번 새 폴더 — 같은 폴더에 다시 받으면 기존 파일과 충돌해 실패한다
+gh run download <run-id> -n mody-release -D "$D" && \
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$D"/mody-*.aab.enc \
   -out ~/Downloads/mody-release.aab -pass file:$HOME/Project/keys/mody-release-artifact.pass
 ```
 ```bash

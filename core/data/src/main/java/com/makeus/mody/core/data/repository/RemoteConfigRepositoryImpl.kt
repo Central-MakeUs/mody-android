@@ -4,6 +4,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.firebase.Firebase
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.makeus.mody.core.model.RemoteNotice
 import com.makeus.mody.core.model.SplashGate
 import com.makeus.mody.core.domain.repository.RemoteConfigRepository
@@ -12,13 +16,16 @@ import java.net.URI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 @Singleton
-class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository {
+class RemoteConfigRepositoryImpl @Inject constructor(
+    private val dataStore: DataStore<Preferences>,
+) : RemoteConfigRepository {
 
     private val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig.apply {
         setConfigSettingsAsync(
@@ -93,7 +100,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
 
     /**
      * notice_flag JSON → [RemoteNotice]. 비었거나 파싱 실패면 공지 없음(null).
-     * iOS 정의 스키마: {"title","contents","skipPossible"} — 혹시 모를 변형(message)도 수용.
+     * iOS 정의 스키마: {"title","contents","skipPossible"} + 안드로이드 선택 필드 "id"(1회 노출). 변형(message)도 수용.
      */
     private fun parseNotice(raw: String): RemoteNotice? {
         if (raw.isBlank()) return null
@@ -103,6 +110,7 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
             val message = json.optString("contents").ifBlank { json.optString("message") }
             if (title.isBlank() && message.isBlank()) return null
             RemoteNotice(
+                id = json.optString("id").ifBlank { null },
                 title = title.ifBlank { "공지사항" },
                 message = message,
                 skipPossible = json.optBoolean("skipPossible", true),
@@ -110,7 +118,17 @@ class RemoteConfigRepositoryImpl @Inject constructor() : RemoteConfigRepository 
         }.getOrNull()
     }
 
+    override suspend fun isNoticeSeen(id: String): Boolean =
+        id in dataStore.data.first()[KEY_SEEN_NOTICE_IDS].orEmpty()
+
+    override suspend fun markNoticeSeen(id: String) {
+        dataStore.edit { it[KEY_SEEN_NOTICE_IDS] = it[KEY_SEEN_NOTICE_IDS].orEmpty() + id }
+    }
+
     private companion object {
+        // 로그아웃(SessionRepository.clear)에서 지우지 않는다 — 기기 단위로 한 번만 보면 된다.
+        val KEY_SEEN_NOTICE_IDS = stringSetPreferencesKey("seen_notice_ids")
+
         /** 심사용 히든 로그인 허용 — 심사 기간에만 콘솔에서 true 게시. */
         const val KEY_GUEST_LOGIN = "guest_login_flag"
 

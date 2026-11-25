@@ -123,6 +123,7 @@ class MainViewModel @Inject constructor(
         val gate = _splashGate.value
         if (gate is SplashGateState.Notice && gate.notice.skipPossible) {
             _splashGate.value = SplashGateState.Passed
+            gate.notice.id?.let { id -> viewModelScope.launch { remoteConfigRepository.markNoticeSeen(id) } }
         }
     }
 
@@ -144,9 +145,15 @@ class MainViewModel @Inject constructor(
             gate.forceUpdate -> SplashGateState.UpdateRequired(gate.playStoreUrl)
             isBelowMinimum(currentVersionName(), gate.minimumSupportedVersion) ->
                 SplashGateState.UpdateRequired(gate.playStoreUrl)
-            notice != null -> SplashGateState.Notice(notice)
+            notice != null && !isSeen(notice) -> SplashGateState.Notice(notice)
             else -> SplashGateState.Passed
         }
+    }
+
+    // 차단 공지(skipPossible=false)는 확인할 수 없으니 본 적 있어도 계속 띄운다.
+    private suspend fun isSeen(notice: RemoteNotice): Boolean {
+        val id = notice.id ?: return false
+        return notice.skipPossible && runCatching { remoteConfigRepository.isNoticeSeen(id) }.getOrDefault(false)
     }
 
     private fun currentVersionName(): String? = runCatching {

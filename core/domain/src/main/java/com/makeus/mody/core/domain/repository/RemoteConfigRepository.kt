@@ -34,4 +34,8 @@ interface RemoteConfigRepository {
 
     /** 스플래시 게이트 구성값 스냅샷. [refresh] 이후 호출해야 최신 활성값 기준. */
     fun splashGate(): SplashGate
+
+    suspend fun isNoticeSeen(id: String): Boolean
+
+    suspend fun markNoticeSeen(id: String)
 }

@@ -19,6 +19,8 @@ data class SplashGate(
 
 /** 원격 공지(notice_flag JSON). */
 data class RemoteNotice(
+    /** 있으면 확인 후 다시 띄우지 않는다(신규 기능 안내 등). 없으면 실행마다 노출. */
+    val id: String?,
     val title: String,
     val message: String,
     /** true: 확인 후 진행 가능(안내용) / false: 확인 비활성 + 진행 차단. */
